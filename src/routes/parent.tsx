@@ -30,7 +30,7 @@ import {
 } from "@/lib/store";
 import { EVENT, CONVENER, formatKes } from "@/lib/event-config";
 import { registrationSchema, paymentSchema } from "@/lib/schemas";
-import type { Swimmer, Registration, Payment } from "@/lib/schemas";
+import type { Swimmer, Payment } from "@/lib/schemas";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/parent")({
