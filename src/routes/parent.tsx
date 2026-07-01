@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { TermsPanel } from "@/components/TermsPanel";
 import { Button } from "@/components/ui/button";
