@@ -224,19 +224,22 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
                   type="number"
                   min={4}
                   max={25}
-                  value={form.age === 0 ? "" : (form.age as number | "")}
-                  onChange={(e) => update("age", parseInt(e.target.value, 10) as number)}
-                  className="h-11"
+                  value={form.age === "" ? "" : form.age}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    update("age", v === "" ? "" : parseInt(v, 10));
+                  }}
+                  className={`h-11 ${errRing("age")}`}
                 />
                 {errText("age")}
               </div>
               <div>
                 <Label>Gender</Label>
                 <Select
-                  value={form.gender as string}
+                  value={form.gender}
                   onValueChange={(v) => update("gender", v as "Male" | "Female")}
                 >
-                  <SelectTrigger className="h-11">
+                  <SelectTrigger className={`h-11 ${errRing("gender")}`}>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -249,10 +252,10 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
               <div>
                 <Label>Spending the night with the team?</Label>
                 <Select
-                  value={form.sleepover as string}
+                  value={form.sleepover}
                   onValueChange={(v) => update("sleepover", v as "Yes" | "No")}
                 >
-                  <SelectTrigger className="h-11">
+                  <SelectTrigger className={`h-11 ${errRing("sleepover")}`}>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -265,10 +268,10 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
               <div>
                 <Label>Owns a cellphone?</Label>
                 <Select
-                  value={form.ownsCellphone as string}
+                  value={form.ownsCellphone}
                   onValueChange={(v) => update("ownsCellphone", v as "Yes" | "No")}
                 >
-                  <SelectTrigger className="h-11">
+                  <SelectTrigger className={`h-11 ${errRing("ownsCellphone")}`}>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -292,7 +295,7 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
               <div>
                 <Label>Parent 1 full name</Label>
                 <Input
-                  className="h-11"
+                  className={`h-11 ${errRing("parent1Name")}`}
                   value={form.parent1Name}
                   onChange={(e) => update("parent1Name", e.target.value)}
                 />
@@ -312,7 +315,7 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
               <div>
                 <Label>Primary cell number</Label>
                 <Input
-                  className="h-11"
+                  className={`h-11 ${errRing("primaryPhone")}`}
                   inputMode="tel"
                   value={form.primaryPhone}
                   onChange={(e) => update("primaryPhone", e.target.value)}
@@ -320,6 +323,7 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
                 />
                 {errText("primaryPhone")}
               </div>
+
               <div>
                 <Label>
                   Secondary cell number{" "}
