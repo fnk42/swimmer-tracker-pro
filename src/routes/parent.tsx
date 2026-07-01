@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { TermsPanel } from "@/components/TermsPanel";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ import {
 } from "@/lib/store";
 import { EVENT, CONVENER, formatKes } from "@/lib/event-config";
 import { registrationSchema, paymentSchema } from "@/lib/schemas";
-import type { Swimmer, Registration, Payment } from "@/lib/schemas";
+import type { Swimmer, Payment } from "@/lib/schemas";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/parent")({
@@ -97,13 +97,37 @@ function ParentPage() {
   );
 }
 
+type RegFormState = {
+  age: number | "";
+  gender: "Male" | "Female" | "";
+  sleepover: "Yes" | "No" | "";
+  ownsCellphone: "Yes" | "No" | "";
+  parent1Name: string;
+  parent2Name: string;
+  primaryPhone: string;
+  secondaryPhone: string;
+  dietary: string;
+  allergies: string;
+  healthConditions: string;
+  specialRequests: string;
+};
+
+const FIELD_LABELS: Record<string, string> = {
+  age: "Age",
+  gender: "Gender",
+  sleepover: "Spending the night with the team",
+  ownsCellphone: "Owns a cellphone",
+  parent1Name: "Parent 1 full name",
+  primaryPhone: "Primary cell number",
+};
+
 function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
   const existing = getRegistration(swimmer.id);
-  const [form, setForm] = useState<Omit<Registration, "swimmerId" | "updatedAt">>({
-    age: existing?.age ?? swimmer.age ?? ("" as unknown as number),
-    gender: existing?.gender ?? swimmer.gender ?? ("" as unknown as "Male"),
-    sleepover: existing?.sleepover ?? ("" as unknown as "Yes"),
-    ownsCellphone: existing?.ownsCellphone ?? ("" as unknown as "Yes"),
+  const [form, setForm] = useState<RegFormState>({
+    age: existing?.age ?? swimmer.age ?? "",
+    gender: existing?.gender ?? swimmer.gender ?? "",
+    sleepover: existing?.sleepover ?? "",
+    ownsCellphone: existing?.ownsCellphone ?? "",
     parent1Name: existing?.parent1Name ?? "",
     parent2Name: existing?.parent2Name ?? "",
     primaryPhone: existing?.primaryPhone ?? "",
@@ -114,18 +138,31 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
     specialRequests: existing?.specialRequests ?? "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const bannerRef = useRef<HTMLDivElement>(null);
 
-  function update<K extends keyof typeof form>(k: K, v: (typeof form)[K]) {
+  function update<K extends keyof RegFormState>(k: K, v: RegFormState[K]) {
     setForm((f) => ({ ...f, [k]: v }));
   }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const parsed = registrationSchema.safeParse({
-      ...form,
+    const payload: Record<string, unknown> = {
       swimmerId: swimmer.id,
       updatedAt: new Date().toISOString(),
-    });
+      age: form.age === "" ? undefined : form.age,
+      gender: form.gender === "" ? undefined : form.gender,
+      sleepover: form.sleepover === "" ? undefined : form.sleepover,
+      ownsCellphone: form.ownsCellphone === "" ? undefined : form.ownsCellphone,
+      parent1Name: form.parent1Name,
+      parent2Name: form.parent2Name,
+      primaryPhone: form.primaryPhone,
+      secondaryPhone: form.secondaryPhone,
+      dietary: form.dietary,
+      allergies: form.allergies,
+      healthConditions: form.healthConditions,
+      specialRequests: form.specialRequests,
+    };
+    const parsed = registrationSchema.safeParse(payload);
     if (!parsed.success) {
       const errs: Record<string, string> = {};
       for (const issue of parsed.error.issues) {
@@ -133,6 +170,9 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
       }
       setErrors(errs);
       toast.error("Please fix the highlighted fields.");
+      requestAnimationFrame(() => {
+        bannerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
       return;
     }
     setErrors({});
@@ -142,6 +182,11 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
 
   const errText = (k: string) =>
     errors[k] ? <p className="text-xs text-destructive mt-1">{errors[k]}</p> : null;
+  const errRing = (k: string) =>
+    errors[k] ? "border-destructive ring-1 ring-destructive/40" : "";
+  const missingLabels = Object.keys(errors)
+    .map((k) => FIELD_LABELS[k])
+    .filter(Boolean);
 
   return (
     <Card>
@@ -155,6 +200,19 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="space-y-6">
+          {Object.keys(errors).length > 0 && (
+            <div
+              ref={bannerRef}
+              className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"
+            >
+              <div className="font-medium mb-1">Please complete the required fields:</div>
+              <ul className="list-disc pl-5 text-xs">
+                {missingLabels.length > 0
+                  ? missingLabels.map((l) => <li key={l}>{l}</li>)
+                  : Object.values(errors).map((m, i) => <li key={i}>{m}</li>)}
+              </ul>
+            </div>
+          )}
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
               Swimmer
@@ -166,19 +224,22 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
                   type="number"
                   min={4}
                   max={25}
-                  value={form.age === 0 ? "" : (form.age as number | "")}
-                  onChange={(e) => update("age", parseInt(e.target.value, 10) as number)}
-                  className="h-11"
+                  value={form.age === "" ? "" : form.age}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    update("age", v === "" ? "" : parseInt(v, 10));
+                  }}
+                  className={`h-11 ${errRing("age")}`}
                 />
                 {errText("age")}
               </div>
               <div>
                 <Label>Gender</Label>
                 <Select
-                  value={form.gender as string}
+                  value={form.gender}
                   onValueChange={(v) => update("gender", v as "Male" | "Female")}
                 >
-                  <SelectTrigger className="h-11">
+                  <SelectTrigger className={`h-11 ${errRing("gender")}`}>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -191,10 +252,10 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
               <div>
                 <Label>Spending the night with the team?</Label>
                 <Select
-                  value={form.sleepover as string}
+                  value={form.sleepover}
                   onValueChange={(v) => update("sleepover", v as "Yes" | "No")}
                 >
-                  <SelectTrigger className="h-11">
+                  <SelectTrigger className={`h-11 ${errRing("sleepover")}`}>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -207,10 +268,10 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
               <div>
                 <Label>Owns a cellphone?</Label>
                 <Select
-                  value={form.ownsCellphone as string}
+                  value={form.ownsCellphone}
                   onValueChange={(v) => update("ownsCellphone", v as "Yes" | "No")}
                 >
-                  <SelectTrigger className="h-11">
+                  <SelectTrigger className={`h-11 ${errRing("ownsCellphone")}`}>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -234,7 +295,7 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
               <div>
                 <Label>Parent 1 full name</Label>
                 <Input
-                  className="h-11"
+                  className={`h-11 ${errRing("parent1Name")}`}
                   value={form.parent1Name}
                   onChange={(e) => update("parent1Name", e.target.value)}
                 />
@@ -254,7 +315,7 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
               <div>
                 <Label>Primary cell number</Label>
                 <Input
-                  className="h-11"
+                  className={`h-11 ${errRing("primaryPhone")}`}
                   inputMode="tel"
                   value={form.primaryPhone}
                   onChange={(e) => update("primaryPhone", e.target.value)}
@@ -262,6 +323,7 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
                 />
                 {errText("primaryPhone")}
               </div>
+
               <div>
                 <Label>
                   Secondary cell number{" "}
