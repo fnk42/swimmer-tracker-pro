@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/api/swimmers")({
   server: {
     handlers: {
       GET: async () => {
         try {
-          const { data, error } = await supabase
+          const { data, error } = await getSupabase()
             .from("swimmers")
             .select("*")
             .order("created_at", { ascending: false });

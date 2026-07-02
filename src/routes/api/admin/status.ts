@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 interface SwimmerStatus {
   id: string;
@@ -18,19 +18,20 @@ export const Route = createFileRoute("/api/admin/status")({
     handlers: {
       GET: async () => {
         try {
-          const { data: swimmers, error: swimmersError } = await supabase
+          const sb = getSupabase();
+          const { data: swimmers, error: swimmersError } = await sb
             .from("swimmers")
             .select("*");
 
           if (swimmersError) throw swimmersError;
 
-          const { data: registrations, error: regsError } = await supabase
+          const { data: registrations, error: regsError } = await sb
             .from("registrations")
             .select("swimmer_id");
 
           if (regsError) throw regsError;
 
-          const { data: payments, error: paymentsError } = await supabase
+          const { data: payments, error: paymentsError } = await sb
             .from("payments")
             .select("swimmer_id, swimmer_ids, child_count, amount, reference, created_at");
 

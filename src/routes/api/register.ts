@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import type { Registration } from "@/lib/supabase";
 
 export const Route = createFileRoute("/api/register")({
@@ -39,7 +39,7 @@ export const Route = createFileRoute("/api/register")({
             updated_at: new Date().toISOString(),
           };
 
-          const { data, error } = await supabase
+          const { data, error } = await getSupabase()
             .from("registrations")
             .upsert(registration, { onConflict: "swimmer_id" })
             .select()

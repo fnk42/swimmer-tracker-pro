@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 import type { Payment } from "@/lib/supabase";
 
 export const Route = createFileRoute("/api/payment")({
@@ -44,7 +44,7 @@ export const Route = createFileRoute("/api/payment")({
             created_at: new Date().toISOString(),
           };
 
-          const { data, error } = await supabase
+          const { data, error } = await getSupabase()
             .from("payments")
             .insert([payment])
             .select()
