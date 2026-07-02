@@ -146,9 +146,18 @@ export function setPayments(list: Payment[]) {
   write(KEYS.payments, list);
 }
 
+// Legacy payments (pre multi-child) don't have swimmerIds/childCount — treat as
+// covering only their primary swimmer.
+function coveredIds(p: Payment): string[] {
+  return p.swimmerIds && p.swimmerIds.length > 0 ? p.swimmerIds : [p.swimmerId];
+}
+function countFor(p: Payment): number {
+  return p.childCount && p.childCount > 0 ? p.childCount : 1;
+}
+
 export function getPaymentsFor(swimmerId: string): Payment[] {
   return getPayments()
-    .filter((p) => p.swimmerId === swimmerId)
+    .filter((p) => coveredIds(p).includes(swimmerId))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
@@ -158,10 +167,14 @@ export function addPayment(input: Omit<Payment, "id" | "createdAt">): Payment {
   return payment;
 }
 
+// Each covered swimmer is credited amount/childCount from the payment. This is
+// the "infer by amount" model — a payment of 60,000 with child_count=3 credits
+// 20,000 to each of its three covered swimmers.
 export function getPaid(swimmerId: string): number {
-  return getPayments()
-    .filter((p) => p.swimmerId === swimmerId)
-    .reduce((sum, p) => sum + p.amount, 0);
+  return getPayments().reduce((sum, p) => {
+    if (!coveredIds(p).includes(swimmerId)) return sum;
+    return sum + p.amount / countFor(p);
+  }, 0);
 }
 
 export function getBalance(swimmerId: string): number {

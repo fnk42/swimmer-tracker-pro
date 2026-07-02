@@ -117,7 +117,7 @@ function AdminPage() {
                     <TableHead className="w-8"></TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead className="hidden sm:table-cell">Age</TableHead>
-                    <TableHead className="hidden md:table-cell">Sleepover</TableHead>
+                    <TableHead className="hidden md:table-cell">Parent sleepover</TableHead>
                     <TableHead className="hidden md:table-cell">Contact</TableHead>
                     <TableHead className="text-right">Paid</TableHead>
                     <TableHead className="text-right">Balance</TableHead>
@@ -262,7 +262,7 @@ function SwimmerRow({
           )}
         </TableCell>
         <TableCell className="hidden sm:table-cell text-sm">{reg?.age ?? swimmer.age ?? "—"}</TableCell>
-        <TableCell className="hidden md:table-cell text-sm">{reg?.sleepover ?? "—"}</TableCell>
+        <TableCell className="hidden md:table-cell text-sm">{reg?.parentSleepover ?? "—"}</TableCell>
         <TableCell className="hidden md:table-cell text-sm">{reg?.primaryPhone ?? "—"}</TableCell>
         <TableCell className="text-right text-sm">{formatKes(paid)}</TableCell>
         <TableCell className="text-right text-sm">{formatKes(balance)}</TableCell>
@@ -283,7 +283,7 @@ function SwimmerRow({
                 <div className="grid gap-4 sm:grid-cols-2 text-sm">
                   <Info label="Age" value={reg.age} />
                   <Info label="Gender" value={reg.gender} />
-                  <Info label="Sleepover" value={reg.sleepover} />
+                  <Info label="Parent sleepover" value={reg.parentSleepover} />
                   <Info label="Owns cellphone" value={reg.ownsCellphone} />
                   <Info label="Parent 1" value={reg.parent1Name} />
                   <Info label="Parent 2" value={reg.parent2Name || "—"} />
@@ -312,17 +312,28 @@ function SwimmerRow({
                   <p className="text-sm text-muted-foreground italic">No payments recorded.</p>
                 ) : (
                   <ul className="divide-y rounded-md border bg-white">
-                    {payments.map((p) => (
-                      <li key={p.id} className="p-3 flex items-center justify-between gap-3 text-sm">
-                        <div>
-                          <div className="font-medium">{formatKes(p.amount)}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {new Date(p.createdAt).toLocaleString()} · Ref {p.reference}
+                    {payments.map((p) => {
+                      const n = p.childCount && p.childCount > 0 ? p.childCount : 1;
+                      return (
+                        <li key={p.id} className="p-3 flex items-center justify-between gap-3 text-sm">
+                          <div>
+                            <div className="font-medium">
+                              {formatKes(p.amount)}
+                              {n > 1 && (
+                                <span className="text-xs font-normal text-muted-foreground ml-2">
+                                  ({formatKes(p.amount / n)} credited)
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(p.createdAt).toLocaleString()} · Ref {p.reference}
+                              {n > 1 ? ` · covers ${n} children` : ""}
+                            </div>
                           </div>
-                        </div>
-                        <Badge variant="secondary">{p.type}</Badge>
-                      </li>
-                    ))}
+                          <Badge variant="secondary">{p.type}</Badge>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>

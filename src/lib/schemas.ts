@@ -12,12 +12,13 @@ export const swimmerSchema = z.object({
 export type Swimmer = z.infer<typeof swimmerSchema>;
 
 export const yesNo = z.enum(["Yes", "No"]);
+export const yesNoMaybe = z.enum(["Yes", "No", "Yet to decide"]);
 
 export const registrationSchema = z.object({
   swimmerId: z.string(),
   age: z.number().int().min(4).max(25),
   gender: genderSchema,
-  sleepover: yesNo,
+  parentSleepover: yesNoMaybe,
   ownsCellphone: yesNo,
   parent1Name: z.string().trim().min(1, "Required").max(120),
   parent2Name: z.string().trim().max(120).optional().or(z.literal("")),
@@ -37,6 +38,8 @@ export type PaymentType = z.infer<typeof paymentTypeSchema>;
 export const paymentSchema = z.object({
   id: z.string(),
   swimmerId: z.string(),
+  swimmerIds: z.array(z.string()).min(1),
+  childCount: z.number().int().min(1),
   amount: z.number().positive().max(1_000_000),
   reference: z.string().trim().min(3, "M-Pesa reference required").max(40),
   type: paymentTypeSchema,

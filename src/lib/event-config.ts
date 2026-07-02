@@ -21,6 +21,14 @@ export const CONVENER = {
   phone: "+254 700 000 000",
 } as const;
 
+// TODO: replace PLACEHOLDER values with the real M-Pesa Paybill, account code,
+// and merchant name once the convener confirms them.
+export const PAYMENT = {
+  paybill: "PLACEHOLDER",
+  accountCode: "PLACEHOLDER",
+  merchantName: "PLACEHOLDER",
+} as const;
+
 // Seed roster used on first load. Admin can add/import/rename/delete.
 // Siblings from the source list have been split into individual swimmers.
 // Age and gender are left blank for admin to fill in manually.

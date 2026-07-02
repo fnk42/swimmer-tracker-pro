@@ -22,16 +22,16 @@ import {
   getRegistration,
   saveRegistration,
   getPaid,
-  getBalance,
-  getStatus,
   getPaymentsFor,
+  getStatus,
   addPayment,
   isRegistered,
 } from "@/lib/store";
-import { EVENT, CONVENER, formatKes } from "@/lib/event-config";
+import { EVENT, CONVENER, PAYMENT, formatKes } from "@/lib/event-config";
 import { registrationSchema, paymentSchema } from "@/lib/schemas";
 import type { Swimmer, Payment } from "@/lib/schemas";
 import { toast } from "sonner";
+import { Copy, X } from "lucide-react";
 
 export const Route = createFileRoute("/parent")({
   component: ParentPage,
@@ -40,7 +40,8 @@ export const Route = createFileRoute("/parent")({
 function ParentPage() {
   const navigate = useNavigate();
   const [swimmers, setSwimmers] = useState<Swimmer[]>([]);
-  const [selectedId, setSelectedId] = useState<string>("");
+  const [groupIds, setGroupIds] = useState<string[]>([]);
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     if (!isAuthed()) {
@@ -48,9 +49,28 @@ function ParentPage() {
       return;
     }
     setSwimmers(getSwimmers());
-  }, [navigate]);
+  }, [navigate, tick]);
 
-  const selected = swimmers.find((s) => s.id === selectedId);
+  const groupSwimmers = useMemo(
+    () =>
+      groupIds
+        .map((id) => swimmers.find((s) => s.id === id))
+        .filter((s): s is Swimmer => !!s),
+    [groupIds, swimmers],
+  );
+  const available = useMemo(
+    () => swimmers.filter((s) => !groupIds.includes(s.id)),
+    [swimmers, groupIds],
+  );
+
+  function addChild(id: string) {
+    if (id && !groupIds.includes(id)) setGroupIds((g) => [...g, id]);
+  }
+  function removeChild(id: string) {
+    setGroupIds((g) => g.filter((x) => x !== id));
+  }
+
+  const refresh = () => setTick((x) => x + 1);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -66,31 +86,78 @@ function ParentPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">1. Select your swimmer</CardTitle>
-            <CardDescription>Pick from the roster loaded by the convener.</CardDescription>
+            <CardTitle className="text-base">
+              1. Select your swimmer{groupIds.length > 1 ? "s" : ""}
+            </CardTitle>
+            <CardDescription>
+              Adding more than one child lets you pay for all of them with a single M-Pesa
+              transaction.
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Select value={selectedId} onValueChange={setSelectedId}>
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Choose swimmer…" />
-              </SelectTrigger>
-              <SelectContent>
-                {swimmers.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
+          <CardContent className="space-y-3">
+            {groupSwimmers.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {groupSwimmers.map((s) => (
+                  <span
+                    key={s.id}
+                    className="inline-flex items-center gap-1 rounded-full bg-sky-100 text-sky-900 text-xs font-medium pl-3 pr-1 py-1"
+                  >
                     {s.name}
                     {isRegistered(s.id) ? " ✓" : ""}
-                  </SelectItem>
+                    <button
+                      type="button"
+                      onClick={() => removeChild(s.id)}
+                      className="rounded-full hover:bg-sky-200 p-0.5"
+                      aria-label={`Remove ${s.name}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            )}
+            {available.length > 0 ? (
+              <Select value="" onValueChange={addChild}>
+                <SelectTrigger className="h-11">
+                  <SelectValue
+                    placeholder={
+                      groupSwimmers.length === 0
+                        ? "Choose swimmer…"
+                        : "+ Add another child…"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {available.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                      {isRegistered(s.id) ? " ✓" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : groupSwimmers.length > 0 ? (
+              <p className="text-xs text-muted-foreground">No more swimmers available to add.</p>
+            ) : null}
           </CardContent>
         </Card>
 
-        {selected && (
-          <>
-            <RegistrationSection swimmer={selected} key={"reg-" + selected.id} />
-            <PaymentSection swimmer={selected} key={"pay-" + selected.id} />
-          </>
+        {groupSwimmers.map((s, i) => (
+          <RegistrationSection
+            key={"reg-" + s.id}
+            swimmer={s}
+            number={i + 2}
+            onSaved={refresh}
+          />
+        ))}
+
+        {groupSwimmers.length > 0 && (
+          <PaymentSection
+            swimmers={groupSwimmers}
+            sectionNumber={groupSwimmers.length + 2}
+            onPaid={refresh}
+            tick={tick}
+          />
         )}
       </main>
     </div>
@@ -100,7 +167,7 @@ function ParentPage() {
 type RegFormState = {
   age: number | "";
   gender: "Male" | "Female" | "";
-  sleepover: "Yes" | "No" | "";
+  parentSleepover: "Yes" | "No" | "Yet to decide" | "";
   ownsCellphone: "Yes" | "No" | "";
   parent1Name: string;
   parent2Name: string;
@@ -115,18 +182,26 @@ type RegFormState = {
 const FIELD_LABELS: Record<string, string> = {
   age: "Age",
   gender: "Gender",
-  sleepover: "Spending the night with the team",
+  parentSleepover: "Parent staying the night",
   ownsCellphone: "Owns a cellphone",
   parent1Name: "Parent 1 full name",
   primaryPhone: "Primary cell number",
 };
 
-function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
+function RegistrationSection({
+  swimmer,
+  number,
+  onSaved,
+}: {
+  swimmer: Swimmer;
+  number: number;
+  onSaved: () => void;
+}) {
   const existing = getRegistration(swimmer.id);
   const [form, setForm] = useState<RegFormState>({
     age: existing?.age ?? swimmer.age ?? "",
     gender: existing?.gender ?? swimmer.gender ?? "",
-    sleepover: existing?.sleepover ?? "",
+    parentSleepover: existing?.parentSleepover ?? "",
     ownsCellphone: existing?.ownsCellphone ?? "",
     parent1Name: existing?.parent1Name ?? "",
     parent2Name: existing?.parent2Name ?? "",
@@ -151,7 +226,7 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
       updatedAt: new Date().toISOString(),
       age: form.age === "" ? undefined : form.age,
       gender: form.gender === "" ? undefined : form.gender,
-      sleepover: form.sleepover === "" ? undefined : form.sleepover,
+      parentSleepover: form.parentSleepover === "" ? undefined : form.parentSleepover,
       ownsCellphone: form.ownsCellphone === "" ? undefined : form.ownsCellphone,
       parent1Name: form.parent1Name,
       parent2Name: form.parent2Name,
@@ -178,6 +253,7 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
     setErrors({});
     saveRegistration(parsed.data);
     toast.success("Registration saved");
+    onSaved();
   }
 
   const errText = (k: string) =>
@@ -191,7 +267,9 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">2. Registration — {swimmer.name}</CardTitle>
+        <CardTitle className="text-base">
+          {number}. Registration — {swimmer.name}
+        </CardTitle>
         <CardDescription>
           {existing
             ? "Details on file. Update anything that's changed."
@@ -250,23 +328,26 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
                 {errText("gender")}
               </div>
               <div>
-                <Label>Spending the night with the team?</Label>
+                <Label>Are you (the parent) staying the night with the team?</Label>
                 <Select
-                  value={form.sleepover}
-                  onValueChange={(v) => update("sleepover", v as "Yes" | "No")}
+                  value={form.parentSleepover}
+                  onValueChange={(v) =>
+                    update("parentSleepover", v as "Yes" | "No" | "Yet to decide")
+                  }
                 >
-                  <SelectTrigger className={`h-11 ${errRing("sleepover")}`}>
+                  <SelectTrigger className={`h-11 ${errRing("parentSleepover")}`}>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Yes">Yes</SelectItem>
                     <SelectItem value="No">No</SelectItem>
+                    <SelectItem value="Yet to decide">Yet to decide</SelectItem>
                   </SelectContent>
                 </Select>
-                {errText("sleepover")}
+                {errText("parentSleepover")}
               </div>
               <div>
-                <Label>Owns a cellphone?</Label>
+                <Label>Swimmer owns a cellphone?</Label>
                 <Select
                   value={form.ownsCellphone}
                   onValueChange={(v) => update("ownsCellphone", v as "Yes" | "No")}
@@ -399,25 +480,93 @@ function RegistrationSection({ swimmer }: { swimmer: Swimmer }) {
   );
 }
 
-function PaymentSection({ swimmer }: { swimmer: Swimmer }) {
-  const [tick, setTick] = useState(0); // force refresh after submit
-  const registered = useMemo(() => isRegistered(swimmer.id), [swimmer.id, tick]);
-  const paid = useMemo(() => getPaid(swimmer.id), [swimmer.id, tick]);
-  const balance = useMemo(() => getBalance(swimmer.id), [swimmer.id, tick]);
-  const status = useMemo(() => getStatus(swimmer.id), [swimmer.id, tick]);
-  const history: Payment[] = useMemo(() => getPaymentsFor(swimmer.id), [swimmer.id, tick]);
-  const pct = Math.min(100, Math.round((paid / EVENT.totalKes) * 100));
+function CopyRow({ label, value }: { label: string; value: string }) {
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label} copied`);
+    } catch {
+      toast.error("Copy failed — long-press to copy manually.");
+    }
+  }
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-md border bg-white px-3 py-2">
+      <div className="min-w-0">
+        <div className="text-[11px] text-muted-foreground uppercase tracking-wide">{label}</div>
+        <div className="text-sm font-medium truncate">{value}</div>
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={copy}
+        className="shrink-0 h-8"
+        aria-label={`Copy ${label}`}
+      >
+        <Copy className="h-4 w-4" /> Copy
+      </Button>
+    </div>
+  );
+}
+
+function PaymentSection({
+  swimmers,
+  sectionNumber,
+  onPaid,
+  tick,
+}: {
+  swimmers: Swimmer[];
+  sectionNumber: number;
+  onPaid: () => void;
+  tick: number;
+}) {
+  const swimmerIds = swimmers.map((s) => s.id);
+  const childCount = swimmers.length;
+
+  const allRegistered = useMemo(
+    () => swimmerIds.every((id) => isRegistered(id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [swimmerIds.join(","), tick],
+  );
+
+  const groupTotal = EVENT.totalKes * childCount;
+  const groupPaid = useMemo(
+    () => swimmerIds.reduce((sum, id) => sum + getPaid(id), 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [swimmerIds.join(","), tick],
+  );
+  const groupBalance = Math.max(0, groupTotal - groupPaid);
+  const pct = Math.min(100, Math.round((groupPaid / groupTotal) * 100));
+
+  const history = useMemo(() => {
+    const seen = new Set<string>();
+    const out: Payment[] = [];
+    swimmerIds.forEach((id) => {
+      getPaymentsFor(id).forEach((p) => {
+        if (!seen.has(p.id)) {
+          seen.add(p.id);
+          out.push(p);
+        }
+      });
+    });
+    return out.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [swimmerIds.join(","), tick]);
 
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
-  const [type, setType] = useState<"Deposit" | "Partial" | "Final">("Deposit");
+  const [type, setType] = useState<"Deposit" | "Partial" | "Final">(
+    childCount > 1 ? "Final" : "Deposit",
+  );
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const notRegistered = swimmers.filter((s) => !isRegistered(s.id));
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!registered) {
-      setError("Save the swimmer's registration details first.");
+    if (!allRegistered) {
+      setError("Save the registration for every child in the group before paying.");
       return;
     }
     const n = parseInt(amount, 10);
@@ -425,8 +574,8 @@ function PaymentSection({ swimmer }: { swimmer: Swimmer }) {
       setError("Enter a valid amount.");
       return;
     }
-    if (n > balance) {
-      setError(`Amount exceeds remaining balance (${formatKes(balance)}).`);
+    if (n > groupBalance) {
+      setError(`Amount exceeds remaining balance (${formatKes(groupBalance)}).`);
       return;
     }
     if (!reference.trim()) {
@@ -439,7 +588,9 @@ function PaymentSection({ swimmer }: { swimmer: Swimmer }) {
     }
     const parsed = paymentSchema.safeParse({
       id: "tmp",
-      swimmerId: swimmer.id,
+      swimmerId: swimmerIds[0],
+      swimmerIds,
+      childCount,
       amount: n,
       reference: reference.trim(),
       type,
@@ -449,60 +600,113 @@ function PaymentSection({ swimmer }: { swimmer: Swimmer }) {
       setError(parsed.error.issues[0]?.message ?? "Invalid payment.");
       return;
     }
-    addPayment({ swimmerId: swimmer.id, amount: n, reference: reference.trim(), type });
+    addPayment({
+      swimmerId: swimmerIds[0],
+      swimmerIds,
+      childCount,
+      amount: n,
+      reference: reference.trim(),
+      type,
+    });
     toast.success(
       `Payment recorded. Confirmation sent to ${CONVENER.email} (simulated).`,
       { duration: 5000 },
     );
     setAmount("");
     setReference("");
-    setType("Deposit");
+    setType(childCount > 1 ? "Final" : "Deposit");
     setAgreed(false);
     setError(null);
-    setTick((x) => x + 1);
+    onPaid();
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">3. Payment — {swimmer.name}</CardTitle>
-        <CardDescription>Log each M-Pesa payment as you make it.</CardDescription>
+        <CardTitle className="text-base">
+          {sectionNumber}. Payment
+          {childCount > 1 ? ` — ${childCount} children` : ` — ${swimmers[0].name}`}
+        </CardTitle>
+        <CardDescription>
+          {childCount > 1
+            ? "One M-Pesa transaction covers all selected children."
+            : "Log each M-Pesa payment as you make it."}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {childCount > 1 && (
+          <div className="rounded-lg border bg-slate-50 p-3 text-sm">
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+              Paying for
+            </div>
+            <ul className="grid sm:grid-cols-2 gap-x-4 gap-y-1">
+              {swimmers.map((s) => (
+                <li key={s.id} className="flex items-center justify-between gap-2">
+                  <span>{s.name}</span>
+                  <StatusBadge status={getStatus(s.id)} />
+                </li>
+              ))}
+            </ul>
+            <div className="mt-3 pt-3 border-t text-sm flex items-center justify-between">
+              <span className="text-muted-foreground">
+                {childCount} × {formatKes(EVENT.totalKes)}
+              </span>
+              <span className="font-semibold">Running total: {formatKes(groupTotal)}</span>
+            </div>
+          </div>
+        )}
+
         <div className="rounded-lg border bg-sky-50/60 p-4 space-y-3">
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div>
               <div className="text-xs text-muted-foreground">Total</div>
-              <div className="text-lg font-semibold">{formatKes(EVENT.totalKes)}</div>
+              <div className="text-lg font-semibold">{formatKes(groupTotal)}</div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Paid</div>
-              <div className="text-lg font-semibold text-emerald-700">{formatKes(paid)}</div>
+              <div className="text-lg font-semibold text-emerald-700">{formatKes(groupPaid)}</div>
             </div>
             <div>
               <div className="text-xs text-muted-foreground">Balance</div>
-              <div className="text-lg font-semibold">{formatKes(balance)}</div>
+              <div className="text-lg font-semibold">{formatKes(groupBalance)}</div>
             </div>
-            <StatusBadge status={status} />
+            {childCount === 1 && <StatusBadge status={getStatus(swimmerIds[0])} />}
           </div>
           <Progress value={pct} className="h-2" />
         </div>
 
-        {balance > 0 ? (
+        {groupBalance > 0 && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-semibold">Pay via M-Pesa</h4>
+            <p className="text-xs text-muted-foreground">
+              Send the amount below via M-Pesa Paybill, then enter the confirmation reference.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <CopyRow label="Paybill" value={PAYMENT.paybill} />
+              <CopyRow label="Account" value={PAYMENT.accountCode} />
+              <CopyRow label="Amount" value={String(groupBalance)} />
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Merchant: {PAYMENT.merchantName}
+            </p>
+          </div>
+        )}
+
+        {groupBalance > 0 ? (
           <form onSubmit={submit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <Label htmlFor="amount">Amount (KES)</Label>
+                <Label htmlFor="amount">Amount paid (KES)</Label>
                 <Input
                   id="amount"
                   className="h-11"
                   type="number"
                   inputMode="numeric"
                   min={1}
-                  max={balance}
+                  max={groupBalance}
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder={String(balance)}
+                  placeholder={String(groupBalance)}
                 />
               </div>
               <div>
@@ -533,13 +737,14 @@ function PaymentSection({ swimmer }: { swimmer: Swimmer }) {
             <TermsPanel checked={agreed} onCheckedChange={setAgreed} />
 
             {error && <p className="text-sm text-destructive">{error}</p>}
-            {!registered && (
+            {!allRegistered && (
               <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-3">
-                Please save registration details above before submitting a payment.
+                Save registration details for {notRegistered.map((s) => s.name).join(", ")} before
+                submitting a payment.
               </p>
             )}
 
-            <Button type="submit" size="lg" className="w-full h-11">
+            <Button type="submit" size="lg" className="w-full h-11" disabled={!allRegistered}>
               Submit payment
             </Button>
           </form>
@@ -553,17 +758,24 @@ function PaymentSection({ swimmer }: { swimmer: Swimmer }) {
           <div>
             <h4 className="text-sm font-semibold mb-2">Payment history</h4>
             <ul className="divide-y rounded-md border">
-              {history.map((p) => (
-                <li key={p.id} className="p-3 flex items-center justify-between gap-3 text-sm">
-                  <div className="min-w-0">
-                    <div className="font-medium">{formatKes(p.amount)}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {new Date(p.createdAt).toLocaleString()} · Ref {p.reference}
+              {history.map((p) => {
+                const n = p.childCount && p.childCount > 0 ? p.childCount : 1;
+                return (
+                  <li
+                    key={p.id}
+                    className="p-3 flex items-center justify-between gap-3 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-medium">{formatKes(p.amount)}</div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {new Date(p.createdAt).toLocaleString()} · Ref {p.reference}
+                        {n > 1 ? ` · covers ${n} children` : ""}
+                      </div>
                     </div>
-                  </div>
-                  <Badge variant="secondary">{p.type}</Badge>
-                </li>
-              ))}
+                    <Badge variant="secondary">{p.type}</Badge>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
