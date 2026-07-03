@@ -4,13 +4,10 @@ import { isAdmin, setRole } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { EVENT } from "@/lib/event-config";
 import { LogOut } from "lucide-react";
-import logoUrl from "@/assets/logo-placeholder.svg";
 
 export function AppHeader() {
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
-  // Role lives in localStorage; SSR can't read it, so defer the admin-tab
-  // decision to after mount to avoid a hydration mismatch.
   const [admin, setAdmin] = useState(false);
   useEffect(() => {
     setAdmin(isAdmin());
@@ -21,42 +18,47 @@ export function AppHeader() {
     navigate({ to: "/" });
   }
 
+  const tabBase =
+    "text-sm px-3 py-1.5 rounded-md transition-colors";
+  const tabActive = "bg-slate-800 text-white font-medium";
+  const tabIdle = "text-slate-300 hover:bg-slate-800 hover:text-white";
+
   return (
-    <header className="border-b bg-white sticky top-0 z-30">
+    <header className="border-b border-slate-800 bg-slate-900 sticky top-0 z-30">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-4">
-        <div className="flex items-center gap-2 min-w-0">
+        <Link to="/parent" className="flex items-center gap-3 min-w-0">
           <img
-            src={logoUrl}
-            alt={`${EVENT.clubName} logo`}
-            className="h-8 w-8 rounded-md shrink-0"
+            src="/nextgen-logo.png"
+            alt="NextGen Swim Club"
+            className="h-9 w-auto shrink-0"
+            width={395}
+            height={265}
           />
-          <div className="min-w-0">
-            <div className="text-sm font-semibold truncate">{EVENT.clubName}</div>
-            <div className="text-[11px] text-muted-foreground truncate">
-              {EVENT.name} · {EVENT.location}
-            </div>
-          </div>
-        </div>
+          <span className="hidden sm:inline text-[11px] text-slate-400 truncate">
+            {EVENT.name} · {EVENT.location}
+          </span>
+        </Link>
         <nav className="ml-auto flex items-center gap-1">
           <Link
             to="/parent"
-            className={`text-sm px-3 py-1.5 rounded-md ${
-              path === "/parent" ? "bg-sky-50 text-sky-700 font-medium" : "text-muted-foreground hover:bg-accent"
-            }`}
+            className={`${tabBase} ${path === "/parent" ? tabActive : tabIdle}`}
           >
             Parent
           </Link>
           {admin && (
             <Link
               to="/admin"
-              className={`text-sm px-3 py-1.5 rounded-md ${
-                path === "/admin" ? "bg-sky-50 text-sky-700 font-medium" : "text-muted-foreground hover:bg-accent"
-              }`}
+              className={`${tabBase} ${path === "/admin" ? tabActive : tabIdle}`}
             >
               Admin
             </Link>
           )}
-          <Button variant="ghost" size="sm" onClick={logout} className="ml-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={logout}
+            className="ml-2 text-slate-300 hover:bg-slate-800 hover:text-white"
+          >
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">Log out</span>
           </Button>

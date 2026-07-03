@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Waves } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   component: LoginPage,
@@ -43,22 +42,33 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        <div className="flex flex-col items-center mb-8 text-center">
-          <div className="h-12 w-12 rounded-full bg-sky-600 text-white grid place-content-center mb-4">
-            <Waves className="h-6 w-6" />
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight">{EVENT.clubName}</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {EVENT.name} · {EVENT.location}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {EVENT.startDate} – {EVENT.endDate}
-          </p>
+    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex flex-col">
+      <header className="border-b border-slate-800 bg-slate-900">
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center">
+          <img
+            src="/nextgen-logo.png"
+            alt="NextGen Swim Club"
+            className="h-9 w-auto"
+            width={395}
+            height={265}
+          />
         </div>
+      </header>
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8 space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {EVENT.name}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {EVENT.location}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {EVENT.startDate} – {EVENT.endDate}
+            </p>
+          </div>
 
-        <Card>
+          <Card>
           <CardHeader>
             <CardTitle>Parent sign-in</CardTitle>
             <CardDescription>Use the shared credentials sent by the convener.</CardDescription>
@@ -97,6 +107,7 @@ function LoginPage() {
             </form>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );
