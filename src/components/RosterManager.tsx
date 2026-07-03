@@ -11,33 +11,37 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { addSwimmer, importSwimmers } from "@/lib/store";
+import { useAddSwimmer, useImportSwimmers } from "@/lib/api";
 import { parseSwimmersCsv, CSV_TEMPLATE, downloadCsv, type ParsedCsv } from "@/lib/csv";
 import { toast } from "sonner";
 import { Upload, Plus, FileDown } from "lucide-react";
 
-type Props = { onChange: () => void };
-
-export function RosterManager({ onChange }: Props) {
+export function RosterManager() {
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState<"Male" | "Female" | "">("");
   const fileRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<ParsedCsv | null>(null);
+  const addMut = useAddSwimmer();
+  const importMut = useImportSwimmers();
 
-  function handleAdd(e: React.FormEvent) {
+  async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    addSwimmer({
-      name: name.trim(),
-      age: age ? parseInt(age, 10) : undefined,
-      gender: gender || undefined,
-    });
-    setName("");
-    setAge("");
-    setGender("");
-    onChange();
-    toast.success("Swimmer added");
+    try {
+      await addMut.mutateAsync({
+        name: name.trim(),
+        age: age ? parseInt(age, 10) : undefined,
+        gender: gender || undefined,
+      });
+      setName("");
+      setAge("");
+      setGender("");
+      toast.success("Swimmer added");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to add swimmer.";
+      toast.error(msg);
+    }
   }
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -53,15 +57,19 @@ export function RosterManager({ onChange }: Props) {
     e.target.value = "";
   }
 
-  function confirmImport() {
+  async function confirmImport() {
     if (!preview) return;
-    const result = importSwimmers(preview.valid);
-    setPreview(null);
-    onChange();
-    toast.success(
-      `Imported ${result.imported.length} swimmer${result.imported.length === 1 ? "" : "s"}` +
-        (result.skipped.length ? `, skipped ${result.skipped.length}` : ""),
-    );
+    try {
+      const result = await importMut.mutateAsync(preview.valid);
+      setPreview(null);
+      toast.success(
+        `Imported ${result.imported.length} swimmer${result.imported.length === 1 ? "" : "s"}` +
+          (result.skipped.length ? `, skipped ${result.skipped.length}` : ""),
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to import.";
+      toast.error(msg);
+    }
   }
 
   return (
@@ -106,8 +114,8 @@ export function RosterManager({ onChange }: Props) {
           </Select>
         </div>
         <div className="flex items-end">
-          <Button type="submit" className="w-full sm:w-auto">
-            <Plus className="h-4 w-4" /> Add swimmer
+          <Button type="submit" className="w-full sm:w-auto" disabled={addMut.isPending}>
+            <Plus className="h-4 w-4" /> {addMut.isPending ? "Adding…" : "Add swimmer"}
           </Button>
         </div>
       </form>
@@ -193,10 +201,11 @@ export function RosterManager({ onChange }: Props) {
             </Button>
             <Button
               onClick={confirmImport}
-              disabled={!preview || preview.valid.length === 0}
+              disabled={!preview || preview.valid.length === 0 || importMut.isPending}
             >
-              Import {preview?.valid.length ?? 0} swimmer
-              {(preview?.valid.length ?? 0) === 1 ? "" : "s"}
+              {importMut.isPending
+                ? "Importing…"
+                : `Import ${preview?.valid.length ?? 0} swimmer${(preview?.valid.length ?? 0) === 1 ? "" : "s"}`}
             </Button>
           </DialogFooter>
         </DialogContent>

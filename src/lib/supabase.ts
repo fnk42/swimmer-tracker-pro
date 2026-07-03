@@ -61,6 +61,7 @@ export type Registration = {
   swimmer_id: string;
   age: number;
   gender: "Male" | "Female";
+  guardian_gender: "Male" | "Female";
   parent_sleepover: "Yes" | "No" | "Yet to decide";
   owns_cellphone: "Yes" | "No";
   parent1_name: string;

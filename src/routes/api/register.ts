@@ -26,6 +26,7 @@ export const Route = createFileRoute("/api/register")({
             swimmer_id: body.swimmerId,
             age: body.age,
             gender: body.gender,
+            guardian_gender: body.guardianGender,
             parent_sleepover: body.parentSleepover,
             owns_cellphone: body.ownsCellphone,
             parent1_name: body.parent1Name,

@@ -83,7 +83,7 @@ function LoginPage() {
                 Sign in
               </Button>
               <p className="text-xs text-muted-foreground text-center pt-2">
-                MVP scaffold · shared credentials · data stored on this device only
+                MVP scaffold · shared credentials · data synced via Supabase
               </p>
             </form>
           </CardContent>

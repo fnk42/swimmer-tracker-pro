@@ -13,8 +13,11 @@ import { Route as ParentRouteImport } from './routes/parent'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSwimmersRouteImport } from './routes/api/swimmers'
+import { Route as ApiRegistrationsRouteImport } from './routes/api/registrations'
 import { Route as ApiRegisterRouteImport } from './routes/api/register'
+import { Route as ApiPaymentsRouteImport } from './routes/api/payments'
 import { Route as ApiPaymentRouteImport } from './routes/api/payment'
+import { Route as ApiSwimmersIdRouteImport } from './routes/api/swimmers/$id'
 import { Route as ApiAdminStatusRouteImport } from './routes/api/admin/status'
 
 const ParentRoute = ParentRouteImport.update({
@@ -37,15 +40,30 @@ const ApiSwimmersRoute = ApiSwimmersRouteImport.update({
   path: '/api/swimmers',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRegistrationsRoute = ApiRegistrationsRouteImport.update({
+  id: '/api/registrations',
+  path: '/api/registrations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRegisterRoute = ApiRegisterRouteImport.update({
   id: '/api/register',
   path: '/api/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPaymentsRoute = ApiPaymentsRouteImport.update({
+  id: '/api/payments',
+  path: '/api/payments',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPaymentRoute = ApiPaymentRouteImport.update({
   id: '/api/payment',
   path: '/api/payment',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSwimmersIdRoute = ApiSwimmersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiSwimmersRoute,
 } as any)
 const ApiAdminStatusRoute = ApiAdminStatusRouteImport.update({
   id: '/api/admin/status',
@@ -58,18 +76,24 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/parent': typeof ParentRoute
   '/api/payment': typeof ApiPaymentRoute
+  '/api/payments': typeof ApiPaymentsRoute
   '/api/register': typeof ApiRegisterRoute
-  '/api/swimmers': typeof ApiSwimmersRoute
+  '/api/registrations': typeof ApiRegistrationsRoute
+  '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/status': typeof ApiAdminStatusRoute
+  '/api/swimmers/$id': typeof ApiSwimmersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/parent': typeof ParentRoute
   '/api/payment': typeof ApiPaymentRoute
+  '/api/payments': typeof ApiPaymentsRoute
   '/api/register': typeof ApiRegisterRoute
-  '/api/swimmers': typeof ApiSwimmersRoute
+  '/api/registrations': typeof ApiRegistrationsRoute
+  '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/status': typeof ApiAdminStatusRoute
+  '/api/swimmers/$id': typeof ApiSwimmersIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -77,9 +101,12 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/parent': typeof ParentRoute
   '/api/payment': typeof ApiPaymentRoute
+  '/api/payments': typeof ApiPaymentsRoute
   '/api/register': typeof ApiRegisterRoute
-  '/api/swimmers': typeof ApiSwimmersRoute
+  '/api/registrations': typeof ApiRegistrationsRoute
+  '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/status': typeof ApiAdminStatusRoute
+  '/api/swimmers/$id': typeof ApiSwimmersIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -88,27 +115,36 @@ export interface FileRouteTypes {
     | '/admin'
     | '/parent'
     | '/api/payment'
+    | '/api/payments'
     | '/api/register'
+    | '/api/registrations'
     | '/api/swimmers'
     | '/api/admin/status'
+    | '/api/swimmers/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
     | '/parent'
     | '/api/payment'
+    | '/api/payments'
     | '/api/register'
+    | '/api/registrations'
     | '/api/swimmers'
     | '/api/admin/status'
+    | '/api/swimmers/$id'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/parent'
     | '/api/payment'
+    | '/api/payments'
     | '/api/register'
+    | '/api/registrations'
     | '/api/swimmers'
     | '/api/admin/status'
+    | '/api/swimmers/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -116,8 +152,10 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ParentRoute: typeof ParentRoute
   ApiPaymentRoute: typeof ApiPaymentRoute
+  ApiPaymentsRoute: typeof ApiPaymentsRoute
   ApiRegisterRoute: typeof ApiRegisterRoute
-  ApiSwimmersRoute: typeof ApiSwimmersRoute
+  ApiRegistrationsRoute: typeof ApiRegistrationsRoute
+  ApiSwimmersRoute: typeof ApiSwimmersRouteWithChildren
   ApiAdminStatusRoute: typeof ApiAdminStatusRoute
 }
 
@@ -151,11 +189,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSwimmersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/registrations': {
+      id: '/api/registrations'
+      path: '/api/registrations'
+      fullPath: '/api/registrations'
+      preLoaderRoute: typeof ApiRegistrationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/register': {
       id: '/api/register'
       path: '/api/register'
       fullPath: '/api/register'
       preLoaderRoute: typeof ApiRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments': {
+      id: '/api/payments'
+      path: '/api/payments'
+      fullPath: '/api/payments'
+      preLoaderRoute: typeof ApiPaymentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/payment': {
@@ -164,6 +216,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/payment'
       preLoaderRoute: typeof ApiPaymentRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/swimmers/$id': {
+      id: '/api/swimmers/$id'
+      path: '/$id'
+      fullPath: '/api/swimmers/$id'
+      preLoaderRoute: typeof ApiSwimmersIdRouteImport
+      parentRoute: typeof ApiSwimmersRoute
     }
     '/api/admin/status': {
       id: '/api/admin/status'
@@ -175,13 +234,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ApiSwimmersRouteChildren {
+  ApiSwimmersIdRoute: typeof ApiSwimmersIdRoute
+}
+
+const ApiSwimmersRouteChildren: ApiSwimmersRouteChildren = {
+  ApiSwimmersIdRoute: ApiSwimmersIdRoute,
+}
+
+const ApiSwimmersRouteWithChildren = ApiSwimmersRoute._addFileChildren(
+  ApiSwimmersRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   ParentRoute: ParentRoute,
   ApiPaymentRoute: ApiPaymentRoute,
+  ApiPaymentsRoute: ApiPaymentsRoute,
   ApiRegisterRoute: ApiRegisterRoute,
-  ApiSwimmersRoute: ApiSwimmersRoute,
+  ApiRegistrationsRoute: ApiRegistrationsRoute,
+  ApiSwimmersRoute: ApiSwimmersRouteWithChildren,
   ApiAdminStatusRoute: ApiAdminStatusRoute,
 }
 export const routeTree = rootRouteImport

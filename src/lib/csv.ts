@@ -1,8 +1,14 @@
 import Papa from "papaparse";
 import { csvRowSchema } from "./schemas";
-import type { CsvImportRow } from "./store";
-import { getSwimmers, getRegistrations, getPayments } from "./store";
+import type { Swimmer, Registration, Payment } from "./schemas";
 import { EVENT, formatKes } from "./event-config";
+
+// CSV import shape (unchanged from before — mirrors csvRowSchema output).
+export type CsvImportRow = {
+  name: string;
+  age?: number;
+  gender?: "Male" | "Female";
+};
 
 export type ParsedCsv = {
   valid: CsvImportRow[];
@@ -65,11 +71,21 @@ export function downloadCsv(filename: string, content: string) {
   URL.revokeObjectURL(url);
 }
 
-// Full export of all data for admin records.
-export function exportAllData(): string {
-  const swimmers = getSwimmers();
-  const regs = getRegistrations();
-  const payments = getPayments();
+// Full export of all data for admin records. Data is passed in from callers
+// (previously read from a localStorage store).
+export function exportAllData({
+  swimmers,
+  registrations,
+  payments,
+}: {
+  swimmers: Swimmer[];
+  registrations: Registration[];
+  payments: Payment[];
+}): string {
+  const regs: Record<string, Registration> = {};
+  registrations.forEach((r) => {
+    regs[r.swimmerId] = r;
+  });
 
   const rows: string[] = [];
   rows.push(
@@ -78,6 +94,7 @@ export function exportAllData(): string {
       "Age",
       "Gender",
       "Parent Sleepover",
+      "Parent/Guardian Gender",
       "Owns Phone",
       "Parent 1",
       "Parent 2",
@@ -99,19 +116,23 @@ export function exportAllData(): string {
       .join(","),
   );
 
+  const coveredIds = (p: Payment) =>
+    p.swimmerIds && p.swimmerIds.length > 0 ? p.swimmerIds : [p.swimmerId];
+  const countFor = (p: Payment) =>
+    p.childCount && p.childCount > 0 ? p.childCount : 1;
+
   swimmers.forEach((s) => {
     const r = regs[s.id];
-    const paid = payments
-      .filter((p) => p.swimmerId === s.id)
-      .reduce((sum, p) => sum + p.amount, 0);
+    const sPayments = payments.filter((p) => coveredIds(p).includes(s.id));
+    const paid = sPayments.reduce((sum, p) => sum + p.amount / countFor(p), 0);
     const balance = Math.max(0, EVENT.totalKes - paid);
-    const sPayments = payments.filter((p) => p.swimmerId === s.id);
 
     const base = [
       s.name,
       r?.age ?? s.age ?? "",
       r?.gender ?? s.gender ?? "",
       r?.parentSleepover ?? "",
+      r?.guardianGender ?? "",
       r?.ownsCellphone ?? "",
       r?.parent1Name ?? "",
       r?.parent2Name ?? "",

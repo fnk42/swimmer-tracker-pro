@@ -18,6 +18,7 @@ export const registrationSchema = z.object({
   swimmerId: z.string(),
   age: z.number().int().min(4).max(25),
   gender: genderSchema,
+  guardianGender: genderSchema,
   parentSleepover: yesNoMaybe,
   ownsCellphone: yesNo,
   parent1Name: z.string().trim().min(1, "Required").max(120),
