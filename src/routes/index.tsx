@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AUTH, EVENT } from "@/lib/event-config";
-import { isAuthed, setAuthed } from "@/lib/store";
+import { getRole, isAuthed, setRole } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,18 +19,27 @@ function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isAuthed()) navigate({ to: "/parent" });
+    if (isAuthed()) {
+      navigate({ to: getRole() === "admin" ? "/admin" : "/parent" });
+    }
   }, [navigate]);
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (username.trim() === AUTH.username && password === AUTH.password) {
-      setAuthed(true);
+    const u = username.trim();
+    if (u === AUTH.admin.username && password === AUTH.admin.password) {
+      setRole("admin");
+      setError(null);
+      navigate({ to: "/admin" });
+      return;
+    }
+    if (u === AUTH.parent.username && password === AUTH.parent.password) {
+      setRole("parent");
       setError(null);
       navigate({ to: "/parent" });
-    } else {
-      setError("Incorrect username or password.");
+      return;
     }
+    setError("Incorrect username or password.");
   }
 
   return (

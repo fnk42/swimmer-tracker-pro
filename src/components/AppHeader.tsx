@@ -1,5 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { setAuthed } from "@/lib/store";
+import { useEffect, useState } from "react";
+import { isAdmin, setRole } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { EVENT } from "@/lib/event-config";
 import { LogOut } from "lucide-react";
@@ -8,9 +9,15 @@ import logoUrl from "@/assets/logo-placeholder.svg";
 export function AppHeader() {
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  // Role lives in localStorage; SSR can't read it, so defer the admin-tab
+  // decision to after mount to avoid a hydration mismatch.
+  const [admin, setAdmin] = useState(false);
+  useEffect(() => {
+    setAdmin(isAdmin());
+  }, [path]);
 
   function logout() {
-    setAuthed(false);
+    setRole(null);
     navigate({ to: "/" });
   }
 
@@ -39,14 +46,16 @@ export function AppHeader() {
           >
             Parent
           </Link>
-          <Link
-            to="/admin"
-            className={`text-sm px-3 py-1.5 rounded-md ${
-              path === "/admin" ? "bg-sky-50 text-sky-700 font-medium" : "text-muted-foreground hover:bg-accent"
-            }`}
-          >
-            Admin
-          </Link>
+          {admin && (
+            <Link
+              to="/admin"
+              className={`text-sm px-3 py-1.5 rounded-md ${
+                path === "/admin" ? "bg-sky-50 text-sky-700 font-medium" : "text-muted-foreground hover:bg-accent"
+              }`}
+            >
+              Admin
+            </Link>
+          )}
           <Button variant="ghost" size="sm" onClick={logout} className="ml-2">
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">Log out</span>

@@ -11,8 +11,8 @@ export const EVENT = {
 } as const;
 
 export const AUTH = {
-  username: "nextgen",
-  password: "swim2026",
+  parent: { username: "nextgen", password: "swim2026" },
+  admin: { username: "admin", password: "admin2026" },
 } as const;
 
 export const CONVENER = {

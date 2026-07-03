@@ -2,18 +2,30 @@
 // Supabase and are read through src/lib/api.ts (React Query hooks against
 // the /api/* routes). Anything that used to live here has moved.
 
-const KEY_AUTHED = "ng_authed";
+const KEY_ROLE = "ng_role";
+
+export type Role = "parent" | "admin";
 
 function isBrowser() {
   return typeof window !== "undefined";
 }
 
-export function isAuthed(): boolean {
-  return isBrowser() && window.localStorage.getItem(KEY_AUTHED) === "true";
+export function getRole(): Role | null {
+  if (!isBrowser()) return null;
+  const v = window.localStorage.getItem(KEY_ROLE);
+  return v === "parent" || v === "admin" ? v : null;
 }
 
-export function setAuthed(v: boolean) {
+export function setRole(role: Role | null) {
   if (!isBrowser()) return;
-  if (v) window.localStorage.setItem(KEY_AUTHED, "true");
-  else window.localStorage.removeItem(KEY_AUTHED);
+  if (role) window.localStorage.setItem(KEY_ROLE, role);
+  else window.localStorage.removeItem(KEY_ROLE);
+}
+
+export function isAuthed(): boolean {
+  return getRole() !== null;
+}
+
+export function isAdmin(): boolean {
+  return getRole() === "admin";
 }

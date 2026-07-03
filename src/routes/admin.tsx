@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { isAuthed } from "@/lib/store";
+import { isAdmin, isAuthed } from "@/lib/store";
 import {
   useSwimmers,
   useRegistrations,
@@ -58,6 +58,7 @@ function AdminPage() {
 
   useEffect(() => {
     if (!isAuthed()) navigate({ to: "/" });
+    else if (!isAdmin()) navigate({ to: "/parent" });
   }, [navigate]);
 
   const swimmers = swimmersQ.data ?? [];
@@ -87,6 +88,8 @@ function AdminPage() {
       toast.error(msg);
     }
   }
+
+  if (!isAdmin()) return null;
 
   return (
     <div className="min-h-screen bg-slate-50">
