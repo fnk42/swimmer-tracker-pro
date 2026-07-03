@@ -661,12 +661,28 @@ function PaymentSection({
   const [collapsed, setCollapsed] = useState<boolean>(history.length > 0);
   const latestPayment = history[0];
 
+  if (!allRegistered) {
+    const missingNames = notRegistered.map((s) => s.name).join(", ");
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            {sectionNumber}. Payment
+            {childCount > 1 ? ` — ${childCount} children` : ` — ${swimmers[0].name}`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pb-6">
+          <p className="text-sm text-muted-foreground">
+            Complete registration first
+            {notRegistered.length > 0 ? ` for ${missingNames}` : ""}.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!allRegistered) {
-      setError("Save the registration for every child in the group before paying.");
-      return;
-    }
     const n = parseInt(amount, 10);
     if (!Number.isFinite(n) || n <= 0) {
       setError("Enter a valid amount.");
@@ -881,18 +897,12 @@ function PaymentSection({
               <TermsPanel checked={agreed} onCheckedChange={setAgreed} />
 
               {error && <p className="text-sm text-destructive">{error}</p>}
-              {!allRegistered && (
-                <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-3">
-                  Save registration details for{" "}
-                  {notRegistered.map((s) => s.name).join(", ")} before submitting a payment.
-                </p>
-              )}
 
               <Button
                 type="submit"
                 size="lg"
                 className="w-full h-11"
-                disabled={!allRegistered || addMut.isPending}
+                disabled={addMut.isPending}
               >
                 {addMut.isPending ? "Recording…" : "Submit payment"}
               </Button>
