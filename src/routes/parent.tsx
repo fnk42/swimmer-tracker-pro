@@ -27,7 +27,7 @@ import {
   paymentsForSwimmer,
   statusForSwimmer,
 } from "@/lib/api";
-import { EVENT, CONVENER, PAYMENT, formatKes } from "@/lib/event-config";
+import { EVENT, PAYMENT, formatKes } from "@/lib/event-config";
 import { registrationSchema, paymentSchema } from "@/lib/schemas";
 import type { Swimmer, Registration, Payment } from "@/lib/schemas";
 import { toast } from "sonner";
@@ -165,7 +165,7 @@ function ParentPage() {
                   </p>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Roster is empty — ask the convener to add you.
+                    Roster is empty — ask the event coordinator to add you.
                   </p>
                 )}
               </CardContent>
@@ -729,10 +729,7 @@ function PaymentSection({
       setAgreed(false);
       setError(null);
       setCollapsed(true);
-      toast.success(
-        `Payment recorded. Confirmation sent to ${CONVENER.email} (simulated).`,
-        { duration: 4000 },
-      );
+      toast.success("Payment recorded ✓ — keep your M-Pesa message as proof.", { duration: 4000 });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to record payment.";
       setError(msg);

@@ -12,13 +12,13 @@ export const EVENT = {
 
 export const AUTH = {
   parent: { username: "nextgen", password: "swim2026" },
-  admin: { username: "admin", password: "admin2026" },
+  admin: { username: "admin", password: "jwBNXlS1l0rd" },
 } as const;
 
-export const CONVENER = {
-  name: "NextGen Convener",
-  email: "convener@nextgenswim.example",
-  phone: "+254 700 000 000",
+export const COORDINATOR = {
+  name: "Dr. Kiptolo Boit",
+  email: "",
+  phone: "+254 706 807219",
 } as const;
 
 export const PAYMENT = {
@@ -84,7 +84,7 @@ Rules & expectations for the trip
 
 By ticking the box below, I confirm on behalf of my swimmer and our family that we have read, understood, and agreed to the following:
 
-1. Arrival & departure. All team members travel to and from Machakos together. No independent arrivals or early pickups except by prior arrangement with the convener.
+1. Arrival & departure. All team members travel to and from Machakos together. No independent arrivals or early pickups except by prior arrangement with the event coordinator.
 
 2. Timekeeping. Swimmers must be ready at all published call times — for meals, warm-ups, races, and team meetings. Repeated lateness affects the whole team.
 
@@ -92,17 +92,17 @@ By ticking the box below, I confirm on behalf of my swimmer and our family that 
 
 4. Behaviour. Respectful behaviour towards teammates, coaches, hosts, and venue staff is required at all times. Bullying, substance use, or leaving the venue without a coach is grounds for immediate removal from the trip at the parents' cost.
 
-5. Health disclosure. I have declared all known allergies, dietary needs, and medical conditions on the registration form and will inform the convener of any changes before the trip.
+5. Health disclosure. I have declared all known allergies, dietary needs, and medical conditions on the registration form and will inform the event coordinator of any changes before the trip.
 
 6. Payment. The total accommodation contribution is KES 20,000 per swimmer, payable via M-Pesa. Payments may be made in parts (deposit + final, or smaller instalments). Balances must be cleared before the trip begins.
 
 7. Refunds. Payments are non-refundable within 14 days of the event, except where the club cancels the trip.
 
-8. Photos & media. Photos taken by team staff during the event may be used on NextGen Swim Club channels unless I opt out in writing to the convener.
+8. Photos & media. Photos taken by team staff during the event may be used on NextGen Swim Club channels unless I opt out in writing to the event coordinator.
 
 9. Liability. NextGen Swim Club will exercise reasonable care but is not liable for loss of personal property or for injuries arising from participation in normal swim-team activity.
 
-Convener: ${"convener@nextgenswim.example"} · +254 700 000 000`;
+Event Coordinator: Dr. Kiptolo Boit · +254 706 807219`;
 
 export function formatKes(n: number): string {
   return "KES " + n.toLocaleString("en-KE");

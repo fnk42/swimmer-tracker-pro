@@ -70,8 +70,8 @@ function LoginPage() {
 
           <Card>
           <CardHeader>
-            <CardTitle>Parent sign-in</CardTitle>
-            <CardDescription>Use the shared credentials sent by the convener.</CardDescription>
+            <CardTitle>Sign in</CardTitle>
+            <CardDescription>Use the shared credentials sent by the event coordinator.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={onSubmit} className="space-y-4">
