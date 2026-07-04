@@ -13,6 +13,7 @@ import { Route as ParentRouteImport } from './routes/parent'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSwimmersRouteImport } from './routes/api/swimmers'
+import { Route as ApiSwimmerParentsRouteImport } from './routes/api/swimmer-parents'
 import { Route as ApiRegistrationsRouteImport } from './routes/api/registrations'
 import { Route as ApiRegisterRouteImport } from './routes/api/register'
 import { Route as ApiPaymentsRouteImport } from './routes/api/payments'
@@ -40,6 +41,11 @@ const IndexRoute = IndexRouteImport.update({
 const ApiSwimmersRoute = ApiSwimmersRouteImport.update({
   id: '/api/swimmers',
   path: '/api/swimmers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSwimmerParentsRoute = ApiSwimmerParentsRouteImport.update({
+  id: '/api/swimmer-parents',
+  path: '/api/swimmer-parents',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRegistrationsRoute = ApiRegistrationsRouteImport.update({
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/api/payments': typeof ApiPaymentsRoute
   '/api/register': typeof ApiRegisterRoute
   '/api/registrations': typeof ApiRegistrationsRoute
+  '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/api/payments': typeof ApiPaymentsRoute
   '/api/register': typeof ApiRegisterRoute
   '/api/registrations': typeof ApiRegistrationsRoute
+  '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/api/payments': typeof ApiPaymentsRoute
   '/api/register': typeof ApiRegisterRoute
   '/api/registrations': typeof ApiRegistrationsRoute
+  '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/api/payments'
     | '/api/register'
     | '/api/registrations'
+    | '/api/swimmer-parents'
     | '/api/swimmers'
     | '/api/admin/status'
     | '/api/parents/link'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/api/payments'
     | '/api/register'
     | '/api/registrations'
+    | '/api/swimmer-parents'
     | '/api/swimmers'
     | '/api/admin/status'
     | '/api/parents/link'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/api/payments'
     | '/api/register'
     | '/api/registrations'
+    | '/api/swimmer-parents'
     | '/api/swimmers'
     | '/api/admin/status'
     | '/api/parents/link'
@@ -180,6 +192,7 @@ export interface RootRouteChildren {
   ApiPaymentsRoute: typeof ApiPaymentsRoute
   ApiRegisterRoute: typeof ApiRegisterRoute
   ApiRegistrationsRoute: typeof ApiRegistrationsRoute
+  ApiSwimmerParentsRoute: typeof ApiSwimmerParentsRoute
   ApiSwimmersRoute: typeof ApiSwimmersRouteWithChildren
   ApiAdminStatusRoute: typeof ApiAdminStatusRoute
 }
@@ -212,6 +225,13 @@ declare module '@tanstack/react-router' {
       path: '/api/swimmers'
       fullPath: '/api/swimmers'
       preLoaderRoute: typeof ApiSwimmersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/swimmer-parents': {
+      id: '/api/swimmer-parents'
+      path: '/api/swimmer-parents'
+      fullPath: '/api/swimmer-parents'
+      preLoaderRoute: typeof ApiSwimmerParentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/registrations': {
@@ -306,6 +326,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPaymentsRoute: ApiPaymentsRoute,
   ApiRegisterRoute: ApiRegisterRoute,
   ApiRegistrationsRoute: ApiRegistrationsRoute,
+  ApiSwimmerParentsRoute: ApiSwimmerParentsRoute,
   ApiSwimmersRoute: ApiSwimmersRouteWithChildren,
   ApiAdminStatusRoute: ApiAdminStatusRoute,
 }

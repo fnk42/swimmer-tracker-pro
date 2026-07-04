@@ -29,17 +29,25 @@ import {
   useSwimmers,
   useRegistrations,
   usePayments,
+  useParents,
+  useSwimmerParents,
   useRenameSwimmer,
   useDeleteSwimmer,
   paidForSwimmer,
   balanceForSwimmer,
   statusForSwimmer,
   paymentsForSwimmer,
+  parentsForSwimmer,
 } from "@/lib/api";
 import { EVENT, formatKes } from "@/lib/event-config";
 import { exportAllData, downloadCsv } from "@/lib/csv";
-import type { Swimmer, Registration, Payment } from "@/lib/schemas";
-import { registrationSchema } from "@/lib/schemas";
+import type {
+  Swimmer,
+  Registration,
+  Payment,
+  Parent,
+  SwimmerParentLink,
+} from "@/lib/schemas";
 import { toast } from "sonner";
 import { ChevronDown, ChevronRight, Trash2, FileDown, Pencil, Check, X } from "lucide-react";
 
@@ -54,6 +62,8 @@ function AdminPage() {
   const swimmersQ = useSwimmers();
   const registrationsQ = useRegistrations();
   const paymentsQ = usePayments();
+  const parentsQ = useParents();
+  const linksQ = useSwimmerParents();
   const deleteMut = useDeleteSwimmer();
 
   useEffect(() => {
@@ -64,6 +74,8 @@ function AdminPage() {
   const swimmers = swimmersQ.data ?? [];
   const registrations = registrationsQ.data ?? [];
   const payments = paymentsQ.data ?? [];
+  const parents = parentsQ.data ?? [];
+  const links = linksQ.data ?? [];
 
   const registrationById = useMemo(() => {
     const m = new Map<string, Registration>();
@@ -72,9 +84,17 @@ function AdminPage() {
   }, [registrations]);
 
   const loading =
-    swimmersQ.isLoading || registrationsQ.isLoading || paymentsQ.isLoading;
+    swimmersQ.isLoading ||
+    registrationsQ.isLoading ||
+    paymentsQ.isLoading ||
+    parentsQ.isLoading ||
+    linksQ.isLoading;
   const errored =
-    swimmersQ.isError || registrationsQ.isError || paymentsQ.isError;
+    swimmersQ.isError ||
+    registrationsQ.isError ||
+    paymentsQ.isError ||
+    parentsQ.isError ||
+    linksQ.isError;
 
   async function confirmDelete() {
     if (!toDelete) return;
@@ -131,7 +151,12 @@ function AdminPage() {
           </Card>
         ) : (
           <>
-            <HeadcountSummary swimmers={swimmers} registrations={registrations} />
+            <HeadcountSummary
+              swimmers={swimmers}
+              registrations={registrations}
+              parents={parents}
+              links={links}
+            />
 
             <Card>
               <CardHeader>
@@ -183,6 +208,7 @@ function AdminPage() {
                           swimmer={s}
                           registration={registrationById.get(s.id)}
                           payments={payments}
+                          parents={parentsForSwimmer(links, parents, s.id)}
                           onDelete={() => setToDelete(s)}
                         />
                       ))}
@@ -233,11 +259,13 @@ function SwimmerRow({
   swimmer,
   registration: reg,
   payments: allPayments,
+  parents,
   onDelete,
 }: {
   swimmer: Swimmer;
   registration: Registration | undefined;
   payments: Payment[];
+  parents: Parent[];
   onDelete: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -254,6 +282,20 @@ function SwimmerRow({
   );
 
   const hasFlag = !!(reg?.allergies || reg?.healthConditions || reg?.dietary);
+
+  // Sleepover status per swimmer, aggregated across all linked parents:
+  //   any "Yes" -> "Yes"
+  //   all "No"  -> "No"
+  //   mixed / has "Yet to decide" -> "Yet to decide"
+  //   no parents linked -> null (renders as "—")
+  const sleepoverAggregate: "Yes" | "No" | "Yet to decide" | null = (() => {
+    if (parents.length === 0) return null;
+    if (parents.some((p) => p.stayingOvernight === "Yes")) return "Yes";
+    if (parents.every((p) => p.stayingOvernight === "No")) return "No";
+    return "Yet to decide";
+  })();
+
+  const primaryPhone = parents[0]?.phone ?? null;
 
   async function saveName() {
     const n = nameDraft.trim();
@@ -328,8 +370,8 @@ function SwimmerRow({
           )}
         </TableCell>
         <TableCell className="hidden sm:table-cell text-sm">{reg?.age ?? swimmer.age ?? "—"}</TableCell>
-        <TableCell className="hidden md:table-cell text-sm">{reg?.parentSleepover ?? "—"}</TableCell>
-        <TableCell className="hidden md:table-cell text-sm">{reg?.primaryPhone ?? "—"}</TableCell>
+        <TableCell className="hidden md:table-cell text-sm">{sleepoverAggregate ?? "—"}</TableCell>
+        <TableCell className="hidden md:table-cell text-sm">{primaryPhone ?? "—"}</TableCell>
         <TableCell className="text-right text-sm">{formatKes(paid)}</TableCell>
         <TableCell className="text-right text-sm">{formatKes(balance)}</TableCell>
         <TableCell>
@@ -346,24 +388,21 @@ function SwimmerRow({
           <TableCell colSpan={9} className="bg-slate-50 p-0">
             <div className="p-4 space-y-4">
               {reg ? (
-                <div className="grid gap-4 sm:grid-cols-2 text-sm">
-                  <Info label="Age" value={reg.age} />
-                  <Info label="Swimmer gender" value={reg.gender} />
-                  <Info label="Parent sleepover" value={reg.parentSleepover} />
-                  <Info label="Parent/guardian gender" value={reg.guardianGender || "—"} />
-                  <Info label="Owns cellphone" value={reg.ownsCellphone} />
-                  <Info label="Parent 1" value={reg.parent1Name} />
-                  <Info label="Parent 2" value={reg.parent2Name || "—"} />
-                  <Info label="Primary phone" value={reg.primaryPhone} />
-                  <Info label="Secondary phone" value={reg.secondaryPhone || "—"} />
-                  <Info label="Dietary" value={reg.dietary || "—"} highlight={!!reg.dietary} />
-                  <Info label="Allergies" value={reg.allergies || "—"} highlight={!!reg.allergies} />
-                  <Info
-                    label="Health conditions"
-                    value={reg.healthConditions || "—"}
-                    highlight={!!reg.healthConditions}
-                  />
-                  <Info label="Special requests" value={reg.specialRequests || "—"} />
+                <div className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2 text-sm">
+                    <Info label="Age" value={reg.age} />
+                    <Info label="Swimmer gender" value={reg.gender} />
+                    <Info label="Owns cellphone" value={reg.ownsCellphone} />
+                    <Info label="Dietary" value={reg.dietary || "—"} highlight={!!reg.dietary} />
+                    <Info label="Allergies" value={reg.allergies || "—"} highlight={!!reg.allergies} />
+                    <Info
+                      label="Health conditions"
+                      value={reg.healthConditions || "—"}
+                      highlight={!!reg.healthConditions}
+                    />
+                    <Info label="Special requests" value={reg.specialRequests || "—"} />
+                  </div>
+                  <ParentDetailBlock parents={parents} />
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground italic">
@@ -434,6 +473,43 @@ function Info({
   );
 }
 
+function ParentDetailBlock({ parents }: { parents: Parent[] }) {
+  if (parents.length === 0) {
+    return (
+      <div className="rounded-md border bg-white p-3 text-sm text-muted-foreground italic">
+        No parents linked yet.
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-md border bg-white divide-y">
+      {parents.map((p, i) => (
+        <div key={p.id} className="p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                Parent {i + 1}
+              </span>
+              <span className="font-medium text-sm truncate">{p.fullName}</span>
+            </div>
+            <GenderPill gender={p.gender ?? undefined} />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3 text-xs text-muted-foreground">
+            <div>
+              <div className="uppercase tracking-wide text-[10px]">Staying overnight</div>
+              <div className="text-sm text-foreground">{p.stayingOvernight}</div>
+            </div>
+            <div>
+              <div className="uppercase tracking-wide text-[10px]">Phone</div>
+              <div className="text-sm text-foreground font-mono">{p.phone}</div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function StatusPill({ status }: { status: "Unpaid" | "Partial" | "Paid" }) {
   const map = {
     Unpaid: "bg-slate-100 text-slate-700",
@@ -445,67 +521,66 @@ function StatusPill({ status }: { status: "Unpaid" | "Partial" | "Paid" }) {
   );
 }
 
-// A registration counts toward summary totals only when every required Zod
-// field is present. Old rows saved before guardian_gender existed will be
-// treated as incomplete until updated.
-function isCompleteRegistration(reg: Registration): boolean {
-  return registrationSchema.safeParse(reg).success;
-}
-
-type GroupedGuardian = {
-  name: string;
-  gender: "Male" | "Female" | undefined;
-  phone: string;
-  swimmerNames: string[];
-};
-
 function HeadcountSummary({
   swimmers,
   registrations,
+  parents,
+  links,
 }: {
   swimmers: Swimmer[];
   registrations: Registration[];
+  parents: Parent[];
+  links: SwimmerParentLink[];
 }) {
   const [showList, setShowList] = useState(false);
+
   const regBySwimmer = useMemo(() => {
     const m = new Map<string, Registration>();
     registrations.forEach((r) => m.set(r.swimmerId, r));
     return m;
   }, [registrations]);
-
   const swimmerGender = (s: Swimmer) => regBySwimmer.get(s.id)?.gender ?? s.gender;
   const boys = swimmers.filter((s) => swimmerGender(s) === "Male").length;
   const girls = swimmers.filter((s) => swimmerGender(s) === "Female").length;
 
-  const swimmerNameById = new Map(swimmers.map((s) => [s.id, s.name]));
-  const completeStaying = registrations.filter(
-    (r) => isCompleteRegistration(r) && r.parentSleepover === "Yes",
+  // Which swimmers each parent is linked to. Deduped by parent id.
+  const namesByParent = useMemo(() => {
+    const swimmerNameById = new Map(swimmers.map((s) => [s.id, s.name]));
+    const m = new Map<string, string[]>();
+    links.forEach((l) => {
+      const nm = swimmerNameById.get(l.swimmerId);
+      if (!nm) return;
+      const bucket = m.get(l.parentId);
+      if (bucket) {
+        if (!bucket.includes(nm)) bucket.push(nm);
+      } else {
+        m.set(l.parentId, [nm]);
+      }
+    });
+    return m;
+  }, [links, swimmers]);
+
+  // Count staying parents even when the swimmer's registration is incomplete —
+  // stayingOvernight is a fact about the parent, not the registration form.
+  const stayingParents = useMemo(
+    () =>
+      parents
+        .filter((p) => p.stayingOvernight === "Yes")
+        .filter((p) => (namesByParent.get(p.id)?.length ?? 0) > 0)
+        .sort((a, b) => a.fullName.localeCompare(b.fullName)),
+    [parents, namesByParent],
   );
 
-  // Best-effort dedupe by parent/guardian identity: lowercased name + phone.
-  // A proper parent entity is planned separately.
-  const groupedMap = new Map<string, GroupedGuardian>();
-  completeStaying.forEach((r) => {
-    const key = `${(r.parent1Name || "").trim().toLowerCase()}|${(r.primaryPhone || "").trim()}`;
-    const swimmerName = swimmerNameById.get(r.swimmerId) ?? "Unknown";
-    const existing = groupedMap.get(key);
-    if (existing) {
-      if (!existing.swimmerNames.includes(swimmerName)) {
-        existing.swimmerNames.push(swimmerName);
-      }
-    } else {
-      groupedMap.set(key, {
-        name: r.parent1Name,
-        gender: r.guardianGender,
-        phone: r.primaryPhone,
-        swimmerNames: [swimmerName],
-      });
-    }
-  });
-  const guardians = [...groupedMap.values()].sort((a, b) => a.name.localeCompare(b.name));
-  const stayingCount = guardians.length;
-  const male = guardians.filter((g) => g.gender === "Male").length;
-  const female = guardians.filter((g) => g.gender === "Female").length;
+  const stayingCount = stayingParents.length;
+  const male = stayingParents.filter((p) => p.gender === "Male").length;
+  const female = stayingParents.filter((p) => p.gender === "Female").length;
+  const unspecified = stayingCount - male - female;
+
+  const summarySub = [
+    `${male} male`,
+    `${female} female`,
+    ...(unspecified > 0 ? [`${unspecified} unspecified`] : []),
+  ].join(" · ");
 
   return (
     <div className="space-y-3">
@@ -518,7 +593,7 @@ function HeadcountSummary({
         <SummaryCard
           title="Parents/guardians staying"
           primary={stayingCount}
-          sub={`${male} male · ${female} female`}
+          sub={summarySub}
         />
       </div>
       <p className="text-sm text-muted-foreground">
@@ -526,6 +601,12 @@ function HeadcountSummary({
         {girls === 1 ? "girl" : "girls"} · {male} male{" "}
         {male === 1 ? "parent/guardian" : "parents/guardians"} for {boys}{" "}
         {boys === 1 ? "boy" : "boys"}
+        {unspecified > 0 && (
+          <>
+            {" "}
+            · {unspecified} unspecified
+          </>
+        )}
       </p>
       <div>
         <Button
@@ -543,23 +624,23 @@ function HeadcountSummary({
         </Button>
         {showList && (
           <div className="mt-3 rounded-md border bg-white divide-y">
-            {guardians.length === 0 ? (
+            {stayingParents.length === 0 ? (
               <p className="p-3 text-sm text-muted-foreground italic">
                 No one confirmed to stay overnight yet.
               </p>
             ) : (
-              guardians.map((g, i) => (
+              stayingParents.map((p) => (
                 <div
-                  key={i}
+                  key={p.id}
                   className="p-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,2fr)_auto] sm:items-center"
                 >
-                  <div className="font-medium text-sm truncate">{g.name || "—"}</div>
-                  <GenderPill gender={g.gender} />
+                  <div className="font-medium text-sm truncate">{p.fullName}</div>
+                  <GenderPill gender={p.gender ?? undefined} />
                   <div className="text-xs text-muted-foreground truncate">
                     <span className="uppercase tracking-wide">Swimmers:</span>{" "}
-                    {g.swimmerNames.join(", ")}
+                    {(namesByParent.get(p.id) ?? []).join(", ")}
                   </div>
-                  <div className="text-xs text-muted-foreground">{g.phone || "—"}</div>
+                  <div className="text-xs text-muted-foreground">{p.phone}</div>
                 </div>
               ))
             )}

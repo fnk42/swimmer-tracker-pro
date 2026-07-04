@@ -166,6 +166,20 @@ export function useParents() {
   });
 }
 
+export function useSwimmerParents() {
+  return useQuery({
+    queryKey: ["swimmer-parents"],
+    queryFn: async (): Promise<SwimmerParentLink[]> => {
+      const rows = await apiFetch<SwimmerParentRow[]>("/api/swimmer-parents");
+      return rows.map((r) => ({
+        swimmerId: r.swimmer_id,
+        parentId: r.parent_id,
+        sortOrder: r.sort_order,
+      }));
+    },
+  });
+}
+
 // ---------- Mutations ----------------------------------------------------
 export function useSaveRegistration() {
   const qc = useQueryClient();
@@ -234,6 +248,7 @@ export function useLinkParent() {
       };
     },
     onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["swimmer-parents"] });
       qc.invalidateQueries({ queryKey: ["parents"] });
     },
   });
@@ -325,6 +340,19 @@ export function paymentsForSwimmer(all: Payment[], swimmerId: string): Payment[]
   return all
     .filter((p) => coveredIds(p).includes(swimmerId))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export function parentsForSwimmer(
+  allLinks: SwimmerParentLink[],
+  allParents: Parent[],
+  swimmerId: string,
+): Parent[] {
+  const byId = new Map(allParents.map((p) => [p.id, p]));
+  return allLinks
+    .filter((l) => l.swimmerId === swimmerId)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((l) => byId.get(l.parentId))
+    .filter((p): p is Parent => !!p);
 }
 
 export function paidForSwimmer(all: Payment[], swimmerId: string): number {
