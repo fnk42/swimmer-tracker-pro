@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { isAdmin, setRole } from "@/lib/store";
+import { signOutParent, useParentSession } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { EVENT } from "@/lib/event-config";
 import { LogOut } from "lucide-react";
@@ -8,18 +9,23 @@ import { LogOut } from "lucide-react";
 export function AppHeader() {
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const { session } = useParentSession();
   const [admin, setAdmin] = useState(false);
   useEffect(() => {
-    setAdmin(isAdmin());
-  }, [path]);
+    // Hide the Admin tab whenever a Supabase session exists — a
+    // Google-signed-in parent should never see it, even if ng_role="admin"
+    // is still sitting in localStorage from an earlier coordinator login
+    // in the same browser.
+    setAdmin(isAdmin() && !session);
+  }, [path, session]);
 
-  function logout() {
+  async function logout() {
+    if (session) await signOutParent();
     setRole(null);
     navigate({ to: "/" });
   }
 
-  const tabBase =
-    "text-sm px-3 py-1.5 rounded-md transition-colors";
+  const tabBase = "text-sm px-3 py-1.5 rounded-md transition-colors";
   const tabActive = "bg-slate-800 text-white font-medium";
   const tabIdle = "text-slate-300 hover:bg-slate-800 hover:text-white";
 
@@ -39,17 +45,11 @@ export function AppHeader() {
           </span>
         </Link>
         <nav className="ml-auto flex items-center gap-1">
-          <Link
-            to="/parent"
-            className={`${tabBase} ${path === "/parent" ? tabActive : tabIdle}`}
-          >
+          <Link to="/parent" className={`${tabBase} ${path === "/parent" ? tabActive : tabIdle}`}>
             Parent
           </Link>
           {admin && (
-            <Link
-              to="/admin"
-              className={`${tabBase} ${path === "/admin" ? tabActive : tabIdle}`}
-            >
+            <Link to="/admin" className={`${tabBase} ${path === "/admin" ? tabActive : tabIdle}`}>
               Admin
             </Link>
           )}

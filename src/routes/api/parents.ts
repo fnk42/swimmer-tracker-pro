@@ -41,6 +41,7 @@ export const Route = createFileRoute("/api/parents")({
             phone: String(body.phone).trim(),
             staying_overnight: body.stayingOvernight ?? "Yet to decide",
             user_id: body.userId ?? null,
+            email: body.email ?? null,
             backfill_note: body.backfillNote ?? null,
           };
 

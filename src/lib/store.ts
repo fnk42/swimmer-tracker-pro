@@ -1,6 +1,8 @@
-// Session flag only. All swimmers / registrations / payments now live in
-// Supabase and are read through src/lib/api.ts (React Query hooks against
-// the /api/* routes). Anything that used to live here has moved.
+// Admin session flag ONLY. Parent identity now lives in Supabase Auth (see
+// `src/lib/auth.ts` — `useParentSession`). This module is kept for the
+// admin path, which still signs in with a shared username/password and
+// hits anon-key API routes at src/routes/api/*. Do not add parent-side
+// state here.
 
 const KEY_ROLE = "ng_role";
 

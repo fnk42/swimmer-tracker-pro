@@ -16,16 +16,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { isAuthed } from "@/lib/store";
+import { useParentSession } from "@/lib/auth";
+import { normalizeKePhone } from "@/lib/phone";
 import {
   useSwimmers,
-  useRegistrations,
-  usePayments,
-  useParents,
-  useSaveRegistration,
-  useSaveParent,
-  useLinkParent,
-  useAddPayment,
+  useMyRegistrations,
+  useMyPayments,
+  useMyParent,
+  useMySwimmerParents,
+  useSaveMyRegistration,
+  useSaveMyParent,
+  useLinkMyParent,
+  useAddMyPayment,
   paidForSwimmer,
   paymentsForSwimmer,
   statusForSwimmer,
@@ -42,19 +44,63 @@ export const Route = createFileRoute("/parent")({
 
 function ParentPage() {
   const navigate = useNavigate();
+  const { session, loading: sessionLoading } = useParentSession();
   const [groupIds, setGroupIds] = useState<string[]>([]);
   const [linkedParents, setLinkedParents] = useState<Parent[]>([]);
-  const [linkedSwimmerIds, setLinkedSwimmerIds] = useState<Set<string>>(
-    () => new Set(),
-  );
-  const linkParentMut = useLinkParent();
+  const [linkedSwimmerIds, setLinkedSwimmerIds] = useState<Set<string>>(() => new Set());
+  const [restored, setRestored] = useState(false);
+  const linkParentMut = useLinkMyParent();
   const swimmersQ = useSwimmers();
-  const registrationsQ = useRegistrations();
-  const paymentsQ = usePayments();
+  const registrationsQ = useMyRegistrations();
+  const paymentsQ = useMyPayments();
+  const myParentQ = useMyParent();
+  const mySwimmerParentsQ = useMySwimmerParents();
 
   useEffect(() => {
-    if (!isAuthed()) navigate({ to: "/" });
-  }, [navigate]);
+    if (sessionLoading) return;
+    if (!session) navigate({ to: "/" });
+  }, [sessionLoading, session, navigate]);
+
+  // Keep linkedParents in sync with the DB record so the RegistrationSection
+  // gate (parentsLinked = parents.length > 0) reflects DB truth, not just
+  // this session's local state. Without this, a returning parent whose row
+  // already exists sees "Details saved ✓" but "Save details" stays disabled.
+  useEffect(() => {
+    const me = myParentQ.data;
+    if (!me) return;
+    setLinkedParents((prev) => (prev.some((p) => p.id === me.id) ? prev : [me]));
+  }, [myParentQ.data]);
+
+  // Rehydrate the group + linked-swimmer state once all "me" queries settle.
+  // Runs at most once per session — user edits after this shouldn't be
+  // overwritten if a background refetch happens.
+  useEffect(() => {
+    if (restored) return;
+    if (myParentQ.isLoading || mySwimmerParentsQ.isLoading || swimmersQ.isLoading) {
+      return;
+    }
+    const me = myParentQ.data;
+    const links = mySwimmerParentsQ.data ?? [];
+    if (me && links.length > 0) {
+      const knownSwimmers = new Set((swimmersQ.data ?? []).map((s) => s.id));
+      const mySwimmerIds = links
+        .filter((l) => l.parentId === me.id && knownSwimmers.has(l.swimmerId))
+        .map((l) => l.swimmerId);
+      if (mySwimmerIds.length > 0) {
+        setGroupIds(mySwimmerIds);
+        setLinkedSwimmerIds(new Set(mySwimmerIds));
+      }
+    }
+    setRestored(true);
+  }, [
+    restored,
+    myParentQ.isLoading,
+    myParentQ.data,
+    mySwimmerParentsQ.isLoading,
+    mySwimmerParentsQ.data,
+    swimmersQ.isLoading,
+    swimmersQ.data,
+  ]);
 
   const swimmers = swimmersQ.data ?? [];
   const registrations = registrationsQ.data ?? [];
@@ -66,10 +112,7 @@ function ParentPage() {
   );
 
   const groupSwimmers = useMemo(
-    () =>
-      groupIds
-        .map((id) => swimmers.find((s) => s.id === id))
-        .filter((s): s is Swimmer => !!s),
+    () => groupIds.map((id) => swimmers.find((s) => s.id === id)).filter((s): s is Swimmer => !!s),
     [groupIds, swimmers],
   );
   const available = useMemo(
@@ -97,8 +140,12 @@ function ParentPage() {
           : "Parents auto-linked to added swimmer.",
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to auto-link parents.";
-      toast.error(msg);
+      const info = extractErr(err);
+      console.warn("[parent] auto-link failed:", info);
+      const userMessage = info.isRlsDenied
+        ? "Couldn't link this swimmer — your account isn't authorised for it. Sign out and back in, or contact the coordinator."
+        : info.message || "Failed to auto-link parents.";
+      toast.error(userMessage);
     }
   }
 
@@ -110,14 +157,12 @@ function ParentPage() {
     }
   }
   function removeChild(id: string) {
-    setGroupIds((g) => {
-      const next = g.filter((x) => x !== id);
-      if (next.length === 0) {
-        setLinkedParents([]);
-        setLinkedSwimmerIds(new Set());
-      }
-      return next;
-    });
+    // Don't clear linkedParents when the picker empties — the DB record
+    // for the signed-in parent doesn't cease to exist just because they
+    // deselected the last swimmer. The sync effect above will restore it
+    // from useMyParent regardless, but avoiding the clobber keeps the
+    // gate correct without a re-render round-trip.
+    setGroupIds((g) => g.filter((x) => x !== id));
     setLinkedSwimmerIds((s) => {
       if (!s.has(id)) return s;
       const next = new Set(s);
@@ -132,9 +177,15 @@ function ParentPage() {
   }
 
   const loading =
-    swimmersQ.isLoading || registrationsQ.isLoading || paymentsQ.isLoading;
-  const errored =
-    swimmersQ.isError || registrationsQ.isError || paymentsQ.isError;
+    sessionLoading ||
+    swimmersQ.isLoading ||
+    registrationsQ.isLoading ||
+    paymentsQ.isLoading ||
+    myParentQ.isLoading ||
+    mySwimmerParentsQ.isLoading;
+  const errored = swimmersQ.isError || registrationsQ.isError || paymentsQ.isError;
+
+  if (!sessionLoading && !session) return null;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -143,8 +194,8 @@ function ParentPage() {
         <div>
           <h1 className="text-xl font-semibold">Register & pay</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {EVENT.name} · {EVENT.startDate} – {EVENT.endDate} · Total{" "}
-            {formatKes(EVENT.totalKes)} per swimmer
+            {EVENT.name} · {EVENT.startDate} – {EVENT.endDate} · Total {formatKes(EVENT.totalKes)}{" "}
+            per swimmer
           </p>
         </div>
 
@@ -199,9 +250,7 @@ function ParentPage() {
                     <SelectTrigger className="h-11">
                       <SelectValue
                         placeholder={
-                          groupSwimmers.length === 0
-                            ? "Choose swimmer…"
-                            : "+ Add another child…"
+                          groupSwimmers.length === 0 ? "Choose swimmer…" : "+ Add another child…"
                         }
                       />
                     </SelectTrigger>
@@ -227,10 +276,7 @@ function ParentPage() {
             </Card>
 
             {groupSwimmers.length > 0 && (
-              <ParentSection
-                swimmers={groupSwimmers}
-                onLinked={handleParentsLinked}
-              />
+              <ParentSection swimmers={groupSwimmers} onLinked={handleParentsLinked} />
             )}
 
             {groupSwimmers.map((s, i) => (
@@ -274,15 +320,6 @@ const FIELD_LABELS: Record<string, string> = {
   ownsCellphone: "Owns a cellphone",
 };
 
-// Kenya mobile normalizer — mirrors the parents_phone_normalized_chk constraint.
-function normalizeKePhone(input: string): string | null {
-  const digits = (input || "").replace(/\D/g, "");
-  if (/^254[0-9]{9}$/.test(digits)) return digits;
-  if (/^0[0-9]{9}$/.test(digits)) return "254" + digits.slice(1);
-  if (/^[17][0-9]{8}$/.test(digits)) return "254" + digits;
-  return null;
-}
-
 function RegistrationSection({
   swimmer,
   number,
@@ -308,7 +345,7 @@ function RegistrationSection({
   const bannerRef = useRef<HTMLDivElement>(null);
   const [hasSaved, setHasSaved] = useState<boolean>(!!existing);
   const [collapsed, setCollapsed] = useState<boolean>(!!existing);
-  const saveMut = useSaveRegistration();
+  const saveMut = useSaveMyRegistration();
 
   function update<K extends keyof RegFormState>(k: K, v: RegFormState[K]) {
     setForm((f) => ({ ...f, [k]: v }));
@@ -365,8 +402,7 @@ function RegistrationSection({
 
   const errText = (k: string) =>
     errors[k] ? <p className="text-xs text-destructive mt-1">{errors[k]}</p> : null;
-  const errRing = (k: string) =>
-    errors[k] ? "border-destructive ring-1 ring-destructive/40" : "";
+  const errRing = (k: string) => (errors[k] ? "border-destructive ring-1 ring-destructive/40" : "");
   const missingLabels = Object.keys(errors)
     .map((k) => FIELD_LABELS[k])
     .filter(Boolean);
@@ -494,8 +530,7 @@ function RegistrationSection({
                 </div>
                 <div>
                   <Label>
-                    Allergies{" "}
-                    <span className="text-muted-foreground font-normal">(optional)</span>
+                    Allergies <span className="text-muted-foreground font-normal">(optional)</span>
                   </Label>
                   <Textarea
                     rows={2}
@@ -555,7 +590,6 @@ type ParentFormRow = {
   fullName: string;
   gender: "Male" | "Female" | "";
   stayingOvernight: "Yes" | "No" | "Yet to decide" | "";
-  matchedParentId?: string;
 };
 
 function emptyParentRow(): ParentFormRow {
@@ -569,38 +603,36 @@ function ParentSection({
   swimmers: Swimmer[];
   onLinked: (parents: Parent[], swimmerIds: string[]) => void;
 }) {
-  const parentsQ = useParents();
-  const saveParent = useSaveParent();
-  const linkParent = useLinkParent();
+  // Parent-side is single-parent: the signed-in Google user owns exactly one
+  // parents row (partial unique index on parents.user_id enforces this).
+  // Secondary contact info still fits on the registration row itself
+  // (parent2_name + secondary_phone) — the admin flow handles second-parent
+  // records separately if needed.
+  const myParentQ = useMyParent();
+  const saveParent = useSaveMyParent();
+  const linkParent = useLinkMyParent();
 
-  const parentsList = parentsQ.data ?? [];
-  const [parent1, setParent1] = useState<ParentFormRow>(emptyParentRow);
-  const [parent2, setParent2] = useState<ParentFormRow | null>(null);
+  const existing = myParentQ.data ?? null;
+  const [parent1, setParent1] = useState<ParentFormRow>(() =>
+    existing ? fromParent(existing) : emptyParentRow(),
+  );
+  const [initialized, setInitialized] = useState<boolean>(!!existing);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [saved, setSaved] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
-  const [savedCount, setSavedCount] = useState(0);
+  const [saved, setSaved] = useState<boolean>(!!existing);
+  const [collapsed, setCollapsed] = useState<boolean>(!!existing);
   const busy = saveParent.isPending || linkParent.isPending;
 
-  function tryPrefill(row: ParentFormRow): ParentFormRow {
-    const norm = normalizeKePhone(row.phone);
-    if (!norm) return { ...row, matchedParentId: undefined };
-    const hit = parentsList.find((p) => p.phone === norm);
-    if (!hit) return { ...row, matchedParentId: undefined };
-    return {
-      phone: row.phone,
-      fullName: hit.fullName,
-      gender: hit.gender ?? "",
-      stayingOvernight: hit.stayingOvernight,
-      matchedParentId: hit.id,
-    };
-  }
+  // Populate the form once useMyParent finishes loading with a real row.
+  useEffect(() => {
+    if (initialized || !existing) return;
+    setParent1(fromParent(existing));
+    setSaved(true);
+    setCollapsed(true);
+    setInitialized(true);
+  }, [existing, initialized]);
 
   function updateParent1<K extends keyof ParentFormRow>(k: K, v: ParentFormRow[K]) {
-    setParent1((prev) => ({ ...prev, [k]: v, matchedParentId: undefined }));
-  }
-  function updateParent2<K extends keyof ParentFormRow>(k: K, v: ParentFormRow[K]) {
-    setParent2((prev) => (prev ? { ...prev, [k]: v, matchedParentId: undefined } : prev));
+    setParent1((prev) => ({ ...prev, [k]: v }));
   }
 
   function validate(): Record<string, string> {
@@ -609,31 +641,7 @@ function ParentSection({
     if (!parent1.gender) errs.p1Gender = "Gender required";
     if (!parent1.stayingOvernight) errs.p1Sleepover = "Answer required";
     if (!normalizeKePhone(parent1.phone)) errs.p1Phone = "Enter a valid Kenyan number";
-    if (parent2) {
-      if (!parent2.fullName.trim()) errs.p2FullName = "Full name required";
-      if (!parent2.stayingOvernight) errs.p2Sleepover = "Answer required";
-      if (!normalizeKePhone(parent2.phone)) errs.p2Phone = "Enter a valid Kenyan number";
-    }
     return errs;
-  }
-
-  async function persistOne(
-    row: ParentFormRow,
-    normalizedPhone: string,
-  ): Promise<Parent> {
-    if (row.matchedParentId) {
-      const hit = parentsList.find((p) => p.id === row.matchedParentId);
-      if (hit) return hit;
-    }
-    return await saveParent.mutateAsync({
-      fullName: row.fullName.trim(),
-      gender: row.gender === "" ? null : row.gender,
-      phone: normalizedPhone,
-      stayingOvernight: (row.stayingOvernight || "Yet to decide") as
-        | "Yes"
-        | "No"
-        | "Yet to decide",
-    });
   }
 
   async function onSave(e: React.FormEvent) {
@@ -645,37 +653,44 @@ function ParentSection({
       return;
     }
     try {
-      const p1Row = await persistOne(parent1, normalizeKePhone(parent1.phone)!);
-      let p2Row: Parent | null = null;
-      if (parent2) {
-        p2Row = await persistOne(parent2, normalizeKePhone(parent2.phone)!);
-      }
-      const linked: Parent[] = p2Row ? [p1Row, p2Row] : [p1Row];
+      const normalized = normalizeKePhone(parent1.phone)!;
+      const p1Row = await saveParent.mutateAsync({
+        id: existing?.id,
+        fullName: parent1.fullName.trim(),
+        gender: parent1.gender === "" ? null : parent1.gender,
+        phone: normalized,
+        stayingOvernight: (parent1.stayingOvernight || "Yet to decide") as
+          | "Yes"
+          | "No"
+          | "Yet to decide",
+      });
       const linkedSwimmerIds: string[] = [];
       for (const s of swimmers) {
-        await linkParent.mutateAsync({
-          swimmerId: s.id,
-          parentId: p1Row.id,
-          sortOrder: 1,
-        });
-        if (p2Row) {
+        try {
           await linkParent.mutateAsync({
             swimmerId: s.id,
-            parentId: p2Row.id,
-            sortOrder: 2,
+            parentId: p1Row.id,
+            sortOrder: 1,
           });
+          linkedSwimmerIds.push(s.id);
+        } catch (linkErr) {
+          const info = extractErr(linkErr);
+          console.warn(`[parent] link failed for ${s.name}:`, info);
+          if (info.isRlsDenied) {
+            toast.error(
+              `${s.name}: your account isn't authorised to link this swimmer. Sign out and back in, or contact the coordinator.`,
+            );
+          } else {
+            toast.error(`${s.name}: ${info.message || "link failed"}`);
+          }
         }
-        linkedSwimmerIds.push(s.id);
       }
-      onLinked(linked, linkedSwimmerIds);
-      setSavedCount(linked.length);
+      onLinked([p1Row], linkedSwimmerIds);
       setSaved(true);
       setCollapsed(true);
-      toast.success(
-        linked.length === 1
-          ? "Parent saved and linked."
-          : "Both parents saved and linked.",
-      );
+      if (linkedSwimmerIds.length > 0) {
+        toast.success("Parent saved and linked.");
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to save.";
       toast.error(msg);
@@ -684,8 +699,7 @@ function ParentSection({
 
   const errText = (k: string) =>
     errors[k] ? <p className="text-xs text-destructive mt-1">{errors[k]}</p> : null;
-  const errRing = (k: string) =>
-    errors[k] ? "border-destructive ring-1 ring-destructive/40" : "";
+  const errRing = (k: string) => (errors[k] ? "border-destructive ring-1 ring-destructive/40" : "");
 
   const isMulti = swimmers.length > 1;
 
@@ -698,21 +712,13 @@ function ParentSection({
             {!collapsed && (
               <CardDescription>
                 {isMulti
-                  ? "Same parents will be linked to all selected swimmers."
-                  : "Enter the parent/guardian for this swimmer."}
+                  ? "You'll be linked to all selected swimmers."
+                  : "Confirm your details as the parent/guardian."}
               </CardDescription>
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {saved && (
-              <SavedCrumb
-                label={
-                  savedCount === 1
-                    ? "1 parent linked"
-                    : `${savedCount} parents linked`
-                }
-              />
-            )}
+            {saved && <SavedCrumb label="Details saved" />}
             {saved && collapsed && (
               <Button
                 variant="outline"
@@ -730,71 +736,18 @@ function ParentSection({
         <CardContent>
           <form onSubmit={onSave} className="space-y-6">
             <ParentRowFields
-              title="Parent 1"
+              title=""
               row={parent1}
               onChange={updateParent1}
-              onPhoneBlur={() => setParent1((r) => tryPrefill(r))}
               errText={errText}
               errRing={errRing}
               keyPrefix="p1"
               genderRequired
             />
 
-            {parent2 !== null && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                    Parent 2
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setParent2(null);
-                      setErrors((e) => {
-                        const next = { ...e };
-                        delete next.p2FullName;
-                        delete next.p2Gender;
-                        delete next.p2Phone;
-                        delete next.p2Sleepover;
-                        return next;
-                      });
-                    }}
-                  >
-                    Remove
-                  </Button>
-                </div>
-                <ParentRowFields
-                  title=""
-                  row={parent2}
-                  onChange={updateParent2}
-                  onPhoneBlur={() => setParent2((r) => (r ? tryPrefill(r) : r))}
-                  errText={errText}
-                  errRing={errRing}
-                  keyPrefix="p2"
-                  genderRequired={false}
-                />
-              </div>
-            )}
-
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              {parent2 === null && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setParent2(emptyParentRow())}
-                >
-                  + Add second parent/guardian
-                </Button>
-              )}
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full sm:w-auto h-11"
-                disabled={busy}
-              >
-                {busy ? "Saving…" : "Save parents"}
+              <Button type="submit" size="lg" className="w-full sm:w-auto h-11" disabled={busy}>
+                {busy ? "Saving…" : existing ? "Update parent details" : "Save parent details"}
               </Button>
             </div>
           </form>
@@ -804,11 +757,47 @@ function ParentSection({
   );
 }
 
+function fromParent(p: Parent): ParentFormRow {
+  return {
+    phone: p.phone,
+    fullName: p.fullName,
+    gender: p.gender ?? "",
+    stayingOvernight: p.stayingOvernight,
+  };
+}
+
+// Supabase PostgrestError isn't a JS Error subclass, so `err instanceof Error`
+// misses it and callers fall back to a generic label. Extract code + message
+// off whatever shape actually came out. Returns { code, message, isRlsDenied }
+// so callers can choose between "you don't have permission" and the raw
+// message from Postgres.
+type ExtractedErr = { code: string | null; message: string; isRlsDenied: boolean };
+
+function extractErr(err: unknown): ExtractedErr {
+  const anyErr = err as { code?: unknown; message?: unknown; details?: unknown } | null;
+  const code = typeof anyErr?.code === "string" ? anyErr.code : null;
+  const messageParts = [anyErr?.message, anyErr?.details]
+    .filter((v): v is string => typeof v === "string" && v.length > 0);
+  const message =
+    messageParts.length > 0
+      ? messageParts.join(" — ")
+      : err instanceof Error
+        ? err.message
+        : String(err);
+  // 42501 = insufficient_privilege (permission denied), what RLS returns.
+  // "new row violates row-level security policy" is the WITH CHECK failure
+  // message; guard on the substring too because different Postgres versions
+  // surface the code slightly differently through PostgREST.
+  const isRlsDenied =
+    code === "42501" ||
+    /row-level security/i.test(typeof anyErr?.message === "string" ? anyErr.message : "");
+  return { code, message, isRlsDenied };
+}
+
 function ParentRowFields({
   title,
   row,
   onChange,
-  onPhoneBlur,
   errText,
   errRing,
   keyPrefix,
@@ -817,7 +806,6 @@ function ParentRowFields({
   title: string;
   row: ParentFormRow;
   onChange: <K extends keyof ParentFormRow>(k: K, v: ParentFormRow[K]) => void;
-  onPhoneBlur: () => void;
   errText: (k: string) => React.ReactNode;
   errRing: (k: string) => string;
   keyPrefix: "p1" | "p2";
@@ -838,14 +826,8 @@ function ParentRowFields({
             inputMode="tel"
             value={row.phone}
             onChange={(e) => onChange("phone", e.target.value)}
-            onBlur={onPhoneBlur}
             placeholder="+254 7XX XXX XXX"
           />
-          {row.matchedParentId && (
-            <p className="text-[11px] text-emerald-700 mt-1">
-              Matched existing parent — fields prefilled.
-            </p>
-          )}
           {errText(`${keyPrefix}Phone`)}
         </div>
         <div>
@@ -882,9 +864,7 @@ function ParentRowFields({
           <Label>Staying the night with the team?</Label>
           <Select
             value={row.stayingOvernight}
-            onValueChange={(v) =>
-              onChange("stayingOvernight", v as "Yes" | "No" | "Yet to decide")
-            }
+            onValueChange={(v) => onChange("stayingOvernight", v as "Yes" | "No" | "Yet to decide")}
           >
             <SelectTrigger className={`h-11 ${errRing(`${keyPrefix}Sleepover`)}`}>
               <SelectValue placeholder="Select" />
@@ -953,7 +933,7 @@ function PaymentSection({
 }) {
   const swimmerIds = swimmers.map((s) => s.id);
   const childCount = swimmers.length;
-  const addMut = useAddPayment();
+  const addMut = useAddMyPayment();
 
   const registeredSet = useMemo(
     () => new Set(registrations.map((r) => r.swimmerId)),
@@ -1113,9 +1093,7 @@ function PaymentSection({
         {collapsed && latestPayment && (
           <div className="mt-2 text-xs text-muted-foreground">
             {new Date(latestPayment.createdAt).toLocaleString()} · Ref{" "}
-            <span className="font-mono font-medium text-foreground">
-              {latestPayment.reference}
-            </span>
+            <span className="font-mono font-medium text-foreground">{latestPayment.reference}</span>
             {groupBalance > 0 && <span> · Balance {formatKes(groupBalance)}</span>}
           </div>
         )}
@@ -1152,9 +1130,7 @@ function PaymentSection({
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Paid</div>
-                <div className="text-lg font-semibold text-emerald-700">
-                  {formatKes(groupPaid)}
-                </div>
+                <div className="text-lg font-semibold text-emerald-700">{formatKes(groupPaid)}</div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Balance</div>
@@ -1178,9 +1154,7 @@ function PaymentSection({
                 <CopyRow label="Account" value={PAYMENT.accountCode} />
                 <CopyRow label="Amount" value={String(groupBalance)} />
               </div>
-              <p className="text-[11px] text-muted-foreground">
-                Merchant: {PAYMENT.merchantName}
-              </p>
+              <p className="text-[11px] text-muted-foreground">Merchant: {PAYMENT.merchantName}</p>
             </div>
           )}
 
@@ -1230,12 +1204,7 @@ function PaymentSection({
 
               {error && <p className="text-sm text-destructive">{error}</p>}
 
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full h-11"
-                disabled={addMut.isPending}
-              >
+              <Button type="submit" size="lg" className="w-full h-11" disabled={addMut.isPending}>
                 {addMut.isPending ? "Recording…" : "Submit payment"}
               </Button>
             </form>
@@ -1252,10 +1221,7 @@ function PaymentSection({
                 {history.map((p) => {
                   const n = p.childCount && p.childCount > 0 ? p.childCount : 1;
                   return (
-                    <li
-                      key={p.id}
-                      className="p-3 flex items-center justify-between gap-3 text-sm"
-                    >
+                    <li key={p.id} className="p-3 flex items-center justify-between gap-3 text-sm">
                       <div className="min-w-0">
                         <div className="font-medium">{formatKes(p.amount)}</div>
                         <div className="text-xs text-muted-foreground truncate">
@@ -1283,8 +1249,6 @@ function StatusBadge({ status }: { status: "Unpaid" | "Partial" | "Paid" }) {
     Paid: "bg-emerald-100 text-emerald-800",
   };
   return (
-    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${map[status]}`}>
-      {status}
-    </span>
+    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${map[status]}`}>{status}</span>
   );
 }

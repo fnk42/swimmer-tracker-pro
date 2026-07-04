@@ -58,6 +58,7 @@ export const parentSchema = z.object({
     .regex(/^254[0-9]{9}$/, "Phone must be 254XXXXXXXXX"),
   stayingOvernight: yesNoMaybe,
   userId: z.string().nullable().optional(),
+  email: z.string().email().nullable().optional(),
   backfillNote: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),

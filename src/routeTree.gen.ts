@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ParentRouteImport } from './routes/parent'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthLinkPhoneRouteImport } from './routes/auth/link-phone'
+import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as ApiSwimmersRouteImport } from './routes/api/swimmers'
 import { Route as ApiSwimmerParentsRouteImport } from './routes/api/swimmer-parents'
 import { Route as ApiRegistrationsRouteImport } from './routes/api/registrations'
@@ -20,7 +22,9 @@ import { Route as ApiPaymentsRouteImport } from './routes/api/payments'
 import { Route as ApiPaymentRouteImport } from './routes/api/payment'
 import { Route as ApiParentsRouteImport } from './routes/api/parents'
 import { Route as ApiSwimmersIdRouteImport } from './routes/api/swimmers/$id'
+import { Route as ApiParentsLinkByPhoneRouteImport } from './routes/api/parents/link-by-phone'
 import { Route as ApiParentsLinkRouteImport } from './routes/api/parents/link'
+import { Route as ApiParentsIdRouteImport } from './routes/api/parents/$id'
 import { Route as ApiAdminStatusRouteImport } from './routes/api/admin/status'
 
 const ParentRoute = ParentRouteImport.update({
@@ -36,6 +40,16 @@ const AdminRoute = AdminRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthLinkPhoneRoute = AuthLinkPhoneRouteImport.update({
+  id: '/auth/link-phone',
+  path: '/auth/link-phone',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSwimmersRoute = ApiSwimmersRouteImport.update({
@@ -78,9 +92,19 @@ const ApiSwimmersIdRoute = ApiSwimmersIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiSwimmersRoute,
 } as any)
+const ApiParentsLinkByPhoneRoute = ApiParentsLinkByPhoneRouteImport.update({
+  id: '/link-by-phone',
+  path: '/link-by-phone',
+  getParentRoute: () => ApiParentsRoute,
+} as any)
 const ApiParentsLinkRoute = ApiParentsLinkRouteImport.update({
   id: '/link',
   path: '/link',
+  getParentRoute: () => ApiParentsRoute,
+} as any)
+const ApiParentsIdRoute = ApiParentsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
   getParentRoute: () => ApiParentsRoute,
 } as any)
 const ApiAdminStatusRoute = ApiAdminStatusRouteImport.update({
@@ -100,8 +124,12 @@ export interface FileRoutesByFullPath {
   '/api/registrations': typeof ApiRegistrationsRoute
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/link-phone': typeof AuthLinkPhoneRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
+  '/api/parents/$id': typeof ApiParentsIdRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
+  '/api/parents/link-by-phone': typeof ApiParentsLinkByPhoneRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
 }
 export interface FileRoutesByTo {
@@ -115,8 +143,12 @@ export interface FileRoutesByTo {
   '/api/registrations': typeof ApiRegistrationsRoute
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/link-phone': typeof AuthLinkPhoneRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
+  '/api/parents/$id': typeof ApiParentsIdRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
+  '/api/parents/link-by-phone': typeof ApiParentsLinkByPhoneRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
 }
 export interface FileRoutesById {
@@ -131,8 +163,12 @@ export interface FileRoutesById {
   '/api/registrations': typeof ApiRegistrationsRoute
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/link-phone': typeof AuthLinkPhoneRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
+  '/api/parents/$id': typeof ApiParentsIdRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
+  '/api/parents/link-by-phone': typeof ApiParentsLinkByPhoneRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
 }
 export interface FileRouteTypes {
@@ -148,8 +184,12 @@ export interface FileRouteTypes {
     | '/api/registrations'
     | '/api/swimmer-parents'
     | '/api/swimmers'
+    | '/auth/callback'
+    | '/auth/link-phone'
     | '/api/admin/status'
+    | '/api/parents/$id'
     | '/api/parents/link'
+    | '/api/parents/link-by-phone'
     | '/api/swimmers/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -163,8 +203,12 @@ export interface FileRouteTypes {
     | '/api/registrations'
     | '/api/swimmer-parents'
     | '/api/swimmers'
+    | '/auth/callback'
+    | '/auth/link-phone'
     | '/api/admin/status'
+    | '/api/parents/$id'
     | '/api/parents/link'
+    | '/api/parents/link-by-phone'
     | '/api/swimmers/$id'
   id:
     | '__root__'
@@ -178,8 +222,12 @@ export interface FileRouteTypes {
     | '/api/registrations'
     | '/api/swimmer-parents'
     | '/api/swimmers'
+    | '/auth/callback'
+    | '/auth/link-phone'
     | '/api/admin/status'
+    | '/api/parents/$id'
     | '/api/parents/link'
+    | '/api/parents/link-by-phone'
     | '/api/swimmers/$id'
   fileRoutesById: FileRoutesById
 }
@@ -194,6 +242,8 @@ export interface RootRouteChildren {
   ApiRegistrationsRoute: typeof ApiRegistrationsRoute
   ApiSwimmerParentsRoute: typeof ApiSwimmerParentsRoute
   ApiSwimmersRoute: typeof ApiSwimmersRouteWithChildren
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthLinkPhoneRoute: typeof AuthLinkPhoneRoute
   ApiAdminStatusRoute: typeof ApiAdminStatusRoute
 }
 
@@ -218,6 +268,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/link-phone': {
+      id: '/auth/link-phone'
+      path: '/auth/link-phone'
+      fullPath: '/auth/link-phone'
+      preLoaderRoute: typeof AuthLinkPhoneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/swimmers': {
@@ -276,11 +340,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSwimmersIdRouteImport
       parentRoute: typeof ApiSwimmersRoute
     }
+    '/api/parents/link-by-phone': {
+      id: '/api/parents/link-by-phone'
+      path: '/link-by-phone'
+      fullPath: '/api/parents/link-by-phone'
+      preLoaderRoute: typeof ApiParentsLinkByPhoneRouteImport
+      parentRoute: typeof ApiParentsRoute
+    }
     '/api/parents/link': {
       id: '/api/parents/link'
       path: '/link'
       fullPath: '/api/parents/link'
       preLoaderRoute: typeof ApiParentsLinkRouteImport
+      parentRoute: typeof ApiParentsRoute
+    }
+    '/api/parents/$id': {
+      id: '/api/parents/$id'
+      path: '/$id'
+      fullPath: '/api/parents/$id'
+      preLoaderRoute: typeof ApiParentsIdRouteImport
       parentRoute: typeof ApiParentsRoute
     }
     '/api/admin/status': {
@@ -294,11 +372,15 @@ declare module '@tanstack/react-router' {
 }
 
 interface ApiParentsRouteChildren {
+  ApiParentsIdRoute: typeof ApiParentsIdRoute
   ApiParentsLinkRoute: typeof ApiParentsLinkRoute
+  ApiParentsLinkByPhoneRoute: typeof ApiParentsLinkByPhoneRoute
 }
 
 const ApiParentsRouteChildren: ApiParentsRouteChildren = {
+  ApiParentsIdRoute: ApiParentsIdRoute,
   ApiParentsLinkRoute: ApiParentsLinkRoute,
+  ApiParentsLinkByPhoneRoute: ApiParentsLinkByPhoneRoute,
 }
 
 const ApiParentsRouteWithChildren = ApiParentsRoute._addFileChildren(
@@ -328,6 +410,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRegistrationsRoute: ApiRegistrationsRoute,
   ApiSwimmerParentsRoute: ApiSwimmerParentsRoute,
   ApiSwimmersRoute: ApiSwimmersRouteWithChildren,
+  AuthCallbackRoute: AuthCallbackRoute,
+  AuthLinkPhoneRoute: AuthLinkPhoneRoute,
   ApiAdminStatusRoute: ApiAdminStatusRoute,
 }
 export const routeTree = rootRouteImport
