@@ -21,7 +21,10 @@ import {
   useSwimmers,
   useRegistrations,
   usePayments,
+  useParents,
   useSaveRegistration,
+  useSaveParent,
+  useLinkParent,
   useAddPayment,
   paidForSwimmer,
   paymentsForSwimmer,
@@ -29,7 +32,7 @@ import {
 } from "@/lib/api";
 import { EVENT, PAYMENT, formatKes } from "@/lib/event-config";
 import { registrationSchema, paymentSchema } from "@/lib/schemas";
-import type { Swimmer, Registration, Payment } from "@/lib/schemas";
+import type { Swimmer, Registration, Payment, Parent } from "@/lib/schemas";
 import { toast } from "sonner";
 import { Check, Copy, X } from "lucide-react";
 
@@ -40,6 +43,11 @@ export const Route = createFileRoute("/parent")({
 function ParentPage() {
   const navigate = useNavigate();
   const [groupIds, setGroupIds] = useState<string[]>([]);
+  const [linkedParents, setLinkedParents] = useState<Parent[]>([]);
+  const [linkedSwimmerIds, setLinkedSwimmerIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const linkParentMut = useLinkParent();
   const swimmersQ = useSwimmers();
   const registrationsQ = useRegistrations();
   const paymentsQ = usePayments();
@@ -69,11 +77,58 @@ function ParentPage() {
     [swimmers, groupIds],
   );
 
+  async function autoLinkNewSwimmer(swimmerId: string, parents: Parent[]) {
+    try {
+      for (let i = 0; i < parents.length; i++) {
+        await linkParentMut.mutateAsync({
+          swimmerId,
+          parentId: parents[i].id,
+          sortOrder: i + 1,
+        });
+      }
+      setLinkedSwimmerIds((s) => {
+        const next = new Set(s);
+        next.add(swimmerId);
+        return next;
+      });
+      toast.success(
+        parents.length === 1
+          ? "Parent auto-linked to added swimmer."
+          : "Parents auto-linked to added swimmer.",
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to auto-link parents.";
+      toast.error(msg);
+    }
+  }
+
   function addChild(id: string) {
-    if (id && !groupIds.includes(id)) setGroupIds((g) => [...g, id]);
+    if (!id || groupIds.includes(id)) return;
+    setGroupIds((g) => [...g, id]);
+    if (linkedParents.length > 0 && !linkedSwimmerIds.has(id)) {
+      autoLinkNewSwimmer(id, linkedParents);
+    }
   }
   function removeChild(id: string) {
-    setGroupIds((g) => g.filter((x) => x !== id));
+    setGroupIds((g) => {
+      const next = g.filter((x) => x !== id);
+      if (next.length === 0) {
+        setLinkedParents([]);
+        setLinkedSwimmerIds(new Set());
+      }
+      return next;
+    });
+    setLinkedSwimmerIds((s) => {
+      if (!s.has(id)) return s;
+      const next = new Set(s);
+      next.delete(id);
+      return next;
+    });
+  }
+
+  function handleParentsLinked(parents: Parent[], swimmerIds: string[]) {
+    setLinkedParents(parents);
+    setLinkedSwimmerIds(new Set(swimmerIds));
   }
 
   const loading =
@@ -171,19 +226,27 @@ function ParentPage() {
               </CardContent>
             </Card>
 
+            {groupSwimmers.length > 0 && (
+              <ParentSection
+                swimmers={groupSwimmers}
+                onLinked={handleParentsLinked}
+              />
+            )}
+
             {groupSwimmers.map((s, i) => (
               <RegistrationSection
                 key={"reg-" + s.id}
                 swimmer={s}
-                number={i + 2}
+                number={i + 3}
                 existing={registrations.find((r) => r.swimmerId === s.id)}
+                parents={linkedParents}
               />
             ))}
 
             {groupSwimmers.length > 0 && (
               <PaymentSection
                 swimmers={groupSwimmers}
-                sectionNumber={groupSwimmers.length + 2}
+                sectionNumber={groupSwimmers.length + 3}
                 registrations={registrations}
                 payments={payments}
               />
@@ -198,13 +261,7 @@ function ParentPage() {
 type RegFormState = {
   age: number | "";
   gender: "Male" | "Female" | "";
-  guardianGender: "Male" | "Female" | "";
-  parentSleepover: "Yes" | "No" | "Yet to decide" | "";
   ownsCellphone: "Yes" | "No" | "";
-  parent1Name: string;
-  parent2Name: string;
-  primaryPhone: string;
-  secondaryPhone: string;
   dietary: string;
   allergies: string;
   healthConditions: string;
@@ -214,37 +271,39 @@ type RegFormState = {
 const FIELD_LABELS: Record<string, string> = {
   age: "Age",
   gender: "Gender",
-  guardianGender: "Parent/guardian gender",
-  parentSleepover: "Parent staying the night",
   ownsCellphone: "Owns a cellphone",
-  parent1Name: "Parent 1 full name",
-  primaryPhone: "Primary cell number",
 };
+
+// Kenya mobile normalizer — mirrors the parents_phone_normalized_chk constraint.
+function normalizeKePhone(input: string): string | null {
+  const digits = (input || "").replace(/\D/g, "");
+  if (/^254[0-9]{9}$/.test(digits)) return digits;
+  if (/^0[0-9]{9}$/.test(digits)) return "254" + digits.slice(1);
+  if (/^[17][0-9]{8}$/.test(digits)) return "254" + digits;
+  return null;
+}
 
 function RegistrationSection({
   swimmer,
   number,
   existing,
+  parents,
 }: {
   swimmer: Swimmer;
   number: number;
   existing?: Registration;
+  parents: Parent[];
 }) {
   const [form, setForm] = useState<RegFormState>({
     age: existing?.age ?? swimmer.age ?? "",
     gender: existing?.gender ?? swimmer.gender ?? "",
-    guardianGender: existing?.guardianGender ?? "",
-    parentSleepover: existing?.parentSleepover ?? "",
     ownsCellphone: existing?.ownsCellphone ?? "",
-    parent1Name: existing?.parent1Name ?? "",
-    parent2Name: existing?.parent2Name ?? "",
-    primaryPhone: existing?.primaryPhone ?? "",
-    secondaryPhone: existing?.secondaryPhone ?? "",
     dietary: existing?.dietary ?? "",
     allergies: existing?.allergies ?? "",
     healthConditions: existing?.healthConditions ?? "",
     specialRequests: existing?.specialRequests ?? "",
   });
+  const parentsLinked = parents.length > 0;
   const [errors, setErrors] = useState<Record<string, string>>({});
   const bannerRef = useRef<HTMLDivElement>(null);
   const [hasSaved, setHasSaved] = useState<boolean>(!!existing);
@@ -257,18 +316,24 @@ function RegistrationSection({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!parentsLinked) {
+      toast.error("Save parents first.");
+      return;
+    }
+    const p1 = parents[0];
+    const p2 = parents[1];
     const payload: Record<string, unknown> = {
       swimmerId: swimmer.id,
       updatedAt: new Date().toISOString(),
       age: form.age === "" ? undefined : form.age,
       gender: form.gender === "" ? undefined : form.gender,
-      guardianGender: form.guardianGender === "" ? undefined : form.guardianGender,
-      parentSleepover: form.parentSleepover === "" ? undefined : form.parentSleepover,
+      guardianGender: p1.gender ?? undefined,
+      parentSleepover: p1.stayingOvernight,
       ownsCellphone: form.ownsCellphone === "" ? undefined : form.ownsCellphone,
-      parent1Name: form.parent1Name,
-      parent2Name: form.parent2Name,
-      primaryPhone: form.primaryPhone,
-      secondaryPhone: form.secondaryPhone,
+      parent1Name: p1.fullName,
+      parent2Name: p2?.fullName ?? "",
+      primaryPhone: p1.phone,
+      secondaryPhone: p2?.phone ?? "",
       dietary: form.dietary,
       allergies: form.allergies,
       healthConditions: form.healthConditions,
@@ -390,25 +455,6 @@ function RegistrationSection({
                   {errText("gender")}
                 </div>
                 <div>
-                  <Label>Are you (the parent) staying the night with the team?</Label>
-                  <Select
-                    value={form.parentSleepover}
-                    onValueChange={(v) =>
-                      update("parentSleepover", v as "Yes" | "No" | "Yet to decide")
-                    }
-                  >
-                    <SelectTrigger className={`h-11 ${errRing("parentSleepover")}`}>
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Yes">Yes</SelectItem>
-                      <SelectItem value="No">No</SelectItem>
-                      <SelectItem value="Yet to decide">Yet to decide</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errText("parentSleepover")}
-                </div>
-                <div>
                   <Label>Swimmer owns a cellphone?</Label>
                   <Select
                     value={form.ownsCellphone}
@@ -426,76 +472,6 @@ function RegistrationSection({
                     Phones are collected and stored during the sleepover.
                   </p>
                   {errText("ownsCellphone")}
-                </div>
-              </div>
-            </section>
-
-            <section className="space-y-4">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Parents / guardians
-              </h3>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <Label>Parent 1 full name</Label>
-                  <Input
-                    className={`h-11 ${errRing("parent1Name")}`}
-                    value={form.parent1Name}
-                    onChange={(e) => update("parent1Name", e.target.value)}
-                  />
-                  {errText("parent1Name")}
-                </div>
-                <div>
-                  <Label>Parent/guardian gender</Label>
-                  <Select
-                    value={form.guardianGender}
-                    onValueChange={(v) => update("guardianGender", v as "Male" | "Female")}
-                  >
-                    <SelectTrigger className={`h-11 ${errRing("guardianGender")}`}>
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Male">Male</SelectItem>
-                      <SelectItem value="Female">Female</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    For chaperone pairing on the trip.
-                  </p>
-                  {errText("guardianGender")}
-                </div>
-                <div>
-                  <Label>
-                    Parent 2 full name{" "}
-                    <span className="text-muted-foreground font-normal">(optional)</span>
-                  </Label>
-                  <Input
-                    className="h-11"
-                    value={form.parent2Name ?? ""}
-                    onChange={(e) => update("parent2Name", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label>Primary cell number</Label>
-                  <Input
-                    className={`h-11 ${errRing("primaryPhone")}`}
-                    inputMode="tel"
-                    value={form.primaryPhone}
-                    onChange={(e) => update("primaryPhone", e.target.value)}
-                    placeholder="+254 7XX XXX XXX"
-                  />
-                  {errText("primaryPhone")}
-                </div>
-                <div>
-                  <Label>
-                    Secondary cell number{" "}
-                    <span className="text-muted-foreground font-normal">(optional)</span>
-                  </Label>
-                  <Input
-                    className="h-11"
-                    inputMode="tel"
-                    value={form.secondaryPhone ?? ""}
-                    onChange={(e) => update("secondaryPhone", e.target.value)}
-                  />
                 </div>
               </div>
             </section>
@@ -552,18 +528,377 @@ function RegistrationSection({
               </div>
             </section>
 
-            <Button
-              type="submit"
-              size="lg"
-              className="w-full sm:w-auto h-11"
-              disabled={saveMut.isPending}
-            >
-              {saveMut.isPending ? "Saving…" : "Save details"}
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full sm:w-auto h-11"
+                disabled={saveMut.isPending || !parentsLinked}
+              >
+                {saveMut.isPending ? "Saving…" : "Save details"}
+              </Button>
+              {!parentsLinked && (
+                <p className="text-xs text-muted-foreground">
+                  Save the parent/guardian section above first.
+                </p>
+              )}
+            </div>
           </form>
         </CardContent>
       )}
     </Card>
+  );
+}
+
+type ParentFormRow = {
+  phone: string;
+  fullName: string;
+  gender: "Male" | "Female" | "";
+  stayingOvernight: "Yes" | "No" | "Yet to decide" | "";
+  matchedParentId?: string;
+};
+
+function emptyParentRow(): ParentFormRow {
+  return { phone: "", fullName: "", gender: "", stayingOvernight: "" };
+}
+
+function ParentSection({
+  swimmers,
+  onLinked,
+}: {
+  swimmers: Swimmer[];
+  onLinked: (parents: Parent[], swimmerIds: string[]) => void;
+}) {
+  const parentsQ = useParents();
+  const saveParent = useSaveParent();
+  const linkParent = useLinkParent();
+
+  const parentsList = parentsQ.data ?? [];
+  const [parent1, setParent1] = useState<ParentFormRow>(emptyParentRow);
+  const [parent2, setParent2] = useState<ParentFormRow | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [saved, setSaved] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [savedCount, setSavedCount] = useState(0);
+  const busy = saveParent.isPending || linkParent.isPending;
+
+  function tryPrefill(row: ParentFormRow): ParentFormRow {
+    const norm = normalizeKePhone(row.phone);
+    if (!norm) return { ...row, matchedParentId: undefined };
+    const hit = parentsList.find((p) => p.phone === norm);
+    if (!hit) return { ...row, matchedParentId: undefined };
+    return {
+      phone: row.phone,
+      fullName: hit.fullName,
+      gender: hit.gender ?? "",
+      stayingOvernight: hit.stayingOvernight,
+      matchedParentId: hit.id,
+    };
+  }
+
+  function updateParent1<K extends keyof ParentFormRow>(k: K, v: ParentFormRow[K]) {
+    setParent1((prev) => ({ ...prev, [k]: v, matchedParentId: undefined }));
+  }
+  function updateParent2<K extends keyof ParentFormRow>(k: K, v: ParentFormRow[K]) {
+    setParent2((prev) => (prev ? { ...prev, [k]: v, matchedParentId: undefined } : prev));
+  }
+
+  function validate(): Record<string, string> {
+    const errs: Record<string, string> = {};
+    if (!parent1.fullName.trim()) errs.p1FullName = "Full name required";
+    if (!parent1.gender) errs.p1Gender = "Gender required";
+    if (!parent1.stayingOvernight) errs.p1Sleepover = "Answer required";
+    if (!normalizeKePhone(parent1.phone)) errs.p1Phone = "Enter a valid Kenyan number";
+    if (parent2) {
+      if (!parent2.fullName.trim()) errs.p2FullName = "Full name required";
+      if (!parent2.stayingOvernight) errs.p2Sleepover = "Answer required";
+      if (!normalizeKePhone(parent2.phone)) errs.p2Phone = "Enter a valid Kenyan number";
+    }
+    return errs;
+  }
+
+  async function persistOne(
+    row: ParentFormRow,
+    normalizedPhone: string,
+  ): Promise<Parent> {
+    if (row.matchedParentId) {
+      const hit = parentsList.find((p) => p.id === row.matchedParentId);
+      if (hit) return hit;
+    }
+    return await saveParent.mutateAsync({
+      fullName: row.fullName.trim(),
+      gender: row.gender === "" ? null : row.gender,
+      phone: normalizedPhone,
+      stayingOvernight: (row.stayingOvernight || "Yet to decide") as
+        | "Yes"
+        | "No"
+        | "Yet to decide",
+    });
+  }
+
+  async function onSave(e: React.FormEvent) {
+    e.preventDefault();
+    const errs = validate();
+    setErrors(errs);
+    if (Object.keys(errs).length > 0) {
+      toast.error("Please complete the highlighted fields.");
+      return;
+    }
+    try {
+      const p1Row = await persistOne(parent1, normalizeKePhone(parent1.phone)!);
+      let p2Row: Parent | null = null;
+      if (parent2) {
+        p2Row = await persistOne(parent2, normalizeKePhone(parent2.phone)!);
+      }
+      const linked: Parent[] = p2Row ? [p1Row, p2Row] : [p1Row];
+      const linkedSwimmerIds: string[] = [];
+      for (const s of swimmers) {
+        await linkParent.mutateAsync({
+          swimmerId: s.id,
+          parentId: p1Row.id,
+          sortOrder: 1,
+        });
+        if (p2Row) {
+          await linkParent.mutateAsync({
+            swimmerId: s.id,
+            parentId: p2Row.id,
+            sortOrder: 2,
+          });
+        }
+        linkedSwimmerIds.push(s.id);
+      }
+      onLinked(linked, linkedSwimmerIds);
+      setSavedCount(linked.length);
+      setSaved(true);
+      setCollapsed(true);
+      toast.success(
+        linked.length === 1
+          ? "Parent saved and linked."
+          : "Both parents saved and linked.",
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to save.";
+      toast.error(msg);
+    }
+  }
+
+  const errText = (k: string) =>
+    errors[k] ? <p className="text-xs text-destructive mt-1">{errors[k]}</p> : null;
+  const errRing = (k: string) =>
+    errors[k] ? "border-destructive ring-1 ring-destructive/40" : "";
+
+  const isMulti = swimmers.length > 1;
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1.5">
+            <CardTitle className="text-base">2. Parent / guardian details</CardTitle>
+            {!collapsed && (
+              <CardDescription>
+                {isMulti
+                  ? "Same parents will be linked to all selected swimmers."
+                  : "Enter the parent/guardian for this swimmer."}
+              </CardDescription>
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {saved && (
+              <SavedCrumb
+                label={
+                  savedCount === 1
+                    ? "1 parent linked"
+                    : `${savedCount} parents linked`
+                }
+              />
+            )}
+            {saved && collapsed && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={() => setCollapsed(false)}
+              >
+                Edit
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      {!collapsed && (
+        <CardContent>
+          <form onSubmit={onSave} className="space-y-6">
+            <ParentRowFields
+              title="Parent 1"
+              row={parent1}
+              onChange={updateParent1}
+              onPhoneBlur={() => setParent1((r) => tryPrefill(r))}
+              errText={errText}
+              errRing={errRing}
+              keyPrefix="p1"
+              genderRequired
+            />
+
+            {parent2 !== null && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Parent 2
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setParent2(null);
+                      setErrors((e) => {
+                        const next = { ...e };
+                        delete next.p2FullName;
+                        delete next.p2Gender;
+                        delete next.p2Phone;
+                        delete next.p2Sleepover;
+                        return next;
+                      });
+                    }}
+                  >
+                    Remove
+                  </Button>
+                </div>
+                <ParentRowFields
+                  title=""
+                  row={parent2}
+                  onChange={updateParent2}
+                  onPhoneBlur={() => setParent2((r) => (r ? tryPrefill(r) : r))}
+                  errText={errText}
+                  errRing={errRing}
+                  keyPrefix="p2"
+                  genderRequired={false}
+                />
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              {parent2 === null && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setParent2(emptyParentRow())}
+                >
+                  + Add second parent/guardian
+                </Button>
+              )}
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full sm:w-auto h-11"
+                disabled={busy}
+              >
+                {busy ? "Saving…" : "Save parents"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
+function ParentRowFields({
+  title,
+  row,
+  onChange,
+  onPhoneBlur,
+  errText,
+  errRing,
+  keyPrefix,
+  genderRequired,
+}: {
+  title: string;
+  row: ParentFormRow;
+  onChange: <K extends keyof ParentFormRow>(k: K, v: ParentFormRow[K]) => void;
+  onPhoneBlur: () => void;
+  errText: (k: string) => React.ReactNode;
+  errRing: (k: string) => string;
+  keyPrefix: "p1" | "p2";
+  genderRequired: boolean;
+}) {
+  return (
+    <section className="space-y-4">
+      {title && (
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+          {title}
+        </h3>
+      )}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <Label>Cell number</Label>
+          <Input
+            className={`h-11 ${errRing(`${keyPrefix}Phone`)}`}
+            inputMode="tel"
+            value={row.phone}
+            onChange={(e) => onChange("phone", e.target.value)}
+            onBlur={onPhoneBlur}
+            placeholder="+254 7XX XXX XXX"
+          />
+          {row.matchedParentId && (
+            <p className="text-[11px] text-emerald-700 mt-1">
+              Matched existing parent — fields prefilled.
+            </p>
+          )}
+          {errText(`${keyPrefix}Phone`)}
+        </div>
+        <div>
+          <Label>Full name</Label>
+          <Input
+            className={`h-11 ${errRing(`${keyPrefix}FullName`)}`}
+            value={row.fullName}
+            onChange={(e) => onChange("fullName", e.target.value)}
+          />
+          {errText(`${keyPrefix}FullName`)}
+        </div>
+        <div>
+          <Label>
+            Gender
+            {!genderRequired && (
+              <span className="text-muted-foreground font-normal"> (optional)</span>
+            )}
+          </Label>
+          <Select
+            value={row.gender}
+            onValueChange={(v) => onChange("gender", v as "Male" | "Female")}
+          >
+            <SelectTrigger className={`h-11 ${errRing(`${keyPrefix}Gender`)}`}>
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Male">Male</SelectItem>
+              <SelectItem value="Female">Female</SelectItem>
+            </SelectContent>
+          </Select>
+          {errText(`${keyPrefix}Gender`)}
+        </div>
+        <div>
+          <Label>Staying the night with the team?</Label>
+          <Select
+            value={row.stayingOvernight}
+            onValueChange={(v) =>
+              onChange("stayingOvernight", v as "Yes" | "No" | "Yet to decide")
+            }
+          >
+            <SelectTrigger className={`h-11 ${errRing(`${keyPrefix}Sleepover`)}`}>
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Yes">Yes</SelectItem>
+              <SelectItem value="No">No</SelectItem>
+              <SelectItem value="Yet to decide">Yet to decide</SelectItem>
+            </SelectContent>
+          </Select>
+          {errText(`${keyPrefix}Sleepover`)}
+        </div>
+      </div>
+    </section>
   );
 }
 

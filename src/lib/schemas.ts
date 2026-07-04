@@ -48,6 +48,29 @@ export const paymentSchema = z.object({
 });
 export type Payment = z.infer<typeof paymentSchema>;
 
+export const parentSchema = z.object({
+  id: z.string(),
+  fullName: z.string().trim().min(1, "Required").max(120),
+  gender: genderSchema.nullable().optional(),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^254[0-9]{9}$/, "Phone must be 254XXXXXXXXX"),
+  stayingOvernight: yesNoMaybe,
+  userId: z.string().nullable().optional(),
+  backfillNote: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type Parent = z.infer<typeof parentSchema>;
+
+export const swimmerParentLinkSchema = z.object({
+  swimmerId: z.string(),
+  parentId: z.string(),
+  sortOrder: z.number().int().min(1),
+});
+export type SwimmerParentLink = z.infer<typeof swimmerParentLinkSchema>;
+
 // CSV row for importing swimmers. Headers are normalized to lowercase before parsing.
 export const csvRowSchema = z.object({
   name: z.string().trim().min(1),

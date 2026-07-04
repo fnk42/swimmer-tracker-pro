@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Payment, Registration, Swimmer } from "./schemas";
+import type {
+  Payment,
+  Registration,
+  Swimmer,
+  Parent,
+  SwimmerParentLink,
+} from "./schemas";
 import { EVENT } from "./event-config";
 
 // ---------- Wire (snake_case) types --------------------------------------
@@ -40,6 +46,24 @@ type PaymentRow = {
   created_at: string;
 };
 
+type ParentRow = {
+  id: string;
+  full_name: string;
+  gender: "Male" | "Female" | null;
+  phone: string;
+  staying_overnight: "Yes" | "No" | "Yet to decide";
+  user_id: string | null;
+  backfill_note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type SwimmerParentRow = {
+  swimmer_id: string;
+  parent_id: string;
+  sort_order: number;
+};
+
 // ---------- Mappers ------------------------------------------------------
 function swimmerFromDb(s: SwimmerRow): Swimmer {
   return { id: s.id, name: s.name, age: s.age, gender: s.gender };
@@ -75,6 +99,20 @@ function paymentFromDb(p: PaymentRow): Payment {
     reference: p.reference,
     type: p.type,
     createdAt: p.created_at,
+  };
+}
+
+function parentFromDb(p: ParentRow): Parent {
+  return {
+    id: p.id,
+    fullName: p.full_name,
+    gender: p.gender ?? undefined,
+    phone: p.phone,
+    stayingOvernight: p.staying_overnight,
+    userId: p.user_id ?? undefined,
+    backfillNote: p.backfill_note ?? undefined,
+    createdAt: p.created_at,
+    updatedAt: p.updated_at,
   };
 }
 
@@ -118,6 +156,16 @@ export function usePayments() {
   });
 }
 
+export function useParents() {
+  return useQuery({
+    queryKey: ["parents"],
+    queryFn: async () => {
+      const rows = await apiFetch<ParentRow[]>("/api/parents");
+      return rows.map(parentFromDb);
+    },
+  });
+}
+
 // ---------- Mutations ----------------------------------------------------
 export function useSaveRegistration() {
   const qc = useQueryClient();
@@ -149,6 +197,44 @@ export function useAddPayment() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["payments"] });
+    },
+  });
+}
+
+export function useSaveParent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: Omit<Parent, "id" | "createdAt" | "updatedAt">) => {
+      const row = await apiFetch<ParentRow>("/api/parents", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      return parentFromDb(row);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["parents"] });
+    },
+  });
+}
+
+export function useLinkParent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: SwimmerParentLink) => {
+      const row = await apiFetch<SwimmerParentRow>("/api/parents/link", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      return {
+        swimmerId: row.swimmer_id,
+        parentId: row.parent_id,
+        sortOrder: row.sort_order,
+      };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["parents"] });
     },
   });
 }
