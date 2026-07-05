@@ -21,6 +21,12 @@ export const COORDINATOR = {
   phone: "+254 706 807219",
 } as const;
 
+export const COORDINATOR_2 = {
+  name: "Edel Quin Odero",
+  email: "",
+  phone: "+254 726 063001",
+} as const;
+
 export const PAYMENT = {
   paybill: "600100",
   accountCode: "0100003703147",
@@ -102,7 +108,8 @@ By ticking the box below, I confirm on behalf of my swimmer and our family that 
 
 9. Liability. NextGen Swim Club will exercise reasonable care but is not liable for loss of personal property or for injuries arising from participation in normal swim-team activity.
 
-Event Coordinator: Dr. Kiptolo Boit · +254 706 807219`;
+Event Coordinator: Dr. Kiptolo Boit · +254 706 807219
+Event Coordinator: Edel Quin Odero · +254 726 063001`;
 
 export function formatKes(n: number): string {
   return "KES " + n.toLocaleString("en-KE");
