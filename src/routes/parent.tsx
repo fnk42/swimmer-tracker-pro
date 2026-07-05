@@ -885,6 +885,13 @@ function ParentRowFields({
               <SelectItem value="Yet to decide">Yet to decide</SelectItem>
             </SelectContent>
           </Select>
+          {row.stayingOvernight === "Yes" && (
+            <p className="mt-1.5 rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-[11px] leading-snug text-sky-900">
+              Parent accommodation is available at an additional cost. We're finalising the
+              price now — once it's set, you'll be able to pay for it right here in this
+              same app, and we'll let you know when it's ready.
+            </p>
+          )}
           {errText(`${keyPrefix}Sleepover`)}
         </div>
       </div>
