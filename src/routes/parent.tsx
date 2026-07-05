@@ -146,6 +146,16 @@ function ParentPage() {
         ? "Couldn't link this swimmer — your account isn't authorised for it. Sign out and back in, or contact the coordinator."
         : info.message || "Failed to auto-link parents.";
       toast.error(userMessage);
+      // Roll back the optimistic pick from addChild so the UI doesn't
+      // show a "selected" chip next to a refusal toast. Also clear from
+      // linkedSwimmerIds defensively (in case a partial success snuck in).
+      setGroupIds((g) => g.filter((x) => x !== swimmerId));
+      setLinkedSwimmerIds((s) => {
+        if (!s.has(swimmerId)) return s;
+        const next = new Set(s);
+        next.delete(swimmerId);
+        return next;
+      });
     }
   }
 

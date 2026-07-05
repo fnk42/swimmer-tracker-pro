@@ -87,19 +87,15 @@ function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex flex-col">
-      <header className="border-b border-slate-800 bg-slate-900">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center">
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
           <img
-            src="/nextgen-logo.png"
+            src="/nextgen-logo-dark.png"
             alt="NextGen Swim Club"
-            className="h-9 w-auto"
+            className="mx-auto h-28 w-auto mb-6"
             width={395}
             height={265}
           />
-        </div>
-      </header>
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
           <div className="text-center mb-8 space-y-1">
             <h1 className="text-2xl font-semibold tracking-tight">{EVENT.name}</h1>
             <p className="text-sm text-muted-foreground">{EVENT.location}</p>

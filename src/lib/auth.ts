@@ -18,7 +18,14 @@ export async function signInWithGoogle(): Promise<void> {
   const redirectTo = window.location.origin + "/auth/callback";
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo },
+    options: {
+      redirectTo,
+      // Force Google's account chooser every time. Without this Google
+      // silently reuses the browser's most recent session, which is the
+      // wrong default on shared family devices where one parent may have
+      // just used another parent's account.
+      queryParams: { prompt: "select_account" },
+    },
   });
   if (error) {
     console.error("[auth] signInWithOAuth failed:", error);
