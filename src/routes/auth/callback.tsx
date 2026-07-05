@@ -35,28 +35,11 @@ function AuthCallback() {
       const timer = setTimeout(() => setFailed(true), 1500);
       return () => clearTimeout(timer);
     }
-    let cancelled = false;
-    (async () => {
-      const { data, error } = await getSupabase()
-        .from("parents")
-        .select("id")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
-      if (cancelled) return;
-      if (error) {
-        console.error("[auth/callback] parents lookup failed:", error);
-        navigate({ to: "/auth/link-phone", replace: true });
-        return;
-      }
-      if (data) {
-        navigate({ to: "/parent", replace: true });
-      } else {
-        navigate({ to: "/auth/link-phone", replace: true });
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    // Every signed-in parent goes to /parent. Returning parents are
+    // recognised there via useMyParent (parents.user_id = auth.uid());
+    // new parents see the empty ParentSection form and create their row
+    // via useSaveMyParent on first save.
+    navigate({ to: "/parent", replace: true });
   }, [loading, session, navigate]);
 
   return (

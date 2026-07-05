@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Payment, Registration, Swimmer, Parent, SwimmerParentLink } from "./schemas";
 import { EVENT } from "./event-config";
 import { getSupabase } from "./supabase";
-import { getAccessToken, useParentSession } from "./auth";
+import { useParentSession } from "./auth";
 
 // ---------- Wire (snake_case) types --------------------------------------
 type SwimmerRow = {
@@ -541,41 +541,6 @@ export function useAddMyPayment() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["me", "payments"] });
       qc.invalidateQueries({ queryKey: ["payments"] });
-    },
-  });
-}
-
-export type LinkByPhoneStatus = "linked" | "no_match" | "owned_by_other";
-
-export function useLinkByPhone() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (input: { phone: string }): Promise<{ status: LinkByPhoneStatus }> => {
-      const token = await getAccessToken();
-      if (!token) throw new Error("Not signed in.");
-      const res = await fetch("/api/parents/link-by-phone", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(input),
-      });
-      if (res.status === 409) {
-        return { status: "owned_by_other" };
-      }
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`${res.status} ${res.statusText}: ${text}`);
-      }
-      const body = (await res.json()) as { status: LinkByPhoneStatus };
-      return body;
-    },
-    onSuccess: (result) => {
-      if (result.status === "linked") {
-        qc.invalidateQueries({ queryKey: ["me", "parent"] });
-        qc.invalidateQueries({ queryKey: ["parents"] });
-      }
     },
   });
 }
