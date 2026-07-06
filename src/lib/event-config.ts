@@ -7,7 +7,7 @@ export const EVENT = {
   location: "Machakos County",
   startDate: "Fri 15 Aug 2026",
   endDate: "Sun 17 Aug 2026",
-  totalKes: 20_000,
+  totalKes: 20_910,
 } as const;
 
 export const AUTH = {
@@ -100,7 +100,7 @@ By ticking the box below, I confirm on behalf of my swimmer and our family that 
 
 5. Health disclosure. I have declared all known allergies, dietary needs, and medical conditions on the registration form and will inform the event coordinator of any changes before the trip.
 
-6. Payment. The total accommodation contribution is KES 20,000 per swimmer, payable via M-Pesa. Payments may be made in parts (deposit + final, or smaller instalments). Balances must be cleared before the trip begins.
+6. Payment. The total accommodation contribution is KES 20,910 per swimmer, payable via M-Pesa. Payments may be made in parts (deposit + final, or smaller instalments). Balances must be cleared before the trip begins.
 
 7. Refunds. Payments are non-refundable within 14 days of the event, except where the club cancels the trip.
 

@@ -37,7 +37,7 @@ export const Route = createFileRoute("/api/admin/status")({
 
           if (paymentsError) throw paymentsError;
 
-          const TOTAL_KES = 20000;
+          const TOTAL_KES = 20910;
           const registeredIds = new Set(
             registrations?.map((r: any) => r.swimmer_id) || [],
           );
