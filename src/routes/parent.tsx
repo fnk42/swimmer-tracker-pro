@@ -116,7 +116,10 @@ function ParentPage() {
     [groupIds, swimmers],
   );
   const available = useMemo(
-    () => swimmers.filter((s) => !groupIds.includes(s.id)),
+    () =>
+      swimmers
+        .filter((s) => !groupIds.includes(s.id))
+        .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
     [swimmers, groupIds],
   );
 
