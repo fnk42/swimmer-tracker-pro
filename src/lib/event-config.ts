@@ -5,8 +5,8 @@ export const EVENT = {
   clubName: "NextGen Swim Club",
   name: "Swimming Nationals",
   location: "Machakos County",
-  startDate: "Fri 15 Aug 2026",
-  endDate: "Sun 17 Aug 2026",
+  startDate: "Thu 19 Nov 2026",
+  endDate: "Sun 22 Nov 2026",
   totalKes: 20_910,
 } as const;
 
