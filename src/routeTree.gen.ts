@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ParentRouteImport } from './routes/parent'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as ApiSwimmersRouteImport } from './routes/api/swimmers'
 import { Route as ApiSwimmerParentsRouteImport } from './routes/api/swimmer-parents'
 import { Route as ApiRegistrationsRouteImport } from './routes/api/registrations'
@@ -22,7 +21,6 @@ import { Route as ApiPaymentRouteImport } from './routes/api/payment'
 import { Route as ApiParentsRouteImport } from './routes/api/parents'
 import { Route as ApiSwimmersIdRouteImport } from './routes/api/swimmers/$id'
 import { Route as ApiParentsLinkRouteImport } from './routes/api/parents/link'
-import { Route as ApiParentsIdRouteImport } from './routes/api/parents/$id'
 import { Route as ApiMeRegistrationRouteImport } from './routes/api/me/registration'
 import { Route as ApiMePaymentRouteImport } from './routes/api/me/payment'
 import { Route as ApiMeParentRouteImport } from './routes/api/me/parent'
@@ -46,11 +44,6 @@ const AdminRoute = AdminRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthCallbackRoute = AuthCallbackRouteImport.update({
-  id: '/auth/callback',
-  path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSwimmersRoute = ApiSwimmersRouteImport.update({
@@ -96,11 +89,6 @@ const ApiSwimmersIdRoute = ApiSwimmersIdRouteImport.update({
 const ApiParentsLinkRoute = ApiParentsLinkRouteImport.update({
   id: '/link',
   path: '/link',
-  getParentRoute: () => ApiParentsRoute,
-} as any)
-const ApiParentsIdRoute = ApiParentsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
   getParentRoute: () => ApiParentsRoute,
 } as any)
 const ApiMeRegistrationRoute = ApiMeRegistrationRouteImport.update({
@@ -160,7 +148,6 @@ export interface FileRoutesByFullPath {
   '/api/registrations': typeof ApiRegistrationsRoute
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
-  '/auth/callback': typeof AuthCallbackRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/request-code': typeof ApiAuthRequestCodeRoute
@@ -170,7 +157,6 @@ export interface FileRoutesByFullPath {
   '/api/me/parent': typeof ApiMeParentRoute
   '/api/me/payment': typeof ApiMePaymentRoute
   '/api/me/registration': typeof ApiMeRegistrationRoute
-  '/api/parents/$id': typeof ApiParentsIdRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
 }
@@ -185,7 +171,6 @@ export interface FileRoutesByTo {
   '/api/registrations': typeof ApiRegistrationsRoute
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
-  '/auth/callback': typeof AuthCallbackRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/request-code': typeof ApiAuthRequestCodeRoute
@@ -195,7 +180,6 @@ export interface FileRoutesByTo {
   '/api/me/parent': typeof ApiMeParentRoute
   '/api/me/payment': typeof ApiMePaymentRoute
   '/api/me/registration': typeof ApiMeRegistrationRoute
-  '/api/parents/$id': typeof ApiParentsIdRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
 }
@@ -211,7 +195,6 @@ export interface FileRoutesById {
   '/api/registrations': typeof ApiRegistrationsRoute
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
-  '/auth/callback': typeof AuthCallbackRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/request-code': typeof ApiAuthRequestCodeRoute
@@ -221,7 +204,6 @@ export interface FileRoutesById {
   '/api/me/parent': typeof ApiMeParentRoute
   '/api/me/payment': typeof ApiMePaymentRoute
   '/api/me/registration': typeof ApiMeRegistrationRoute
-  '/api/parents/$id': typeof ApiParentsIdRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
 }
@@ -238,7 +220,6 @@ export interface FileRouteTypes {
     | '/api/registrations'
     | '/api/swimmer-parents'
     | '/api/swimmers'
-    | '/auth/callback'
     | '/api/admin/status'
     | '/api/auth/me'
     | '/api/auth/request-code'
@@ -248,7 +229,6 @@ export interface FileRouteTypes {
     | '/api/me/parent'
     | '/api/me/payment'
     | '/api/me/registration'
-    | '/api/parents/$id'
     | '/api/parents/link'
     | '/api/swimmers/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -263,7 +243,6 @@ export interface FileRouteTypes {
     | '/api/registrations'
     | '/api/swimmer-parents'
     | '/api/swimmers'
-    | '/auth/callback'
     | '/api/admin/status'
     | '/api/auth/me'
     | '/api/auth/request-code'
@@ -273,7 +252,6 @@ export interface FileRouteTypes {
     | '/api/me/parent'
     | '/api/me/payment'
     | '/api/me/registration'
-    | '/api/parents/$id'
     | '/api/parents/link'
     | '/api/swimmers/$id'
   id:
@@ -288,7 +266,6 @@ export interface FileRouteTypes {
     | '/api/registrations'
     | '/api/swimmer-parents'
     | '/api/swimmers'
-    | '/auth/callback'
     | '/api/admin/status'
     | '/api/auth/me'
     | '/api/auth/request-code'
@@ -298,7 +275,6 @@ export interface FileRouteTypes {
     | '/api/me/parent'
     | '/api/me/payment'
     | '/api/me/registration'
-    | '/api/parents/$id'
     | '/api/parents/link'
     | '/api/swimmers/$id'
   fileRoutesById: FileRoutesById
@@ -314,7 +290,6 @@ export interface RootRouteChildren {
   ApiRegistrationsRoute: typeof ApiRegistrationsRoute
   ApiSwimmerParentsRoute: typeof ApiSwimmerParentsRoute
   ApiSwimmersRoute: typeof ApiSwimmersRouteWithChildren
-  AuthCallbackRoute: typeof AuthCallbackRoute
   ApiAdminStatusRoute: typeof ApiAdminStatusRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
   ApiAuthRequestCodeRoute: typeof ApiAuthRequestCodeRoute
@@ -347,13 +322,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/callback': {
-      id: '/auth/callback'
-      path: '/auth/callback'
-      fullPath: '/auth/callback'
-      preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/swimmers': {
@@ -417,13 +385,6 @@ declare module '@tanstack/react-router' {
       path: '/link'
       fullPath: '/api/parents/link'
       preLoaderRoute: typeof ApiParentsLinkRouteImport
-      parentRoute: typeof ApiParentsRoute
-    }
-    '/api/parents/$id': {
-      id: '/api/parents/$id'
-      path: '/$id'
-      fullPath: '/api/parents/$id'
-      preLoaderRoute: typeof ApiParentsIdRouteImport
       parentRoute: typeof ApiParentsRoute
     }
     '/api/me/registration': {
@@ -493,12 +454,10 @@ declare module '@tanstack/react-router' {
 }
 
 interface ApiParentsRouteChildren {
-  ApiParentsIdRoute: typeof ApiParentsIdRoute
   ApiParentsLinkRoute: typeof ApiParentsLinkRoute
 }
 
 const ApiParentsRouteChildren: ApiParentsRouteChildren = {
-  ApiParentsIdRoute: ApiParentsIdRoute,
   ApiParentsLinkRoute: ApiParentsLinkRoute,
 }
 
@@ -529,7 +488,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRegistrationsRoute: ApiRegistrationsRoute,
   ApiSwimmerParentsRoute: ApiSwimmerParentsRoute,
   ApiSwimmersRoute: ApiSwimmersRouteWithChildren,
-  AuthCallbackRoute: AuthCallbackRoute,
   ApiAdminStatusRoute: ApiAdminStatusRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
   ApiAuthRequestCodeRoute: ApiAuthRequestCodeRoute,

@@ -48,12 +48,14 @@ export async function sendLoginCode(email: string, code: string): Promise<SendRe
     });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      console.error("[mailer] resend failed:", res.status, body);
+      console.error("[mailer] resend REJECTED the send:", res.status, body);
+      console.warn(`[mailer] falling back to console. Login code for ${email}: ${code}`);
       return { delivered: false, via: "resend", error: `${res.status}` };
     }
     return { delivered: true, via: "resend" };
   } catch (err) {
     console.error("[mailer] resend threw:", err);
+    console.warn(`[mailer] falling back to console. Login code for ${email}: ${code}`);
     return { delivered: false, via: "resend", error: String(err) };
   }
 }
