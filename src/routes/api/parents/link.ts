@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { one, json, fail } from "@/lib/db";
+import { requireAdmin } from "@/lib/session";
 
 export const Route = createFileRoute("/api/parents/link")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const denied = requireAdmin(request);
+        if (denied) return denied;
         try {
           const body = await request.json();
           if (!body.swimmerId || !body.parentId) {

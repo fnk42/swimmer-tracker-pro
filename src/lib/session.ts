@@ -101,3 +101,34 @@ export function adminEmails(): string[] {
 export function isAdminEmail(email: string): boolean {
   return adminEmails().includes(email.trim().toLowerCase());
 }
+
+// ---------- route guards --------------------------------------------------
+
+/**
+ * Returns a 401/403 Response when the caller may not proceed, or null when
+ * they may. Used at the top of every admin route.
+ *
+ * These routes were previously unauthenticated: anyone who knew the URL could
+ * GET /api/parents and read every phone number, or DELETE a swimmer. That was
+ * survivable only because the old Supabase anon key made the same data
+ * reachable anyway. Now that the key is gone, the routes have to say no
+ * themselves.
+ */
+export function requireAdmin(request: Request): Response | null {
+  const s = sessionFromRequest(request);
+  if (!s) return deny("Not signed in", 401);
+  if (!s.isAdmin) return deny("Coordinator access only", 403);
+  return null;
+}
+
+/** Any signed-in person — parent or coordinator. */
+export function requireSignedIn(request: Request): Response | null {
+  return sessionFromRequest(request) ? null : deny("Not signed in", 401);
+}
+
+function deny(error: string, status: number): Response {
+  return new Response(JSON.stringify({ error }), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}

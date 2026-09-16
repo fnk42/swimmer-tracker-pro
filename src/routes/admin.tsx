@@ -24,7 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { isAdmin, isAuthed } from "@/lib/store";
+
 import {
   useSwimmers,
   useRegistrations,
@@ -38,6 +38,7 @@ import {
   statusForSwimmer,
   paymentsForSwimmer,
   parentsForSwimmer,
+  useMe,
 } from "@/lib/api";
 import { EVENT, formatKes } from "@/lib/event-config";
 import { exportAllData, downloadCsv } from "@/lib/csv";
@@ -66,10 +67,15 @@ function AdminPage() {
   const linksQ = useSwimmerParents();
   const deleteMut = useDeleteSwimmer();
 
+  // The gate is the signed session, not a localStorage flag. The old check
+  // could be defeated with one line in the browser console; this one cannot,
+  // and the admin API routes refuse unauthorised callers independently anyway.
+  const me = useMe();
   useEffect(() => {
-    if (!isAuthed()) navigate({ to: "/" });
-    else if (!isAdmin()) navigate({ to: "/parent" });
-  }, [navigate]);
+    if (me.isLoading) return;
+    if (!me.data?.signedIn) navigate({ to: "/" });
+    else if (!me.data.isAdmin) navigate({ to: "/parent" });
+  }, [me.isLoading, me.data, navigate]);
 
   const swimmers = swimmersQ.data ?? [];
   const registrations = registrationsQ.data ?? [];
@@ -109,7 +115,7 @@ function AdminPage() {
     }
   }
 
-  if (!isAdmin()) return null;
+  if (me.isLoading || !me.data?.isAdmin) return null;
 
   return (
     <div className="min-h-screen bg-slate-50">
