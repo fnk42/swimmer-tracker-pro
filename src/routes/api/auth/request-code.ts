@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { q, one, json, fail } from "@/lib/db";
-import { newCode, hashCode } from "@/lib/session";
+import { newCode, hashCode, isAdminEmail } from "@/lib/session";
 import { sendLoginCode } from "@/lib/mailer";
 
 const WINDOW_MIN = 15;
@@ -34,9 +34,10 @@ export const Route = createFileRoute("/api/auth/request-code")({
             [email],
           );
 
+          // Coordinators need a code even if they have no child registered.
           // Always answer the same way whether or not the address is known —
-          // otherwise this endpoint tells a stranger which parents exist.
-          if (!parent) return json({ ok: true });
+          // otherwise this endpoint tells a stranger who is involved.
+          if (!parent && !isAdminEmail(email)) return json({ ok: true });
 
           const code = newCode();
           await q(

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { one, q, json, fail } from "@/lib/db";
-import { hashCode, createSession, cookieHeader } from "@/lib/session";
+import { hashCode, createSession, cookieHeader, isAdminEmail } from "@/lib/session";
 
 const MAX_ATTEMPTS = 5;
 
@@ -45,17 +45,24 @@ export const Route = createFileRoute("/api/auth/verify-code")({
             `select id, full_name, email from public.parents where lower(email) = $1`,
             [email],
           );
-          if (!parent) return json({ error: "No parent record for that address" }, 403);
+          const admin = isAdminEmail(email);
+          if (!parent && !admin) {
+            return json({ error: "No record for that address" }, 403);
+          }
 
           await q(`update public.auth_codes set consumed_at = now() where id = $1`, [row.id]);
 
           const token = createSession({
-            role: "parent",
-            parentId: parent.id,
-            email: parent.email,
+            email,
+            parentId: parent?.id,
+            isAdmin: admin,
           });
           return new Response(
-            JSON.stringify({ ok: true, parent: { id: parent.id, fullName: parent.full_name } }),
+            JSON.stringify({
+              ok: true,
+              isAdmin: admin,
+              parent: parent ? { id: parent.id, fullName: parent.full_name } : null,
+            }),
             {
               status: 200,
               headers: {

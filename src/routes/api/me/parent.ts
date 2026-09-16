@@ -10,7 +10,7 @@ export const Route = createFileRoute("/api/me/parent")({
       PATCH: async ({ request }) => {
         try {
           const s = sessionFromRequest(request);
-          if (!s || s.role !== "parent") return json({ error: "Not signed in" }, 401);
+          if (!s?.parentId) return json({ error: "Not signed in" }, 401);
           const b = await request.json().catch(() => ({}));
 
           const row = await one(

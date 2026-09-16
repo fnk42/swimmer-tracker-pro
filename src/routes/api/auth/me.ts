@@ -10,16 +10,21 @@ export const Route = createFileRoute("/api/auth/me")({
         try {
           const s = sessionFromRequest(request);
           if (!s) return json({ signedIn: false });
-          if (s.role === "admin") return json({ signedIn: true, role: "admin" });
-          const p = await one<{ id: string; full_name: string; email: string; phone: string }>(
-            `select id, full_name, email, phone from public.parents where id = $1`,
-            [s.parentId],
-          );
-          if (!p) return json({ signedIn: false });
+          const p = s.parentId
+            ? await one<{ id: string; full_name: string; email: string; phone: string }>(
+                `select id, full_name, email, phone from public.parents where id = $1`,
+                [s.parentId],
+              )
+            : null;
+          // Someone can be both — a coordinator who also has a child swimming.
+          if (!p && !s.isAdmin) return json({ signedIn: false });
           return json({
             signedIn: true,
-            role: "parent",
-            parent: { id: p.id, fullName: p.full_name, email: p.email, phone: p.phone },
+            email: s.email,
+            isAdmin: s.isAdmin,
+            parent: p
+              ? { id: p.id, fullName: p.full_name, email: p.email, phone: p.phone }
+              : null,
           });
         } catch (err) {
           return fail("GET /api/auth/me", err, "Could not read session");
