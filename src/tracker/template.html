@@ -389,6 +389,9 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
   .lp-how .lp-wrap{grid-template-columns:minmax(0,1fr);gap:26px}
 }
 footer{border-top:1px solid var(--line);margin-top:22px;padding-block:24px 36px;color:var(--muted);font-size:12px}
+.gpline{margin-top:16px;padding-top:15px;border-top:1px solid var(--line);
+  justify-content:center;font-size:11.5px;letter-spacing:.3px;color:var(--muted)}
+.gpline b{font-weight:600;color:var(--ink);opacity:.72}
 footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 </style>
 
@@ -417,10 +420,15 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
   <main id="app"></main>
 </div>
 
-<footer><div class="wrap">
-  <span>NextGen Analytics · NextGen Multi Sport Academy</span>
-  <span id="foot"></span>
-</div></footer>
+<footer>
+  <div class="wrap">
+    <span>NextGen Analytics · NextGen Multi Sport Academy</span>
+    <span id="foot"></span>
+  </div>
+  <div class="wrap gpline">
+    <span>A product of <b>Golden Pipit Solutions</b></span>
+  </div>
+</footer>
 
 <script>
 // Data comes from /api/tracker/data, which requires a coordinator session.
