@@ -181,6 +181,8 @@ details[open] .chev{transform:rotate(45deg)}
 .shell{display:grid;grid-template-columns:186px minmax(0,1fr);gap:28px;
   max-width:1180px;margin:0 auto;padding-inline:20px;align-items:start}
 .sidenav{position:sticky;top:18px;padding-block:28px;display:grid;gap:2px;align-content:start}
+/* the class sets display, which beats the UA [hidden] rule — the gate needs this */
+.sidenav[hidden]{display:none}
 .sidenav .navtitle{font-size:10.5px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;
   color:var(--muted);padding:0 12px 10px}
 .sidenav a{display:grid;grid-template-columns:22px 1fr;gap:6px;align-items:baseline;
@@ -289,6 +291,24 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
 .dec h3{font-size:14px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase}
 .dec p{margin:8px 0 0;font-size:13.2px;color:var(--muted)}
 
+/* sign-in gate — this page is the landing page for the performance domain,
+   so a signed-out visitor has to be able to get in from here */
+.gate{max-width:420px;margin:0 auto;padding-block:8px}
+.gate h2{font-size:21px;margin:0 0 6px}
+.gate p.lead{color:var(--muted);font-size:13.6px;margin:0 0 20px}
+.gate label{display:block;font-size:11px;font-weight:700;letter-spacing:1.3px;
+  text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.gate input{width:100%;box-sizing:border-box;padding:11px 13px;font:inherit;font-size:15px;
+  border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
+.gate input:focus-visible{outline:2px solid var(--electric);outline-offset:1px;border-color:var(--electric)}
+.gate button{margin-top:14px;width:100%;padding:11px 14px;font:inherit;font-weight:600;font-size:15px;
+  color:#fff;background:var(--electric-deep);border:0;border-radius:10px;cursor:pointer}
+.gate button:hover{background:var(--electric)}
+.gate button[disabled]{opacity:.55;cursor:default}
+.gate .err{margin-top:12px;font-size:13px;color:var(--alert);font-weight:600}
+.gate .hint{margin-top:14px;font-size:12.4px;color:var(--muted)}
+.gate .back{margin-top:10px;background:none;color:var(--muted);font-weight:500;font-size:13px}
+.gate .back:hover{background:none;color:var(--ink)}
 footer{border-top:1px solid var(--line);margin-top:22px;padding-block:24px 36px;color:var(--muted);font-size:12px}
 footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 </style>
@@ -743,16 +763,83 @@ document.getElementById('years').addEventListener('click', e => {
   tabs(); render(); window.scrollTo({top:0,behavior:'smooth'});
 });
 
+
+// ---------------------------------------------------------------------------
+// Sign-in. This page is the landing page for the performance domain, so a
+// signed-out coordinator has to be able to get in from here rather than being
+// sent to the event portal. Same six-digit-code endpoints the portal uses.
+function gate(step, email, msg){
+  const app = document.getElementById('app');
+  document.getElementById('sidenav').hidden = true;
+  document.getElementById('years').innerHTML = '';
+  step = step || 'email';
+
+  app.innerHTML = `
+  <section class="wrap"><div class="gate">
+    <h2>${step === 'email' ? 'Performance analytics' : 'Check your email'}</h2>
+    <p class="lead">${step === 'email'
+      ? 'Every verified swim by a NextGen athlete, by season, age group and swimmer. Coordinator access only.'
+      : 'We sent a six-digit code to <strong>' + esc(email) + '</strong>. It expires in 10 minutes.'}</p>
+    ${step === 'email'
+      ? `<label for="g-email">Email address</label>
+         <input id="g-email" type="email" inputmode="email" autocomplete="email"
+                placeholder="you@example.com" value="${esc(email || '')}">
+         <button id="g-send" type="button">Send me a code</button>`
+      : `<label for="g-code">Six-digit code</label>
+         <input id="g-code" type="text" inputmode="numeric" autocomplete="one-time-code"
+                maxlength="6" placeholder="000000">
+         <button id="g-verify" type="button">Sign in</button>
+         <button id="g-back" class="back" type="button">Use a different address</button>`}
+    ${msg ? `<div class="err">${esc(msg)}</div>` : ''}
+    <p class="hint">Access is by email address — there is no shared password.
+       If your address is not recognised, nothing is sent.</p>
+  </div></section>`;
+
+  const post = async (url, body, btn, onOk) => {
+    btn.disabled = true;
+    try {
+      const r = await fetch(url, {method:'POST', headers:{'content-type':'application/json'},
+                                 body: JSON.stringify(body)});
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { gate(step, body.email, d.error || 'Something went wrong. Please try again.'); return; }
+      onOk(d);
+    } catch (e) {
+      gate(step, body.email, 'Could not reach the server. Please try again.');
+    } finally { btn.disabled = false; }
+  };
+
+  if (step === 'email') {
+    const inp = document.getElementById('g-email');
+    const go = () => {
+      const v = inp.value.trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) { gate('email', v, 'Enter a valid email address'); return; }
+      post('/api/auth/request-code', {email: v}, document.getElementById('g-send'),
+           () => gate('code', v));
+    };
+    document.getElementById('g-send').onclick = go;
+    inp.onkeydown = e => { if (e.key === 'Enter') go(); };
+    inp.focus();
+  } else {
+    const inp = document.getElementById('g-code');
+    const go = () => {
+      const c = inp.value.trim();
+      if (!/^\d{6}$/.test(c)) { gate('code', email, 'Enter the 6-digit code from your email'); return; }
+      post('/api/auth/verify-code', {email: email, code: c}, document.getElementById('g-verify'),
+           () => { document.getElementById('sidenav').hidden = false; boot(); });
+    };
+    document.getElementById('g-verify').onclick = go;
+    document.getElementById('g-back').onclick = () => gate('email', email);
+    inp.onkeydown = e => { if (e.key === 'Enter') go(); };
+    inp.focus();
+  }
+}
+
 async function boot(){
   const app = document.getElementById('app');
   app.innerHTML = '<section class="wrap"><p class="sec-sub">Loading…</p></section>';
   try {
     const res = await fetch('/api/tracker/data');
-    if (res.status === 401 || res.status === 403) {
-      app.innerHTML = '<section class="wrap"><div class="caution"><strong>Coordinator access only.</strong> '
-        + '<a href="/" style="color:var(--electric-deep)">Sign in</a> with a coordinator email to view this.</div></section>';
-      return;
-    }
+    if (res.status === 401 || res.status === 403) { gate(); return; }
     if (!res.ok) throw new Error(String(res.status));
     DATA = await res.json();
   } catch (e) {

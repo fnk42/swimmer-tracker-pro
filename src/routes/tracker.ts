@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { sessionFromRequest } from "@/lib/session";
 import html from "../tracker/template.html?raw";
 
 // The performance tracker. Served as a self-contained page rather than as React
@@ -13,10 +12,11 @@ import html from "../tracker/template.html?raw";
 export const Route = createFileRoute("/tracker")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const s = sessionFromRequest(request);
+      GET: async () => {
+        // Always 200: this is the landing page for performance.nextgenkenya.com,
+        // and the shell holds no data — it carries its own sign-in and fetches
+        // the numbers from /api/tracker/data, which is where access is enforced.
         return new Response(html, {
-          status: s?.isAdmin ? 200 : 401,
           headers: {
             "content-type": "text/html; charset=utf-8",
             "cache-control": "no-store",
