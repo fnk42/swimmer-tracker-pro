@@ -8,7 +8,7 @@ export const Route = createFileRoute("/api/me/registration")({
       POST: async ({ request }) => {
         try {
           const s = sessionFromRequest(request);
-          if (!s || s.role !== "parent") return json({ error: "Not signed in" }, 401);
+          if (!s?.parentId) return json({ error: "Not signed in" }, 401);
           const b = await request.json().catch(() => ({}));
           if (!b.swimmerId || !b.age || !b.gender || !b.parent1Name || !b.primaryPhone) {
             return json({ error: "Missing required fields" }, 400);

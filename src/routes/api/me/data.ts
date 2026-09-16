@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/me/data")({
       GET: async ({ request }) => {
         try {
           const s = sessionFromRequest(request);
-          if (!s || s.role !== "parent") return json({ error: "Not signed in" }, 401);
+          if (!s?.parentId) return json({ error: "Not signed in" }, 401);
           const pid = s.parentId;
 
           const [parent, swimmers, links, registrations, payments] = await Promise.all([

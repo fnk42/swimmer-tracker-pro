@@ -9,15 +9,17 @@ import { createHmac, timingSafeEqual, randomInt, createHash } from "node:crypto"
 const COOKIE = "ng_session";
 const MAX_AGE_S = 60 * 60 * 24 * 30; // 30 days — a term's worth of registration
 
-export type Session =
-  | { role: "parent"; parentId: string; email: string; exp: number }
-  | { role: "admin"; exp: number };
+// One session shape carrying capabilities, not two mutually exclusive roles.
+// Boit is both a coordinator and a parent of a swimmer; he should not have to
+// sign in twice or choose which hat he is wearing.
+export type Session = {
+  email: string;
+  parentId?: string;   // present if this address owns a parent row
+  isAdmin: boolean;    // present if this address is on the ADMIN_EMAILS list
+  exp: number;
+};
 
-// Omit<> over a union collapses to the keys the members share, which would
-// silently drop parentId. Distribute it so each member keeps its own fields.
-type NewSession =
-  | { role: "parent"; parentId: string; email: string }
-  | { role: "admin" };
+type NewSession = Omit<Session, "exp">;
 
 function secret(): string {
   const s = process.env.SESSION_SECRET;
@@ -79,4 +81,23 @@ export function hashCode(email: string, code: string): string {
   return createHash("sha256")
     .update(`${secret()}:${email.trim().toLowerCase()}:${code}`)
     .digest("hex");
+}
+
+// ---------- admin allowlist ----------------------------------------------
+
+/**
+ * Addresses allowed into the coordinator view, from ADMIN_EMAILS (comma
+ * separated). An allowlist rather than a shared password: nothing to leak,
+ * nothing baked into the JavaScript bundle, and access can be withdrawn from
+ * one person without disturbing anyone else.
+ */
+export function adminEmails(): string[] {
+  return (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+export function isAdminEmail(email: string): boolean {
+  return adminEmails().includes(email.trim().toLowerCase());
 }
