@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrackerRouteImport } from './routes/tracker'
 import { Route as ParentRouteImport } from './routes/parent'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -20,6 +21,7 @@ import { Route as ApiPaymentsRouteImport } from './routes/api/payments'
 import { Route as ApiPaymentRouteImport } from './routes/api/payment'
 import { Route as ApiParentsRouteImport } from './routes/api/parents'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as ApiTrackerDataRouteImport } from './routes/api/tracker/data'
 import { Route as ApiSwimmersIdRouteImport } from './routes/api/swimmers/$id'
 import { Route as ApiParentsLinkRouteImport } from './routes/api/parents/link'
 import { Route as ApiMeRegistrationRouteImport } from './routes/api/me/registration'
@@ -32,6 +34,11 @@ import { Route as ApiAuthRequestCodeRouteImport } from './routes/api/auth/reques
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAdminStatusRouteImport } from './routes/api/admin/status'
 
+const TrackerRoute = TrackerRouteImport.update({
+  id: '/tracker',
+  path: '/tracker',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ParentRoute = ParentRouteImport.update({
   id: '/parent',
   path: '/parent',
@@ -85,6 +92,11 @@ const ApiParentsRoute = ApiParentsRouteImport.update({
 const ApiHealthRoute = ApiHealthRouteImport.update({
   id: '/api/health',
   path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTrackerDataRoute = ApiTrackerDataRouteImport.update({
+  id: '/api/tracker/data',
+  path: '/api/tracker/data',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSwimmersIdRoute = ApiSwimmersIdRouteImport.update({
@@ -147,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/parent': typeof ParentRoute
+  '/tracker': typeof TrackerRoute
   '/api/health': typeof ApiHealthRoute
   '/api/parents': typeof ApiParentsRouteWithChildren
   '/api/payment': typeof ApiPaymentRoute
@@ -166,11 +179,13 @@ export interface FileRoutesByFullPath {
   '/api/me/registration': typeof ApiMeRegistrationRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
+  '/api/tracker/data': typeof ApiTrackerDataRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/parent': typeof ParentRoute
+  '/tracker': typeof TrackerRoute
   '/api/health': typeof ApiHealthRoute
   '/api/parents': typeof ApiParentsRouteWithChildren
   '/api/payment': typeof ApiPaymentRoute
@@ -190,12 +205,14 @@ export interface FileRoutesByTo {
   '/api/me/registration': typeof ApiMeRegistrationRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
+  '/api/tracker/data': typeof ApiTrackerDataRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/parent': typeof ParentRoute
+  '/tracker': typeof TrackerRoute
   '/api/health': typeof ApiHealthRoute
   '/api/parents': typeof ApiParentsRouteWithChildren
   '/api/payment': typeof ApiPaymentRoute
@@ -215,6 +232,7 @@ export interface FileRoutesById {
   '/api/me/registration': typeof ApiMeRegistrationRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
+  '/api/tracker/data': typeof ApiTrackerDataRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -222,6 +240,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/parent'
+    | '/tracker'
     | '/api/health'
     | '/api/parents'
     | '/api/payment'
@@ -241,11 +260,13 @@ export interface FileRouteTypes {
     | '/api/me/registration'
     | '/api/parents/link'
     | '/api/swimmers/$id'
+    | '/api/tracker/data'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
     | '/parent'
+    | '/tracker'
     | '/api/health'
     | '/api/parents'
     | '/api/payment'
@@ -265,11 +286,13 @@ export interface FileRouteTypes {
     | '/api/me/registration'
     | '/api/parents/link'
     | '/api/swimmers/$id'
+    | '/api/tracker/data'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/parent'
+    | '/tracker'
     | '/api/health'
     | '/api/parents'
     | '/api/payment'
@@ -289,12 +312,14 @@ export interface FileRouteTypes {
     | '/api/me/registration'
     | '/api/parents/link'
     | '/api/swimmers/$id'
+    | '/api/tracker/data'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   ParentRoute: typeof ParentRoute
+  TrackerRoute: typeof TrackerRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiParentsRoute: typeof ApiParentsRouteWithChildren
   ApiPaymentRoute: typeof ApiPaymentRoute
@@ -312,10 +337,18 @@ export interface RootRouteChildren {
   ApiMeParentRoute: typeof ApiMeParentRoute
   ApiMePaymentRoute: typeof ApiMePaymentRoute
   ApiMeRegistrationRoute: typeof ApiMeRegistrationRoute
+  ApiTrackerDataRoute: typeof ApiTrackerDataRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tracker': {
+      id: '/tracker'
+      path: '/tracker'
+      fullPath: '/tracker'
+      preLoaderRoute: typeof TrackerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/parent': {
       id: '/parent'
       path: '/parent'
@@ -391,6 +424,13 @@ declare module '@tanstack/react-router' {
       path: '/api/health'
       fullPath: '/api/health'
       preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tracker/data': {
+      id: '/api/tracker/data'
+      path: '/api/tracker/data'
+      fullPath: '/api/tracker/data'
+      preLoaderRoute: typeof ApiTrackerDataRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/swimmers/$id': {
@@ -501,6 +541,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   ParentRoute: ParentRoute,
+  TrackerRoute: TrackerRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiParentsRoute: ApiParentsRouteWithChildren,
   ApiPaymentRoute: ApiPaymentRoute,
@@ -518,6 +559,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMeParentRoute: ApiMeParentRoute,
   ApiMePaymentRoute: ApiMePaymentRoute,
   ApiMeRegistrationRoute: ApiMeRegistrationRoute,
+  ApiTrackerDataRoute: ApiTrackerDataRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

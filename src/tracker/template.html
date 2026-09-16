@@ -1,0 +1,691 @@
+<title>NextGen Performance Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Sora:wght@300;400;500;600;700;800&display=swap">
+<style>
+:root{
+  --navy:#0A1B33; --navy-2:#12294A; --electric:#16A6E8; --electric-deep:#0E7FC0;
+  --cyan:#46D3F0; --gold:#FFC24B; --ok:#1FB67A; --alert:#E0524A;
+  --ink:#0A1B33; --muted:#5C7390; --line:rgba(10,27,51,.12);
+  --bg:#F4FAFE; --surface:#FFFFFF; --ice:#EAF6FD; --sunken:#F7FBFE;
+  --ok-t:#0E8455; --gold-t:#8A5D00; --alert-t:#B03127;
+  --shadow:0 20px 60px -30px rgba(10,27,51,.40);
+  --shadow-sm:0 8px 24px -14px rgba(10,27,51,.35);
+  --hero:linear-gradient(160deg,#071427 0%,#0A1B33 58%,#08284A 100%);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ink:#E8F2FA; --muted:#93A9C2; --line:rgba(190,220,245,.16);
+  --bg:#071320; --surface:#0E2237; --ice:#13304A; --sunken:#0A1B2C;
+  --ok-t:#6FE3B4; --gold-t:#FFC24B; --alert-t:#FF9A92; --electric-deep:#4FC0F5;
+  --shadow:0 20px 60px -30px rgba(0,0,0,.75); --shadow-sm:0 8px 24px -14px rgba(0,0,0,.6);
+}}
+:root[data-theme="dark"]{
+  --ink:#E8F2FA; --muted:#93A9C2; --line:rgba(190,220,245,.16);
+  --bg:#071320; --surface:#0E2237; --ice:#13304A; --sunken:#0A1B2C;
+  --ok-t:#6FE3B4; --gold-t:#FFC24B; --alert-t:#FF9A92; --electric-deep:#4FC0F5;
+  --shadow:0 20px 60px -30px rgba(0,0,0,.75); --shadow-sm:0 8px 24px -14px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:'Sora',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+.wrap{max-width:1140px;margin:0 auto;padding-inline:20px}
+h1,h2,h3{text-wrap:balance;margin:0}
+.display{font-family:'Anton',Impact,sans-serif;font-weight:400;letter-spacing:.5px;text-transform:uppercase;line-height:1.05}
+
+/* hero */
+.hero{background:var(--hero);color:#fff;padding-block:32px 30px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,rgba(70,211,240,.08),transparent 55%);pointer-events:none}
+.hero .wrap{position:relative;z-index:1}
+.logo{width:112px;height:auto;display:block;margin-bottom:18px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:2.2px;text-transform:uppercase;color:var(--cyan);margin-bottom:10px}
+.hero h1{font-size:clamp(30px,5.4vw,48px);color:#fff}
+.hero p{color:#C4DAEC;font-weight:300;margin:12px 0 0;max-width:62ch;font-size:15px}
+
+/* year tabs */
+.years{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap}
+.yr{appearance:none;border:1.5px solid rgba(255,255,255,.22);background:rgba(255,255,255,.06);
+  color:#C4DAEC;font-family:inherit;font-size:14px;font-weight:600;padding:9px 20px;
+  border-radius:999px;cursor:pointer;transition:.15s}
+.yr:hover{background:rgba(255,255,255,.13);color:#fff}
+.yr[aria-selected="true"]{background:linear-gradient(135deg,var(--electric),var(--electric-deep));
+  color:#fff;border-color:transparent}
+.yr:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+section{padding-block:34px}
+.sec-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.sec-num{font-family:'Anton',sans-serif;font-size:12px;letter-spacing:2px;color:var(--electric-deep)}
+h2{font-size:clamp(20px,3vw,27px);font-weight:700;letter-spacing:-.3px}
+.sec-sub{color:var(--muted);max-width:70ch;margin-top:7px;font-size:14px}
+
+/* caution */
+.caution{margin-top:18px;background:rgba(255,194,75,.12);border:1px solid rgba(255,194,75,.42);
+  border-radius:14px;padding:15px 18px;font-size:13.6px;color:var(--ink)}
+.caution strong{color:var(--gold-t)}
+
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(138px,1fr));gap:12px;margin-top:22px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:17px 16px;box-shadow:var(--shadow-sm)}
+.tile .n{font-family:'Anton',sans-serif;font-size:34px;line-height:1;color:var(--electric-deep)}
+.tile .n.g{color:var(--gold)}
+.tile .l{font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);margin-top:8px}
+.tile .d{font-size:12px;color:var(--muted);margin-top:4px;font-weight:300}
+
+/* classification bar */
+.classbar{margin-top:22px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:var(--shadow-sm)}
+.cbar{display:flex;height:34px;border-radius:9px;overflow:hidden;margin-top:14px;background:var(--ice)}
+.cbar span{display:grid;place-items:center;font-size:12px;font-weight:700;color:#fff;min-width:0}
+.cbar .s-fast{background:linear-gradient(135deg,#7C4DFF,#B388FF)}
+.cbar .s-improving{background:linear-gradient(135deg,var(--ok),#5FD9A8)}
+.cbar .s-stable{background:linear-gradient(135deg,var(--gold),#FFD98A);color:#4A3200}
+.cbar .s-review{background:linear-gradient(135deg,var(--alert),#F08A84)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:12.5px;color:var(--muted)}
+.legend b{color:var(--ink);font-weight:600}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:baseline}
+.d-fast{background:#7C4DFF}.d-improving{background:var(--ok)}.d-stable{background:var(--gold)}.d-review{background:var(--alert)}
+
+/* panels */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:15px;margin-top:22px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:var(--shadow-sm)}
+.panel h3{font-size:15px;font-weight:700}
+.panel .kick{font-size:11px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:var(--electric-deep);margin-bottom:8px}
+.panel p.note{margin:12px 0 0;font-size:12.5px;color:var(--muted)}
+
+.bars{display:grid;gap:9px;margin-top:14px}
+.bar{display:grid;grid-template-columns:96px 1fr 68px;align-items:center;gap:12px}
+.bar .lab{font-size:13px;font-weight:600}
+.bar .track{display:block;height:20px;background:var(--ice);border-radius:6px;overflow:hidden;position:relative}
+.bar .fill{display:block;height:100%;border-radius:6px;min-width:3px}
+.f-fast{background:linear-gradient(90deg,#7C4DFF,#B388FF)}
+.f-improving{background:linear-gradient(90deg,var(--ok),#5FD9A8)}
+.f-stable{background:linear-gradient(90deg,var(--gold),#FFD98A)}
+.f-review{background:linear-gradient(90deg,var(--alert),#F08A84)}
+.bar .val{font-size:12px;color:var(--muted);text-align:right}
+@media(max-width:520px){.bar{grid-template-columns:78px 1fr 58px;gap:9px}}
+
+/* alerts */
+.alerts{display:grid;gap:10px;margin-top:14px}
+.alert{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;
+  padding:13px 15px;border-radius:12px;background:var(--sunken);border:1px solid var(--line);border-left:3px solid var(--muted)}
+.alert.warn{border-left-color:var(--gold)}
+.alert.ok{border-left-color:var(--ok)}
+.alert .k{font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}
+.alert .v{font-size:15px;font-weight:700;margin-top:3px}
+.alert .d{font-size:12.5px;color:var(--muted);margin-top:2px}
+
+/* table */
+.tblwrap{overflow-x:auto;margin-top:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:13px}
+th{background:var(--ice);text-align:left;font-size:10.5px;font-weight:700;letter-spacing:1px;
+  text-transform:uppercase;padding:11px 13px;white-space:nowrap;color:var(--ink)}
+td{padding:11px 13px;border-top:1px solid var(--line)}
+td.num,th.num{text-align:right}
+
+/* swimmer list */
+.filters{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px;align-items:center}
+.filters select,.filters input{font-family:inherit;font-size:13.5px;padding:8px 12px;border-radius:10px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.filters input{min-width:180px;flex:1;max-width:260px}
+.filters label{font-size:11.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted)}
+.count{font-size:12.5px;color:var(--muted);margin-left:auto}
+
+.swimmers{display:grid;gap:9px;margin-top:16px}
+details.sw{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-sm)}
+details.sw[open]{border-color:var(--electric)}
+summary{list-style:none;cursor:pointer;padding:14px 17px;display:grid;
+  grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center}
+summary::-webkit-details-marker{display:none}
+summary:hover{background:var(--sunken)}
+summary:focus-visible{outline:2px solid var(--electric);outline-offset:-2px}
+.chev{width:9px;height:9px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);
+  transform:rotate(-45deg);transition:.18s;margin-left:3px}
+details[open] .chev{transform:rotate(45deg)}
+.sw-name{font-weight:600;font-size:14.5px}
+.sw-meta{font-size:12px;color:var(--muted);margin-top:1px}
+.pill{font-size:11px;font-weight:700;padding:4px 11px;border-radius:999px;white-space:nowrap}
+.p-fast{background:rgba(124,77,255,.15);color:#6A3DE8}
+.p-improving{background:rgba(31,182,122,.15);color:var(--ok-t)}
+.p-stable{background:rgba(255,194,75,.20);color:var(--gold-t)}
+.p-review{background:rgba(224,82,74,.14);color:var(--alert-t)}
+.p-unrated{background:var(--ice);color:var(--muted)}
+:root:not([data-theme="light"]) .p-fast{color:#C3A6FF}
+:root[data-theme="dark"] .p-fast{color:#C3A6FF}
+.trend{font-size:13px;font-weight:700;min-width:58px;text-align:right}
+.t-up{color:var(--ok-t)}.t-down{color:var(--alert-t)}.t-flat{color:var(--muted)}
+
+.sw-body{padding:0 17px 18px;border-top:1px solid var(--line)}
+.profile{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:16px}
+.prof h4{font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);margin:0 0 9px}
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+.chip{font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;background:var(--sunken);border:1px solid var(--line)}
+.chip .dot{margin-right:5px}
+.evlist{margin-top:16px}
+.evrow{display:grid;grid-template-columns:1fr auto auto auto;gap:12px;align-items:center;
+  font-size:12.8px;padding:8px 0;border-bottom:1px solid var(--line)}
+.evrow:last-child{border-bottom:none}
+.evrow .e{font-weight:600}
+.evrow .c{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:5px;background:var(--ice);color:var(--electric-deep)}
+.evrow .t{color:var(--muted);font-size:12.2px}
+.offclub{margin-top:14px;font-size:12.5px;color:var(--muted);padding:10px 13px;
+  background:var(--sunken);border-radius:10px;border-left:3px solid var(--cyan)}
+.nodata{margin-top:14px;font-size:12.8px;color:var(--muted);font-style:italic}
+
+/* coach view inside the swimmer card */
+.coachview{margin-top:16px;background:var(--sunken);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
+.coachview h4{font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.cvgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:13px}
+.cvitem .k{font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}
+.cvitem .v{font-size:14px;font-weight:700;margin-top:2px}
+.focusline{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:13.5px}
+.focusline b{color:var(--electric-deep)}
+
+/* competition cards */
+.comps{display:grid;gap:12px;margin-top:20px}
+.comp{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow-sm)}
+.comphead{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start}
+.comp h3{font-size:15px;font-weight:700}
+.comp .when{font-size:12px;color:var(--muted);margin-top:2px}
+.formbar{display:flex;height:26px;border-radius:7px;overflow:hidden;margin-top:14px;background:var(--ice)}
+.formbar span{display:grid;place-items:center;font-size:11.5px;font-weight:700;color:#fff;min-width:0}
+.fb-above{background:linear-gradient(135deg,var(--ok),#5FD9A8)}
+.fb-below{background:linear-gradient(135deg,var(--alert),#F08A84)}
+.compstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(122px,1fr));gap:12px;margin-top:14px}
+.cs .k{font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}
+.cs .v{font-size:15px;font-weight:700;margin-top:2px}
+.cs .v small{font-size:11.5px;font-weight:500;color:var(--muted)}
+
+/* watch lists */
+.watch{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:13px;margin-top:20px}
+.wcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow-sm);border-top:3px solid var(--muted)}
+.wcard.g{border-top-color:var(--ok)}.wcard.a{border-top-color:var(--gold)}.wcard.r{border-top-color:var(--alert)}
+.wcard.p{border-top-color:#7C4DFF}
+.wcard h4{font-size:13px;font-weight:700;margin:0}
+.wcard .n{font-family:'Anton',sans-serif;font-size:26px;line-height:1;margin:6px 0 4px}
+.wcard .why{font-size:11.5px;color:var(--muted);margin-bottom:9px}
+.wcard .names{font-size:12.3px;line-height:1.7}
+
+/* segmented toggle */
+.seg{display:inline-flex;background:var(--ice);border-radius:10px;padding:3px;gap:3px}
+.seg button{appearance:none;border:none;background:transparent;color:var(--muted);
+  font-family:inherit;font-size:12.5px;font-weight:600;padding:6px 14px;border-radius:8px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm)}
+.seg button:focus-visible{outline:2px solid var(--electric);outline-offset:1px}
+.toggrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:18px}
+.toggrow h3{font-size:15px;font-weight:700}
+.rangebox{display:inline-flex;align-items:center;gap:7px}
+.rangebox span{font-size:12.5px;color:var(--muted)}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+.presets button{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--muted);
+  font-family:inherit;font-size:12px;font-weight:600;padding:6px 11px;border-radius:999px;cursor:pointer}
+.presets button:hover{color:var(--ink);border-color:var(--electric)}
+.presets button[aria-pressed="true"]{background:var(--electric);border-color:var(--electric);color:#fff}
+
+/* cohort groups */
+details.grp{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:10px}
+details.grp[open]{border-color:var(--electric)}
+details.grp > summary{padding:16px 18px;display:grid;grid-template-columns:auto auto 1fr auto;
+  gap:14px;align-items:center;cursor:pointer}
+details.grp > summary:hover{background:var(--sunken)}
+details.grp .gn{font-family:'Anton',sans-serif;font-size:26px;line-height:1;min-width:34px}
+details.grp .gt{font-size:15px;font-weight:700}
+details.grp .gd{font-size:12.3px;color:var(--muted);margin-top:2px}
+details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+.g-fast .gn{color:#7C4DFF}.g-improving .gn{color:var(--ok-t)}.g-stable .gn{color:var(--gold-t)}
+.g-review .gn{color:var(--alert-t)}.g-unrated .gn{color:var(--muted)}
+.grpbody{padding:0 14px 14px;border-top:1px solid var(--line)}
+.grpbody .swimmers{margin-top:12px}
+.grpempty{padding:14px 4px;font-size:12.8px;color:var(--muted);font-style:italic}
+@media(max-width:560px){
+  details.grp > summary{grid-template-columns:auto 1fr;row-gap:6px}
+  details.grp .gcount{grid-column:1/-1}
+}
+
+/* decision framework */
+.decisions{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:20px}
+.dec{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--ok);
+  border-radius:0 0 16px 16px;padding:18px;box-shadow:var(--shadow-sm)}
+.dec.i{border-top-color:var(--gold)}.dec.c{border-top-color:var(--alert)}
+.dec h3{font-size:14px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase}
+.dec p{margin:8px 0 0;font-size:13.2px;color:var(--muted)}
+
+footer{border-top:1px solid var(--line);margin-top:22px;padding-block:24px 36px;color:var(--muted);font-size:12px}
+footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <img class="logo" src="/nextgen-logo-dark.png" alt="NextGen Multi Sport Academy">
+    <div class="eyebrow">Performance Tracker · Prepared for Dr. Edwin Boit</div>
+    <h1 class="display">Squad <span style="color:var(--cyan)">Development</span></h1>
+    <p>Every verified swim by a NextGen athlete, 2024 to 2026. Pick a season, then open any
+       swimmer to see what they are actually doing stroke by stroke.</p>
+    <div class="years" role="tablist" id="years"></div>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<footer><div class="wrap">
+  <span>NextGen Multi Sport Academy · Performance Data Programme</span>
+  <span id="foot"></span>
+</div></footer>
+
+<script>
+// Data comes from /api/tracker/data, which requires a coordinator session.
+// Keeping it out of this file means a data refresh does not mean re-editing
+// the page, and the numbers are never sitting in a public static asset.
+let DATA = { generated: "", thresholds: { n: 0, fast: 0, improving: 0, stable_hi: 0 }, years: {} };
+const CLS = {fast:'Fast progression', improving:'Improving', stable:'Stable',
+             review:'Review', unrated:'Not enough data'};
+const GROUPS = [
+  {k:'fast',      t:'🚀 Progressing fast',  d:'biggest gains in the squad — keep doing what is working'},
+  {k:'improving', t:'🟢 Improving',         d:'moving in the right direction'},
+  {k:'stable',    t:'🟡 Stable',            d:'holding their level — watch for a plateau'},
+  {k:'review',    t:'🔴 Review',            d:'slower than they were — investigate before changing anything'},
+  {k:'unrated',   t:'Not enough data',      d:'no repeat swim in the same event and course yet'},
+];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pct = v => (v>0?'+':'') + v.toFixed(1) + '%';
+const trendCls = v => v===null ? 't-flat' : v < -0.5 ? 't-up' : v > 0.5 ? 't-down' : 't-flat';
+
+let YEARS = ['all'];
+const YLABEL = y => y === 'all' ? 'All years' : y;
+let year = 'all';
+let fQ = '';
+let ageMode = 'band';          // 'band' | 'year' — how section 02 aggregates
+let ageLo = null, ageHi = null; // inclusive single-year range for section 03
+
+function tabs(){
+  document.getElementById('years').innerHTML = YEARS
+    .map(y => `<button class="yr" role="tab" data-y="${y}" aria-selected="${y===year}">${YLABEL(y)}</button>`).join('');
+}
+
+function swimmerCard(s){
+  const strokes = ['Free','Back','Breast','Fly','IM']
+    .filter(k => s.strokes[k])
+    .map(k => `<span class="chip"><span class="dot d-${s.strokes[k]}"></span>${k}</span>`).join('');
+  const dists = ['Sprint','Middle','Distance']
+    .filter(k => s.dists[k])
+    .map(k => `<span class="chip"><span class="dot d-${s.dists[k]}"></span>${k}</span>`).join('');
+  const evs = s.events.map(e => `
+    <div class="evrow">
+      <span class="e">${esc(e.event)}</span>
+      <span class="c">${e.course}</span>
+      <span class="t">${esc(e.first)} → ${esc(e.last)}${
+        year==='all'&&e.firstDate?` <span style="opacity:.62">(${e.firstDate} → ${e.lastDate})</span>`:''}</span>
+      <span class="trend ${trendCls(e.pct)}">${pct(e.pct)}</span>
+    </div>`).join('');
+  const num = (v, suf) => v === null || v === undefined ? '—' : (v + (suf||''));
+  const coach = (s.focus || s.consistency !== null || s.pbRate !== null) ? `
+    <div class="coachview">
+      <h4>Coach view</h4>
+      <div class="cvgrid">
+        <div class="cvitem"><div class="k">Last 3 months</div>
+          <div class="v ${trendCls(s.t3)}">${s.t3===null?'—':pct(s.t3)}</div></div>
+        <div class="cvitem"><div class="k">Last 6 months</div>
+          <div class="v ${trendCls(s.t6)}">${s.t6===null?'—':pct(s.t6)}</div></div>
+        <div class="cvitem"><div class="k">PB rate</div>
+          <div class="v">${num(s.pbRate,'%')}</div></div>
+        <div class="cvitem"><div class="k">Race consistency</div>
+          <div class="v">${esc(s.consBand)}${s.consistency!==null?` <span style="font-size:11.5px;font-weight:500;color:var(--muted)">±${s.consistency}%</span>`:''}</div></div>
+      </div>
+      ${s.focus?`<div class="focusline"><b>Coaching focus:</b> ${esc(s.focus)}</div>`:''}
+    </div>` : '';
+  const off = s.offclub.length
+    ? `<div class="offclub"><strong>Also raced for:</strong> ${s.offclub.map(esc).join(', ')}.
+       Those swims count toward this athlete's development, never toward NextGen team totals.</div>` : '';
+  const none = s.nocompare
+    ? `<p class="nodata">No repeat swims in the same event and course, so no trend can be
+       calculated. ${s.swims} swim${s.swims===1?'':'s'} recorded.</p>` : '';
+  return `
+  <details class="sw" data-band="${esc(s.band)}" data-age="${s.age===null?'':s.age}"
+    data-cls="${s.cls}" data-name="${esc(s.name.toLowerCase())}">
+    <summary>
+      <span class="chev"></span>
+      <span>
+        <span class="sw-name">${esc(s.name)}</span>
+        <span class="sw-meta">${s.age?('age '+s.age+' · '):''}${esc(s.band)} · ${s.swims} swims ·
+          ${s.meets} meet${s.meets===1?'':'s'}${s.podiums?' · '+s.podiums+' podium'+(s.podiums===1?'':'s'):''}${
+          year==='all'&&s.seasons?' · '+s.seasons.join(', '):''}${s.status==='former'?' · former member':''}</span>
+      </span>
+      <span class="pill p-${s.cls}">${CLS[s.cls]}</span>
+      <span class="trend ${trendCls(s.trend)}">${s.trend===null?'—':pct(s.trend)}</span>
+    </summary>
+    <div class="sw-body">
+      ${none}
+      ${(strokes||dists) ? `<div class="profile">
+        ${strokes?`<div class="prof"><h4>Stroke profile</h4><div class="chips">${strokes}</div></div>`:''}
+        ${dists?`<div class="prof"><h4>Distance profile</h4><div class="chips">${dists}</div></div>`:''}
+      </div>`:''}
+      ${coach}
+      ${evs?`<div class="evlist"><h4 style="font-size:11px;font-weight:700;letter-spacing:1.1px;
+        text-transform:uppercase;color:var(--muted);margin:0 0 4px">Event by event — first to last swim</h4>${evs}</div>`:''}
+      ${off}
+    </div>
+  </details>`;
+}
+
+function render(){
+  const Y = DATA.years[year], s = Y.summary;
+  const bands = ['8 & under','9-10','11-12','13-14','15-17','18 & over'];
+  const AGES = Object.keys(Y.ageYears||{}).map(Number).sort((a,b)=>a-b);
+  const PRESETS = [
+    {t:'8 & under', lo:0,  hi:8},  {t:'9–10', lo:9,  hi:10},
+    {t:'11–12',     lo:11, hi:12}, {t:'13–14', lo:13, hi:14},
+    {t:'15–17',     lo:15, hi:17}, {t:'18+',   lo:18, hi:99},
+  ].filter(p=>AGES.some(a=>a>=p.lo&&a<=p.hi));
+  const cbar = ['fast','improving','stable','review'].map(k => {
+    const n = k==='fast'?s.n_fast : k==='improving'?(s.n_improving-s.n_fast) : k==='stable'?s.n_stable : s.n_review;
+    const w = s.rated ? (100*n/s.rated) : 0;
+    return w > 0 ? `<span class="s-${k}" style="width:${w}%">${w>9?Math.round(w)+'%':''}</span>` : '';
+  }).join('');
+
+  const strokeBars = Object.entries(Y.strokes).sort((a,b)=>a[1].median-b[1].median).map(([k,v])=>{
+    const mx = Math.max(...Object.values(Y.strokes).map(x=>Math.abs(x.median)),1);
+    return `<div class="bar"><span class="lab">${esc(k)}</span>
+      <span class="track"><span class="fill f-${v.cls}" style="width:${Math.max(4,100*Math.abs(v.median)/mx)}%"></span></span>
+      <span class="val">${pct(v.median)}</span></div>`;}).join('');
+
+  const distBars = ['Sprint','Middle','Distance'].filter(k=>Y.dists[k]).map(k=>{
+    const v = Y.dists[k];
+    const mx = Math.max(...Object.values(Y.dists).map(x=>Math.abs(x.median)),1);
+    return `<div class="bar"><span class="lab">${k}</span>
+      <span class="track"><span class="fill f-${v.cls}" style="width:${Math.max(4,100*Math.abs(v.median)/mx)}%"></span></span>
+      <span class="val">${pct(v.median)}</span></div>`;}).join('');
+
+  const ageSrc = ageMode === 'year'
+    ? Object.keys(Y.ageYears||{}).sort((a,b)=>a-b).map(k=>[k+' yrs', Y.ageYears[k]])
+    : bands.filter(b=>Y.ages[b]).map(b=>[b, Y.ages[b]]);
+  const ageRows = ageSrc.map(([lab,a])=>
+    `<tr><td><strong>${esc(lab)}</strong></td><td class="num">${a.swimmers}</td>
+      <td class="num">${a.swims}</td><td class="num">${a.podiums}</td>
+      <td class="num ${trendCls(a.median===undefined?null:a.median)}">${a.median===null||a.median===undefined?'—':pct(a.median)}</td>
+      <td class="num">${a.rated?`<span style="color:var(--ok-t);font-weight:700">${a.improving}</span> /
+        ${a.stable} / <span style="color:var(--alert-t);font-weight:700">${a.review}</span>`:'—'}</td></tr>`).join('');
+
+  const alerts = Y.alerts.map(a=>`<div class="alert ${a.t}"><span><span class="k">${esc(a.k)}</span>
+    <span class="v">${esc(a.v)}</span><span class="d">${esc(a.d)}</span></span></div>`).join('');
+
+  // boys vs girls
+  const sexRows = ['Girls','Boys'].filter(k=>Y.sexes[k]&&Y.sexes[k].swimmers).map(k=>{
+    const v = Y.sexes[k];
+    return `<tr><td><strong>${k}</strong></td><td class="num">${v.swimmers}</td>
+      <td class="num">${v.swims}</td><td class="num">${v.podiums}</td>
+      <td class="num ${trendCls(v.median)}">${v.median===null?'—':pct(v.median)}</td>
+      <td class="num">${v.rated?`<span style="color:var(--ok-t);font-weight:700">${v.improving}</span> /
+        ${v.stable} / <span style="color:var(--alert-t);font-weight:700">${v.review}</span>`:'—'}</td></tr>`;}).join('');
+
+  // swimmer watch lists
+  const W = Y.watch || {};
+  const wdef = [
+    ['fast','p','Progressing fast','biggest gains in the squad'],
+    ['risers','g','Rising from behind','fewer podiums, improving quickly'],
+    ['plateau','a','Beginning to plateau','was improving, now flat'],
+    ['stalled','a','Strong but stalled','high podium rate, progress has stopped'],
+    ['regressing','r','Regressing','slower than they were'],
+  ];
+  const watchCards = wdef.filter(([k])=>(W[k]||[]).length).map(([k,c,title,why])=>`
+    <div class="wcard ${c}"><h4>${title}</h4><div class="n">${W[k].length}</div>
+      <div class="why">${why}</div>
+      <div class="names">${W[k].slice(0,8).map(esc).join(' · ')}${W[k].length>8?` · <span style="color:var(--muted)">+${W[k].length-8} more</span>`:''}</div>
+    </div>`).join('');
+
+  // competition level
+  const kv = (o,lbl) => o ? `<div class="cs"><div class="k">${lbl}</div>
+    <div class="v">${esc(o.k)} <small>${pct(o.v)}</small></div></div>` : '';
+  const compCards = (Y.comps||[]).map(c=>{
+    const showWorstSt = c.worstStroke && c.bestStroke && c.worstStroke.k !== c.bestStroke.k;
+    const showWorstAg = c.worstAge && c.bestAge && c.worstAge.k !== c.bestAge.k;
+    const bar = c.above===null ? '' : `<div class="formbar">
+      ${c.above>0?`<span class="fb-above" style="width:${c.above}%">${c.above>11?c.above+'% at or above form':''}</span>`:''}
+      ${c.below>0?`<span class="fb-below" style="width:${c.below}%">${c.below>11?c.below+'% below':''}</span>`:''}
+    </div>`;
+    return `<div class="comp">
+      <div class="comphead">
+        <div><h3>${esc(c.name)}</h3>
+          <div class="when">${c.date} · ${c.course||'—'} · ${c.swimmers} swimmers · ${c.swims} swims · ${c.podiums} podiums</div></div>
+        ${c.median!==null?`<span class="pill ${c.median<=-2?'p-improving':c.median<=0.6?'p-stable':'p-review'}">${pct(c.median)} vs form</span>`:''}
+      </div>
+      ${bar}
+      <div class="compstats">
+        <div class="cs"><div class="k">PB rate</div><div class="v">${c.pbRate===null?'—':c.pbRate+'%'} <small>${c.pbs} PBs</small></div></div>
+        ${kv(c.bestStroke,'Best stroke')}
+        ${showWorstSt?kv(c.worstStroke,'Weakest stroke'):''}
+        ${kv(c.bestDist,'Best distance')}
+        ${kv(c.bestAge,'Best age group')}
+        ${showWorstAg?kv(c.worstAge,'Needs review'):''}
+        ${c.vsPrev!==null?`<div class="cs"><div class="k">vs previous meet</div>
+          <div class="v ${c.vsPrev<0?'t-up':c.vsPrev>0?'t-down':'t-flat'}">${c.vsPrev>0?'+':''}${c.vsPrev} pts</div></div>`:''}
+      </div>
+    </div>`;}).join('');
+
+  document.getElementById('app').innerHTML = `
+  <section class="wrap">
+    <div class="sec-head"><span class="sec-num">01</span><h2>Is the programme working?</h2></div>
+    <p class="sec-sub">${s.swimmers} athletes raced ${s.swims} times across ${s.meets} meet${s.meets===1?'':'s'}
+      ${year==='all'?`between ${Y.meets[Y.meets.length-1].date.slice(0,7)} and ${Y.meets[0].date.slice(0,7)}`:'in '+year}.
+      Every swim reconciled against the official published results.</p>
+    ${year==='all' ? `<div class="caution" style="background:rgba(22,166,232,.10);border-color:rgba(22,166,232,.38)">
+      <strong style="color:var(--electric-deep)">This is the career view.</strong>
+      Each swimmer's trend compares their first and last swim in every event they repeated,
+      across all three seasons — so it shows development since they started with the club, not
+      form this term. Use the season tabs for current form.</div>` : ''}
+    ${!s.reliable ? `<div class="caution"><strong>Read the trend with care.</strong>
+      ${year}'s meets span only ${s.span_days} day${s.span_days===1?'':'s'}, and just ${s.rated} swimmers
+      have repeat swims to compare. A development trend needs a season, not a fortnight — treat the
+      classification below as a snapshot, not a verdict.</div>` : ''}
+    <div class="tiles">
+      <div class="tile"><div class="n">${s.swimmers}</div><div class="l">Athletes</div><div class="d">${s.meets} meets</div></div>
+      <div class="tile"><div class="n">${s.swims}</div><div class="l">Swims</div><div class="d">${s.offclub_swims} at other clubs</div></div>
+      <div class="tile"><div class="n g">${s.podiums}</div><div class="l">Podiums</div><div class="d">${s.wins} wins</div></div>
+      <div class="tile"><div class="n g">${s.pbs}</div><div class="l">Personal bests</div><div class="d">${year==='all'?'career':'within '+year}</div></div>
+      <div class="tile"><div class="n">${s.rated}</div><div class="l">Rated</div><div class="d">${s.unrated} lack repeat swims</div></div>
+    </div>
+
+    <div class="classbar">
+      <h3>Squad development — ${s.rated} rated swimmers</h3>
+      <div class="cbar">${cbar}</div>
+      <div class="legend">
+        <span><span class="dot d-fast"></span><b>${s.n_fast}</b> fast progression</span>
+        <span><span class="dot d-improving"></span><b>${s.n_improving-s.n_fast}</b> improving</span>
+        <span><span class="dot d-stable"></span><b>${s.n_stable}</b> stable</span>
+        <span><span class="dot d-review"></span><b>${s.n_review}</b> review</span>
+      </div>
+      <p class="note" style="margin-top:12px;font-size:12.5px;color:var(--muted)">
+        Bands are set from NextGen's own record — ${DATA.thresholds.n} event-series across all three
+        seasons — not from borrowed numbers. Fast progression is a gain of
+        ${Math.abs(DATA.thresholds.fast).toFixed(1)}% or better; improving is
+        ${Math.abs(DATA.thresholds.improving).toFixed(1)}% or better; stable runs to
+        ${pct(DATA.thresholds.stable_hi)}; slower than that is review.</p>
+    </div>
+
+    <div class="grid2">
+      <div class="panel"><div class="kick">Stroke development</div>
+        <h3>Where the squad is gaining time</h3>
+        <div class="bars">${strokeBars||'<p class="note">No comparable repeat swims this season.</p>'}</div>
+        <p class="note">Median change across every swimmer who raced the stroke twice. Negative is faster.</p>
+      </div>
+      <div class="panel"><div class="kick">Distance development</div>
+        <h3>Sprint, middle and distance</h3>
+        <div class="bars">${distBars||'<p class="note">No comparable repeat swims this season.</p>'}</div>
+        <p class="note">Sprint 25–50m · Middle 100–200m · Distance 400m and above.</p>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:15px"><div class="kick">Automatic alerts</div>
+      <h3>What the data is flagging</h3>
+      <div class="alerts">${alerts}</div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Which group needs attention?</h2></div>
+    <p class="sec-sub">Improving / stable / review counts by age band, so the squad with the problem
+      is visible before you open a single swimmer.</p>
+    <div class="toggrow">
+      <div class="seg" id="agemode">
+        <button data-m="band" aria-pressed="${ageMode==='band'}">Age bands</button>
+        <button data-m="year" aria-pressed="${ageMode==='year'}">Single years</button>
+      </div>
+    </div>
+    <div class="tblwrap" style="margin-top:12px"><table>
+      <thead><tr><th>${ageMode==='year'?'Age':'Age band'}</th><th class="num">Swimmers</th><th class="num">Swims</th>
+        <th class="num">Podiums</th><th class="num">Median change</th>
+        <th class="num">Improving / Stable / Review</th></tr></thead>
+      <tbody>${ageRows}</tbody></table></div>
+
+    <h3 style="margin-top:26px;font-size:15px;font-weight:700">Boys and girls</h3>
+    <div class="tblwrap" style="margin-top:10px"><table>
+      <thead><tr><th></th><th class="num">Swimmers</th><th class="num">Swims</th>
+        <th class="num">Podiums</th><th class="num">Median change</th>
+        <th class="num">Improving / Stable / Review</th></tr></thead>
+      <tbody>${sexRows}</tbody></table></div>
+
+    ${watchCards?`<h3 style="margin-top:28px;font-size:15px;font-weight:700">Swimmers to look at</h3>
+    <p class="sec-sub" style="margin-top:4px">Five patterns worth a coach's attention, pulled
+      out of the squad automatically.</p>
+    <div class="watch">${watchCards}</div>`:''}
+  </section>
+
+  <section class="wrap">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Who specifically?</h2></div>
+    <p class="sec-sub">Grouped by how they are developing. Open a group to see its swimmers,
+      then open a swimmer for their stroke and distance profile and every event they repeated
+      ${year==='all'?'across the three seasons':'this season'}. Searching a name opens whichever
+      group they are in.</p>
+    <div class="filters">
+      <label>Age</label>
+      <span class="rangebox">
+        <select id="alo"><option value="">any</option>${AGES.map(a=>
+          `<option value="${a}"${ageLo==a?' selected':''}>${a}</option>`).join('')}</select>
+        <span>to</span>
+        <select id="ahi"><option value="">any</option>${AGES.map(a=>
+          `<option value="${a}"${ageHi==a?' selected':''}>${a}</option>`).join('')}</select>
+      </span>
+      <span class="presets" id="presets">
+        ${PRESETS.map(p=>`<button data-lo="${p.lo}" data-hi="${p.hi}"
+          aria-pressed="${ageLo==p.lo&&ageHi==p.hi}">${p.t}</button>`).join('')}
+        <button data-lo="" data-hi="" aria-pressed="${ageLo===null&&ageHi===null}">All</button>
+      </span>
+      <input id="fq" type="search" placeholder="Search name…" value="${esc(fQ)}">
+      <span class="count" id="cnt"></span>
+    </div>
+    <div id="list">${GROUPS.map(g=>{
+      const members = Y.swimmers.filter(s=>s.cls===g.k);
+      if(!members.length) return '';
+      return `<details class="grp g-${g.k}" data-grp="${g.k}">
+        <summary>
+          <span class="chev"></span>
+          <span class="gn">${members.length}</span>
+          <span><span class="gt">${g.t}</span><span class="gd">${g.d}</span></span>
+          <span class="gcount" data-gcount="${g.k}">${members.length} swimmer${members.length===1?'':'s'}</span>
+        </summary>
+        <div class="grpbody"><div class="swimmers">${members.map(swimmerCard).join('')}</div>
+          <div class="grpempty" data-empty="${g.k}" hidden>No swimmer in this group matches the filters.</div>
+        </div>
+      </details>`;}).join('')}</div>
+  </section>
+
+  <section class="wrap">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Did it translate into performance?</h2></div>
+    <p class="sec-sub">Every meet judged on what each swimmer had already achieved — not on
+      absolute times. "At or above form" means they swam within 1% of their own previous best,
+      or beat it.</p>
+    <div class="comps">${compCards}</div>
+  </section>
+
+  <section class="wrap">
+    <div class="sec-head"><span class="sec-num">05</span><h2>So what do we do?</h2></div>
+    <p class="sec-sub">Every finding above should resolve into one of three decisions.</p>
+    <div class="decisions">
+      <div class="dec"><h3>🟢 Continue</h3><p>Progress is appropriate. Keep the current approach
+        and check again after the next meet.</p></div>
+      <div class="dec i"><h3>🟡 Investigate</h3><p>Progress is slowing or inconsistent. Review the
+        swimmer, squad or programme before changing anything.</p></div>
+      <div class="dec c"><h3>🔴 Change</h3><p>A sustained pattern says the current approach is not
+        producing development. Agree an intervention, apply it, and measure the response.</p></div>
+    </div>
+  </section>`;
+
+  document.getElementById('agemode').onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    ageMode = b.dataset.m; render();
+  };
+  const setRange = (lo, hi) => {
+    ageLo = lo === '' || lo === null ? null : Number(lo);
+    ageHi = hi === '' || hi === null ? null : Number(hi);
+    render();
+  };
+  document.getElementById('alo').onchange = e => setRange(e.target.value, ageHi);
+  document.getElementById('ahi').onchange = e => setRange(ageLo, e.target.value);
+  document.getElementById('presets').onclick = e => {
+    const b = e.target.closest('button'); if (!b) return;
+    setRange(b.dataset.lo, b.dataset.hi);
+  };
+  document.getElementById('fq').oninput = e => { fQ = e.target.value.toLowerCase(); filter(); };
+  filter();
+}
+
+function filter(){
+  const filtering = ageLo !== null || ageHi !== null || !!fQ;
+  let shown = 0, total = 0;
+  document.querySelectorAll('#list details.grp').forEach(grp => {
+    let n = 0, t = 0;
+    grp.querySelectorAll('details.sw').forEach(d => {
+      t++;
+      const age = d.dataset.age === '' ? null : Number(d.dataset.age);
+      const inRange = (ageLo === null && ageHi === null) ? true
+        : age === null ? false
+        : (ageLo === null || age >= ageLo) && (ageHi === null || age <= ageHi);
+      const ok = inRange && (!fQ || d.dataset.name.includes(fQ));
+      d.hidden = !ok; if (ok) n++;
+    });
+    shown += n; total += t;
+    // a group with no matches disappears entirely; one with matches opens itself
+    // so a search lands you on the swimmer rather than on a closed drawer
+    grp.hidden = filtering && n === 0;
+    if (filtering && n > 0) grp.open = true;
+    if (!filtering) grp.open = false;
+    const lbl = grp.querySelector('[data-gcount]');
+    if (lbl) lbl.textContent = filtering
+      ? n + ' of ' + t + ' shown'
+      : t + ' swimmer' + (t===1?'':'s');
+    const em = grp.querySelector('[data-empty]');
+    if (em) em.hidden = n > 0;
+  });
+  const c = document.getElementById('cnt');
+  if (c) c.textContent = filtering ? shown + ' of ' + total + ' swimmers' : total + ' swimmers';
+}
+
+document.getElementById('years').addEventListener('click', e => {
+  const b = e.target.closest('.yr'); if (!b) return;
+  year = b.dataset.y; ageLo=null; ageHi=null; fQ='';
+  tabs(); render(); window.scrollTo({top:0,behavior:'smooth'});
+});
+
+async function boot(){
+  const app = document.getElementById('app');
+  app.innerHTML = '<section class="wrap"><p class="sec-sub">Loading…</p></section>';
+  try {
+    const res = await fetch('/api/tracker/data');
+    if (res.status === 401 || res.status === 403) {
+      app.innerHTML = '<section class="wrap"><div class="caution"><strong>Coordinator access only.</strong> '
+        + '<a href="/" style="color:var(--electric-deep)">Sign in</a> with a coordinator email to view this.</div></section>';
+      return;
+    }
+    if (!res.ok) throw new Error(String(res.status));
+    DATA = await res.json();
+  } catch (e) {
+    app.innerHTML = '<section class="wrap"><div class="caution"><strong>Could not load the data.</strong> '
+      + 'Please refresh, or tell Felix if it keeps happening.</div></section>';
+    return;
+  }
+  YEARS = ['all'].concat(Object.keys(DATA.years).filter(y=>y!=='all').sort().reverse());
+  year = 'all';
+  document.getElementById('foot').textContent =
+    DATA.thresholds.n + ' comparable event-series · bands derived from NextGen data · built ' + DATA.generated;
+  tabs(); render();
+}
+boot();
+</script>

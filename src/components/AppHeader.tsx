@@ -47,6 +47,13 @@ export function AppHeader() {
               Admin
             </Link>
           )}
+          {admin && (
+            // Plain anchor, not a router Link: /tracker is served as its own
+            // HTML document by the server, not a React route.
+            <a href="/tracker" className={`${tabBase} ${path === "/tracker" ? tabActive : tabIdle}`}>
+              Performance
+            </a>
+          )}
           <Button
             variant="ghost"
             size="sm"
