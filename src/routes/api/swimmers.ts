@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { q, one, json, fail } from "@/lib/db";
+import { requireAdmin, requireSignedIn } from "@/lib/session";
 
 type SwimmerRow = {
   id: string; name: string; age: number | null;
@@ -9,7 +10,11 @@ type SwimmerRow = {
 export const Route = createFileRoute("/api/swimmers")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
+        // Parents need the roster to find their child, so any signed-in person
+        // may read it. It carries names and ages only — no contact details.
+        const denied = requireSignedIn(request);
+        if (denied) return denied;
         try {
           return json(
             await q<SwimmerRow>(
@@ -24,6 +29,8 @@ export const Route = createFileRoute("/api/swimmers")({
       // Single body -> add one swimmer. Array body -> bulk import, deduped by
       // name against the existing roster and within the batch itself.
       POST: async ({ request }) => {
+        const denied = requireAdmin(request);
+        if (denied) return denied;
         try {
           const body = await request.json();
 

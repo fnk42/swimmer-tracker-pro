@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { q, json, fail } from "@/lib/db";
+import { requireAdmin } from "@/lib/session";
 
 interface SwimmerStatus {
   id: string;
@@ -24,7 +25,9 @@ type PaymentRow = {
 export const Route = createFileRoute("/api/admin/status")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
+        const denied = requireAdmin(request);
+        if (denied) return denied;
         try {
           const [swimmers, registrations, payments] = await Promise.all([
             q<SwimmerRow>(`select id, name, age, gender from public.swimmers order by name`),

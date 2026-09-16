@@ -1,6 +1,4 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { isAdmin, setRole } from "@/lib/store";
 import { useMe, useSignOut } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { EVENT } from "@/lib/event-config";
@@ -12,18 +10,12 @@ export function AppHeader() {
   const me = useMe();
   const signOut = useSignOut();
   const session = me.data?.signedIn ? me.data : null;
-  const [admin, setAdmin] = useState(false);
-  useEffect(() => {
-    // Hide the Admin tab whenever a Supabase session exists — a
-    // Google-signed-in parent should never see it, even if ng_role="admin"
-    // is still sitting in localStorage from an earlier coordinator login
-    // in the same browser.
-    setAdmin(isAdmin() && !session);
-  }, [path, session]);
+  // Straight from the signed session. Boit is both a coordinator and a parent,
+  // so the Admin tab shows alongside the parent view rather than instead of it.
+  const admin = !!me.data?.isAdmin;
 
   async function logout() {
     await signOut.mutateAsync();
-    setRole(null);
     navigate({ to: "/" });
   }
 
