@@ -47,12 +47,19 @@ export const Route = createFileRoute("/api/auth/request-code")({
           );
           const sent = await sendLoginCode(email, code);
 
-          return json({
-            ok: true,
-            // Only ever true in local development, where the code is printed
-            // to the server console instead of being emailed.
-            devMode: sent.via === "console" ? true : undefined,
-          });
+          // The response is deliberately the same shape whether or not the
+          // address was known, so this cannot be used to discover who is
+          // registered. A delivery failure is an operational problem, not
+          // something to tell the caller about — it is logged loudly instead,
+          // and the code is written to the server log so nobody is stranded.
+          if (!sent.delivered) {
+            console.error(
+              `[auth] code generated for ${email} but NOT delivered ` +
+                `(via ${sent.via}${sent.error ? `, ${sent.error}` : ""}). ` +
+                `Check RESEND_API_KEY and that the sending domain is verified.`,
+            );
+          }
+          return json({ ok: true, devMode: !sent.delivered ? true : undefined });
         } catch (err) {
           return fail("POST /api/auth/request-code", err, "Could not send a code");
         }

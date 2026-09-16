@@ -1,7 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { isAdmin, setRole } from "@/lib/store";
-import { signOutParent, useParentSession } from "@/lib/auth";
+import { useMe, useSignOut } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { EVENT } from "@/lib/event-config";
 import { LogOut } from "lucide-react";
@@ -9,7 +9,9 @@ import { LogOut } from "lucide-react";
 export function AppHeader() {
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const { session } = useParentSession();
+  const me = useMe();
+  const signOut = useSignOut();
+  const session = me.data?.signedIn ? me.data : null;
   const [admin, setAdmin] = useState(false);
   useEffect(() => {
     // Hide the Admin tab whenever a Supabase session exists — a
@@ -20,7 +22,7 @@ export function AppHeader() {
   }, [path, session]);
 
   async function logout() {
-    if (session) await signOutParent();
+    await signOut.mutateAsync();
     setRole(null);
     navigate({ to: "/" });
   }

@@ -1,8 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Payment, Registration, Swimmer, Parent, SwimmerParentLink } from "./schemas";
 import { EVENT } from "./event-config";
-import { getSupabase } from "./supabase";
-import { useParentSession } from "./auth";
 
 // ---------- Wire (snake_case) types --------------------------------------
 type SwimmerRow = {
@@ -318,81 +316,108 @@ export function useDeleteSwimmer() {
   });
 }
 
-// ---------- Parent-side "me" hooks (direct Supabase, RLS-scoped) --------
-// These hooks bypass the anon-key TanStack API routes and call Supabase
-// directly, so the signed-in parent's JWT flows through and RLS enforces
-// row-level isolation. They MUST NOT be called from admin code (admin has
-// no Supabase Auth session — the queries would return empty).
+// ---------- Parent-side "me" hooks --------------------------------------
+// These used to query Supabase straight from the browser, relying on RLS to
+// keep one family out of another's data. They now go through /api/me/*, where
+// the parent id comes from the signed session cookie rather than from anything
+// the caller sends — so there is no parameter in which to ask for someone
+// else's child, and the browser holds no database credential at all.
 
-export function useMyParent() {
-  const { user, loading } = useParentSession();
-  const uid = user?.id ?? null;
+export type Me = {
+  signedIn: boolean;
+  email?: string;
+  isAdmin?: boolean;
+  parent: Parent | null;
+};
+
+type MeDataWire = {
+  parent: ParentRow | null;
+  swimmers: SwimmerRow[];
+  links: SwimmerParentRow[];
+  registrations: RegistrationRow[];
+  payments: PaymentRow[];
+};
+
+/** Who is signed in. Cheap, and safe to call anywhere. */
+export function useMe() {
   return useQuery({
-    queryKey: ["me", "parent", uid],
-    enabled: !loading && !!uid,
-    queryFn: async (): Promise<Parent | null> => {
-      if (!uid) return null;
-      const { data, error } = await getSupabase()
-        .from("parents")
-        .select("*")
-        .eq("user_id", uid)
-        .maybeSingle();
-      if (error) throw error;
-      return data ? parentFromDb(data as ParentRow) : null;
+    queryKey: ["me"],
+    queryFn: async (): Promise<Me> => {
+      const res = await fetch("/api/auth/me");
+      if (!res.ok) return { signedIn: false, parent: null };
+      const d = await res.json();
+      return {
+        signedIn: !!d.signedIn,
+        email: d.email,
+        isAdmin: !!d.isAdmin,
+        parent: d.parent
+          ? {
+              id: d.parent.id,
+              fullName: d.parent.fullName,
+              phone: d.parent.phone,
+              email: d.parent.email,
+              stayingOvernight: "Yet to decide",
+              createdAt: "",
+              updatedAt: "",
+            }
+          : null,
+      };
+    },
+    staleTime: 30_000,
+  });
+}
+
+/** Everything this parent may see, in one request. */
+function useMyData() {
+  return useQuery({
+    queryKey: ["me", "data"],
+    queryFn: async (): Promise<MeDataWire> => {
+      const res = await fetch("/api/me/data");
+      if (res.status === 401) {
+        return { parent: null, swimmers: [], links: [], registrations: [], payments: [] };
+      }
+      if (!res.ok) throw new Error(await res.text());
+      return (await res.json()) as MeDataWire;
     },
   });
+}
+
+export function useMyParent() {
+  const qy = useMyData();
+  return { ...qy, data: qy.data?.parent ? parentFromDb(qy.data.parent) : null };
+}
+
+export function useMySwimmers() {
+  const qy = useMyData();
+  return { ...qy, data: (qy.data?.swimmers ?? []).map(swimmerFromDb) };
 }
 
 export function useMyRegistrations() {
-  const { session, loading } = useParentSession();
-  return useQuery({
-    queryKey: ["me", "registrations", session?.user.id ?? null],
-    enabled: !loading && !!session,
-    queryFn: async (): Promise<Registration[]> => {
-      const { data, error } = await getSupabase().from("registrations").select("*");
-      if (error) throw error;
-      return (data ?? []).map((r) => regFromDb(r as RegistrationRow));
-    },
-  });
+  const qy = useMyData();
+  return { ...qy, data: (qy.data?.registrations ?? []).map(regFromDb) };
 }
 
 export function useMyPayments() {
-  const { session, loading } = useParentSession();
-  return useQuery({
-    queryKey: ["me", "payments", session?.user.id ?? null],
-    enabled: !loading && !!session,
-    queryFn: async (): Promise<Payment[]> => {
-      const { data, error } = await getSupabase().from("payments").select("*");
-      if (error) throw error;
-      return (data ?? []).map((p) => paymentFromDb(p as PaymentRow));
-    },
-  });
+  const qy = useMyData();
+  return { ...qy, data: (qy.data?.payments ?? []).map(paymentFromDb) };
 }
 
 export function useMySwimmerParents() {
-  const { session, loading } = useParentSession();
-  return useQuery({
-    queryKey: ["me", "swimmer-parents", session?.user.id ?? null],
-    enabled: !loading && !!session,
-    queryFn: async (): Promise<SwimmerParentLink[]> => {
-      const { data, error } = await getSupabase().from("swimmer_parents").select("*");
-      if (error) throw error;
-      return (data ?? []).map((r) => {
-        const row = r as SwimmerParentRow;
-        return {
-          swimmerId: row.swimmer_id,
-          parentId: row.parent_id,
-          sortOrder: row.sort_order,
-        };
-      });
-    },
-  });
+  const qy = useMyData();
+  return {
+    ...qy,
+    data: (qy.data?.links ?? []).map((l) => ({
+      swimmerId: l.swimmer_id,
+      parentId: l.parent_id,
+      sortOrder: l.sort_order,
+    })),
+  };
 }
 
 // ---------- Parent-side "me" mutations ----------------------------------
 
 type MyParentInput = {
-  id?: string; // present → UPDATE; absent → INSERT
+  id?: string;
   fullName: string;
   gender?: "Male" | "Female" | null;
   phone: string;
@@ -400,151 +425,119 @@ type MyParentInput = {
   email?: string | null;
 };
 
-export function useSaveMyParent() {
+/** Invalidate everything the parent view reads. */
+function useRefreshMe() {
   const qc = useQueryClient();
+  return () => {
+    qc.invalidateQueries({ queryKey: ["me"] });
+  };
+}
+
+export function useSaveMyParent() {
+  const refresh = useRefreshMe();
   return useMutation({
     mutationFn: async (input: MyParentInput): Promise<Parent> => {
-      const supabase = getSupabase();
-      const { data: sessionData } = await supabase.auth.getSession();
-      const uid = sessionData.session?.user.id;
-      if (!uid) throw new Error("Not signed in.");
-      const row = {
-        full_name: input.fullName.trim(),
-        gender: input.gender ?? null,
-        phone: input.phone,
-        staying_overnight: input.stayingOvernight,
-        user_id: uid,
-        email: input.email ?? sessionData.session?.user.email ?? null,
-      };
-      if (input.id) {
-        const { data, error } = await supabase
-          .from("parents")
-          .update(row)
-          .eq("id", input.id)
-          .select()
-          .single();
-        if (error) throw error;
-        return parentFromDb(data as ParentRow);
-      }
-      const { data, error } = await supabase.from("parents").insert([row]).select().single();
-      if (error) throw error;
-      return parentFromDb(data as ParentRow);
+      const row = await apiFetch<ParentRow>("/api/me/parent", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      return parentFromDb(row);
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["me", "parent"] });
-      qc.invalidateQueries({ queryKey: ["parents"] });
-    },
+    onSuccess: refresh,
   });
 }
 
 export function useLinkMyParent() {
-  const qc = useQueryClient();
+  const refresh = useRefreshMe();
   return useMutation({
-    mutationFn: async (input: SwimmerParentLink): Promise<SwimmerParentLink> => {
-      const supabase = getSupabase();
-      // Idempotent: if my link already exists (e.g. a rehydrated returning
-      // parent hitting Save again), skip the INSERT. Straight upserts fail
-      // under our swimmer_parents RLS UPDATE-denies-authenticated policy.
-      const { data: existing, error: selErr } = await supabase
-        .from("swimmer_parents")
-        .select("swimmer_id, parent_id, sort_order")
-        .eq("swimmer_id", input.swimmerId)
-        .eq("parent_id", input.parentId)
-        .maybeSingle();
-      if (selErr) throw selErr;
-      if (existing) {
-        const row = existing as SwimmerParentRow;
-        return {
-          swimmerId: row.swimmer_id,
-          parentId: row.parent_id,
-          sortOrder: row.sort_order,
-        };
-      }
-      const { data, error } = await supabase
-        .from("swimmer_parents")
-        .insert([
-          {
-            swimmer_id: input.swimmerId,
-            parent_id: input.parentId,
-            sort_order: input.sortOrder,
-          },
-        ])
-        .select()
-        .single();
-      if (error) throw error;
-      const row = data as SwimmerParentRow;
-      return {
-        swimmerId: row.swimmer_id,
-        parentId: row.parent_id,
-        sortOrder: row.sort_order,
-      };
+    mutationFn: async (input: { swimmerId: string }): Promise<SwimmerParentLink> => {
+      const row = await apiFetch<SwimmerParentRow>("/api/me/link", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ swimmerId: input.swimmerId }),
+      });
+      return { swimmerId: row.swimmer_id, parentId: row.parent_id, sortOrder: row.sort_order };
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["me", "swimmer-parents"] });
-      qc.invalidateQueries({ queryKey: ["swimmer-parents"] });
-    },
+    onSuccess: refresh,
   });
 }
 
 export function useSaveMyRegistration() {
-  const qc = useQueryClient();
+  const refresh = useRefreshMe();
   return useMutation({
-    mutationFn: async (reg: Registration): Promise<Registration> => {
-      const row = {
-        swimmer_id: reg.swimmerId,
-        age: reg.age,
-        gender: reg.gender,
-        guardian_gender: reg.guardianGender,
-        parent_sleepover: reg.parentSleepover,
-        owns_cellphone: reg.ownsCellphone,
-        parent1_name: reg.parent1Name,
-        parent2_name: reg.parent2Name || null,
-        primary_phone: reg.primaryPhone,
-        secondary_phone: reg.secondaryPhone || null,
-        dietary: reg.dietary || null,
-        allergies: reg.allergies || null,
-        health_conditions: reg.healthConditions || null,
-        special_requests: reg.specialRequests || null,
-        updated_at: reg.updatedAt,
-      };
-      const { data, error } = await getSupabase()
-        .from("registrations")
-        .upsert([row], { onConflict: "swimmer_id" })
-        .select()
-        .single();
-      if (error) throw error;
-      return regFromDb(data as RegistrationRow);
+    mutationFn: async (input: Registration): Promise<Registration> => {
+      const row = await apiFetch<RegistrationRow>("/api/me/registration", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      return regFromDb(row);
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["me", "registrations"] });
-      qc.invalidateQueries({ queryKey: ["registrations"] });
-    },
+    onSuccess: refresh,
   });
 }
 
 export function useAddMyPayment() {
-  const qc = useQueryClient();
+  const refresh = useRefreshMe();
   return useMutation({
-    mutationFn: async (input: Omit<Payment, "id" | "createdAt">): Promise<Payment> => {
-      const row = {
-        swimmer_id: input.swimmerId,
-        swimmer_ids: input.swimmerIds,
-        child_count: input.childCount,
-        amount: input.amount,
-        reference: input.reference,
-        type: input.type,
-      };
-      const { data, error } = await getSupabase().from("payments").insert([row]).select().single();
-      if (error) throw error;
-      return paymentFromDb(data as PaymentRow);
+    mutationFn: async (input: {
+      swimmerId: string;
+      swimmerIds?: string[];
+      childCount?: number;
+      amount: number;
+      reference: string;
+      type?: "Deposit" | "Partial" | "Final";
+    }): Promise<Payment> => {
+      const row = await apiFetch<PaymentRow>("/api/me/payment", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(input),
+      });
+      return paymentFromDb(row);
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["me", "payments"] });
-      qc.invalidateQueries({ queryKey: ["payments"] });
-    },
+    onSuccess: refresh,
   });
 }
 
+// ---------- Sign in / out ------------------------------------------------
+
+export function useRequestCode() {
+  return useMutation({
+    mutationFn: async (email: string): Promise<{ ok: boolean; devMode?: boolean }> =>
+      apiFetch("/api/auth/request-code", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email }),
+      }),
+  });
+}
+
+export function useVerifyCode() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { email: string; code: string }) =>
+      apiFetch<{ ok: boolean; isAdmin: boolean; parent: { id: string; fullName: string } | null }>(
+        "/api/auth/verify-code",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(input),
+        },
+      ),
+    onSuccess: () => qc.invalidateQueries(),
+  });
+}
+
+export function useSignOut() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      await fetch("/api/auth/me", { method: "DELETE" });
+    },
+    onSuccess: () => qc.clear(),
+  });
+}
 // ---------- Derived helpers (pure) --------------------------------------
 // A multi-child payment credits amount/childCount to each covered swimmer —
 // same rule the admin status endpoint uses.
