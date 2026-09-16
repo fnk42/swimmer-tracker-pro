@@ -92,7 +92,7 @@ h2{font-size:clamp(20px,3vw,27px);font-weight:700;letter-spacing:-.3px}
 .panel p.note{margin:12px 0 0;font-size:12.5px;color:var(--muted)}
 
 .bars{display:grid;gap:9px;margin-top:14px}
-.bar{display:grid;grid-template-columns:96px 1fr 68px;align-items:center;gap:12px}
+.bar{display:grid;grid-template-columns:104px 1fr 70px;align-items:center;gap:16px}
 .bar .lab{font-size:13px;font-weight:600}
 .bar .track{display:block;height:20px;background:var(--ice);border-radius:6px;overflow:hidden;position:relative}
 .bar .fill{display:block;height:100%;border-radius:6px;min-width:3px}
@@ -101,7 +101,7 @@ h2{font-size:clamp(20px,3vw,27px);font-weight:700;letter-spacing:-.3px}
 .f-stable{background:linear-gradient(90deg,var(--gold),#FFD98A)}
 .f-review{background:linear-gradient(90deg,var(--alert),#F08A84)}
 .bar .val{font-size:12px;color:var(--muted);text-align:right}
-@media(max-width:520px){.bar{grid-template-columns:78px 1fr 58px;gap:9px}}
+@media(max-width:520px){.bar{grid-template-columns:84px 1fr 60px;gap:11px}}
 
 /* alerts */
 .alerts{display:grid;gap:10px;margin-top:14px}
@@ -110,8 +110,8 @@ h2{font-size:clamp(20px,3vw,27px);font-weight:700;letter-spacing:-.3px}
 .alert.warn{border-left-color:var(--gold)}
 .alert.ok{border-left-color:var(--ok)}
 .alert .k{font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}
-.alert .v{font-size:15px;font-weight:700;margin-top:3px}
-.alert .d{font-size:12.5px;color:var(--muted);margin-top:2px}
+.alert .v{font-size:15px;font-weight:700;margin-top:6px;line-height:1.3}
+.alert .d{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.5}
 
 /* table */
 .tblwrap{overflow-x:auto;margin-top:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
@@ -122,7 +122,8 @@ td{padding:11px 13px;border-top:1px solid var(--line)}
 td.num,th.num{text-align:right}
 
 /* swimmer list */
-.filters{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px;align-items:center}
+.filters{display:flex;gap:9px;flex-wrap:wrap;margin-top:20px;align-items:center;
+  padding-bottom:18px;border-bottom:1px solid var(--line)}
 .filters select,.filters input{font-family:inherit;font-size:13.5px;padding:8px 12px;border-radius:10px;
   border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 .filters input{min-width:180px;flex:1;max-width:260px}
@@ -169,6 +170,38 @@ details[open] .chev{transform:rotate(45deg)}
 .offclub{margin-top:14px;font-size:12.5px;color:var(--muted);padding:10px 13px;
   background:var(--sunken);border-radius:10px;border-left:3px solid var(--cyan)}
 .nodata{margin-top:14px;font-size:12.8px;color:var(--muted);font-style:italic}
+
+/* section navigation — the page is long for a coordinator, so give them a
+   way to jump rather than scroll. On a phone it becomes a scrollable strip. */
+.shell{display:grid;grid-template-columns:186px minmax(0,1fr);gap:28px;
+  max-width:1180px;margin:0 auto;padding-inline:20px;align-items:start}
+.sidenav{position:sticky;top:18px;padding-block:28px;display:grid;gap:2px;align-content:start}
+.sidenav .navtitle{font-size:10.5px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;
+  color:var(--muted);padding:0 12px 10px}
+.sidenav a{display:grid;grid-template-columns:22px 1fr;gap:6px;align-items:baseline;
+  font-size:13.2px;color:var(--muted);text-decoration:none;padding:9px 12px;border-radius:9px;
+  line-height:1.35;transition:.14s}
+.sidenav a span.n{font-family:'Anton',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.75}
+.sidenav a:hover{background:var(--ice);color:var(--ink)}
+.sidenav a[aria-current="true"]{background:var(--ice);color:var(--ink);font-weight:600}
+.sidenav a:focus-visible{outline:2px solid var(--electric);outline-offset:1px}
+.shell section{padding-block:34px}
+.shell section:first-of-type{padding-top:28px}
+.shell .wrap{max-width:none;margin:0;padding-inline:0}
+/* anchors sit under nothing, but leave room so a jump does not clip the heading */
+.shell section{scroll-margin-top:18px}
+@media(max-width:900px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:0}
+  .sidenav{position:sticky;top:0;z-index:20;background:var(--bg);padding-block:12px;
+    display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--line);
+    margin-inline:-20px;padding-inline:20px;scrollbar-width:none}
+  .sidenav::-webkit-scrollbar{display:none}
+  .sidenav .navtitle{display:none}
+  .sidenav a{grid-template-columns:auto;white-space:nowrap;padding:7px 13px;
+    border:1px solid var(--line);border-radius:999px;font-size:12.5px}
+  .sidenav a span.n{display:none}
+  .shell section{scroll-margin-top:58px}
+}
 
 /* coach view inside the swimmer card */
 .coachview{margin-top:16px;background:var(--sunken);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
@@ -256,7 +289,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 <header class="hero">
   <div class="wrap">
     <img class="logo" src="/nextgen-logo-dark.png" alt="NextGen Multi Sport Academy">
-    <div class="eyebrow">Performance Tracker · Prepared for Dr. Edwin Boit</div>
+    <div class="eyebrow">NextGen Analytics</div>
     <h1 class="display">Squad <span style="color:var(--cyan)">Development</span></h1>
     <p>Every verified swim by a NextGen athlete, 2024 to 2026. Pick a season, then open any
        swimmer to see what they are actually doing stroke by stroke.</p>
@@ -264,10 +297,20 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
   </div>
 </header>
 
-<main id="app"></main>
+<div class="shell">
+  <nav class="sidenav" id="sidenav" aria-label="Sections">
+    <div class="navtitle">Sections</div>
+    <a href="#s1"><span class="n">01</span><span>Programme</span></a>
+    <a href="#s2"><span class="n">02</span><span>Age groups</span></a>
+    <a href="#s3"><span class="n">03</span><span>Swimmers</span></a>
+    <a href="#s4"><span class="n">04</span><span>Meets</span></a>
+    <a href="#s5"><span class="n">05</span><span>Decisions</span></a>
+  </nav>
+  <main id="app"></main>
+</div>
 
 <footer><div class="wrap">
-  <span>NextGen Multi Sport Academy · Performance Data Programme</span>
+  <span>NextGen Analytics · NextGen Multi Sport Academy</span>
   <span id="foot"></span>
 </div></footer>
 
@@ -461,7 +504,7 @@ function render(){
     </div>`;}).join('');
 
   document.getElementById('app').innerHTML = `
-  <section class="wrap">
+  <section class="wrap" id="s1">
     <div class="sec-head"><span class="sec-num">01</span><h2>Is the programme working?</h2></div>
     <p class="sec-sub">${s.swimmers} athletes raced ${s.swims} times across ${s.meets} meet${s.meets===1?'':'s'}
       ${year==='all'?`between ${Y.meets[Y.meets.length-1].date.slice(0,7)} and ${Y.meets[0].date.slice(0,7)}`:'in '+year}.
@@ -519,7 +562,7 @@ function render(){
     </div>
   </section>
 
-  <section class="wrap">
+  <section class="wrap" id="s2">
     <div class="sec-head"><span class="sec-num">02</span><h2>Which group needs attention?</h2></div>
     <p class="sec-sub">Improving / stable / review counts by age band, so the squad with the problem
       is visible before you open a single swimmer.</p>
@@ -548,7 +591,7 @@ function render(){
     <div class="watch">${watchCards}</div>`:''}
   </section>
 
-  <section class="wrap">
+  <section class="wrap" id="s3">
     <div class="sec-head"><span class="sec-num">03</span><h2>Who specifically?</h2></div>
     <p class="sec-sub">Grouped by how they are developing. Open a group to see its swimmers,
       then open a swimmer for their stroke and distance profile and every event they repeated
@@ -571,7 +614,7 @@ function render(){
       <input id="fq" type="search" placeholder="Search name…" value="${esc(fQ)}">
       <span class="count" id="cnt"></span>
     </div>
-    <div id="list">${GROUPS.map(g=>{
+    <div id="list" style="margin-top:18px">${GROUPS.map(g=>{
       const members = Y.swimmers.filter(s=>s.cls===g.k);
       if(!members.length) return '';
       return `<details class="grp g-${g.k}" data-grp="${g.k}">
@@ -587,7 +630,7 @@ function render(){
       </details>`;}).join('')}</div>
   </section>
 
-  <section class="wrap">
+  <section class="wrap" id="s4">
     <div class="sec-head"><span class="sec-num">04</span><h2>Did it translate into performance?</h2></div>
     <p class="sec-sub">Every meet judged on what each swimmer had already achieved — not on
       absolute times. "At or above form" means they swam within 1% of their own previous best,
@@ -595,7 +638,7 @@ function render(){
     <div class="comps">${compCards}</div>
   </section>
 
-  <section class="wrap">
+  <section class="wrap" id="s5">
     <div class="sec-head"><span class="sec-num">05</span><h2>So what do we do?</h2></div>
     <p class="sec-sub">Every finding above should resolve into one of three decisions.</p>
     <div class="decisions">
@@ -686,6 +729,26 @@ async function boot(){
   document.getElementById('foot').textContent =
     DATA.thresholds.n + ' comparable event-series · bands derived from NextGen data · built ' + DATA.generated;
   tabs(); render();
+  watchSections();
 }
+
+// Mark the section currently in view, so the nav says where you are.
+let sectionWatcher = null;
+function watchSections(){
+  if (sectionWatcher) sectionWatcher.disconnect();
+  const links = [...document.querySelectorAll('#sidenav a')];
+  const ids = links.map(a => a.getAttribute('href').slice(1));
+  const seen = new Map();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => seen.set(e.target.id, e.intersectionRatio));
+    let best = null, bestRatio = 0;
+    ids.forEach(id => { const r = seen.get(id) ?? 0; if (r > bestRatio) { bestRatio = r; best = id; } });
+    links.forEach(a => a.setAttribute('aria-current',
+      String(best !== null && a.getAttribute('href') === '#' + best)));
+  }, { threshold: [0, .15, .35, .6, .9] });
+  sectionWatcher = io;
+  ids.forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
+}
+
 boot();
 </script>
