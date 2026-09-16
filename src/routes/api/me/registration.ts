@@ -1,18 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { one, json, fail } from "@/lib/db";
-import { requireAdmin } from "@/lib/session";
+import { sessionFromRequest } from "@/lib/session";
 
-export const Route = createFileRoute("/api/register")({
+export const Route = createFileRoute("/api/me/registration")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const denied = requireAdmin(request);
-        if (denied) return denied;
         try {
-          const b = await request.json();
+          const s = sessionFromRequest(request);
+          if (!s?.parentId) return json({ error: "Not signed in" }, 401);
+          const b = await request.json().catch(() => ({}));
           if (!b.swimmerId || !b.age || !b.gender || !b.parent1Name || !b.primaryPhone) {
             return json({ error: "Missing required fields" }, 400);
           }
+
+          // The swimmer must be one of mine.
+          const mine = await one(
+            `select 1 from public.swimmer_parents
+             where swimmer_id = $1 and parent_id = $2`,
+            [b.swimmerId, s.parentId],
+          );
+          if (!mine) return json({ error: "That swimmer is not linked to you" }, 403);
+
           const row = await one(
             `insert into public.registrations
                (swimmer_id, age, gender, guardian_gender, parent_sleepover,
@@ -34,17 +43,14 @@ export const Route = createFileRoute("/api/register")({
                special_requests = excluded.special_requests,
                updated_at = now()
              returning *`,
-            [
-              b.swimmerId, b.age, b.gender, b.guardianGender ?? null,
-              b.parentSleepover, b.ownsCellphone, b.parent1Name,
-              b.parent2Name ?? null, b.primaryPhone, b.secondaryPhone ?? null,
-              b.dietary ?? null, b.allergies ?? null, b.healthConditions ?? null,
-              b.specialRequests ?? null,
-            ],
+            [b.swimmerId, b.age, b.gender, b.guardianGender ?? null,
+             b.parentSleepover, b.ownsCellphone, b.parent1Name, b.parent2Name ?? null,
+             b.primaryPhone, b.secondaryPhone ?? null, b.dietary ?? null,
+             b.allergies ?? null, b.healthConditions ?? null, b.specialRequests ?? null],
           );
           return json(row);
         } catch (err) {
-          return fail("POST /api/register", err, "Failed to save registration");
+          return fail("POST /api/me/registration", err, "Could not save the registration");
         }
       },
     },

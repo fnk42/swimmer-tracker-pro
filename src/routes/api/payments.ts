@@ -1,27 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSupabase } from "@/lib/supabase";
+import { q, json, fail } from "@/lib/db";
+import { requireAdmin } from "@/lib/session";
 
 export const Route = createFileRoute("/api/payments")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
+        const denied = requireAdmin(request);
+        if (denied) return denied;
         try {
-          const { data, error } = await getSupabase()
-            .from("payments")
-            .select("*")
-            .order("created_at", { ascending: false });
-
-          if (error) throw error;
-
-          return new Response(JSON.stringify(data || []), {
-            headers: { "content-type": "application/json" },
-          });
-        } catch (err) {
-          console.error("GET /api/payments error:", err);
-          return new Response(
-            JSON.stringify({ error: "Failed to fetch payments" }),
-            { status: 500, headers: { "content-type": "application/json" } },
+          return json(
+            await q(`select * from public.payments order by created_at desc`),
           );
+        } catch (err) {
+          return fail("GET /api/payments", err, "Failed to fetch payments");
         }
       },
     },

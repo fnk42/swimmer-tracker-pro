@@ -31,3 +31,8 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Migration artefacts containing real personal data (parent phones/emails,
+# child health conditions). Never commit these.
+migration/02_data.sql
+migration/*.backup

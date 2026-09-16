@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useParentSession } from "@/lib/auth";
+
 import { normalizeKePhone } from "@/lib/phone";
 import {
   useSwimmers,
@@ -31,6 +31,7 @@ import {
   paidForSwimmer,
   paymentsForSwimmer,
   statusForSwimmer,
+  useMe,
 } from "@/lib/api";
 import { EVENT, PAYMENT, formatKes } from "@/lib/event-config";
 import { registrationSchema, paymentSchema } from "@/lib/schemas";
@@ -44,7 +45,9 @@ export const Route = createFileRoute("/parent")({
 
 function ParentPage() {
   const navigate = useNavigate();
-  const { session, loading: sessionLoading } = useParentSession();
+  const me = useMe();
+  const session = me.data?.signedIn ? me.data : null;
+  const sessionLoading = me.isLoading;
   const [groupIds, setGroupIds] = useState<string[]>([]);
   const [linkedParents, setLinkedParents] = useState<Parent[]>([]);
   const [linkedSwimmerIds, setLinkedSwimmerIds] = useState<Set<string>>(() => new Set());
@@ -126,11 +129,9 @@ function ParentPage() {
   async function autoLinkNewSwimmer(swimmerId: string, parents: Parent[]) {
     try {
       for (let i = 0; i < parents.length; i++) {
-        await linkParentMut.mutateAsync({
-          swimmerId,
-          parentId: parents[i].id,
-          sortOrder: i + 1,
-        });
+        // parentId and sortOrder now come from the signed session server-side;
+        // a parent can only ever link a swimmer to themselves.
+        await linkParentMut.mutateAsync({ swimmerId });
       }
       setLinkedSwimmerIds((s) => {
         const next = new Set(s);
@@ -680,11 +681,7 @@ function ParentSection({
       const linkedSwimmerIds: string[] = [];
       for (const s of swimmers) {
         try {
-          await linkParent.mutateAsync({
-            swimmerId: s.id,
-            parentId: p1Row.id,
-            sortOrder: 1,
-          });
+          await linkParent.mutateAsync({ swimmerId: s.id });
           linkedSwimmerIds.push(s.id);
         } catch (linkErr) {
           const info = extractErr(linkErr);
@@ -787,24 +784,16 @@ function fromParent(p: Parent): ParentFormRow {
 type ExtractedErr = { code: string | null; message: string; isRlsDenied: boolean };
 
 function extractErr(err: unknown): ExtractedErr {
-  const anyErr = err as { code?: unknown; message?: unknown; details?: unknown } | null;
-  const code = typeof anyErr?.code === "string" ? anyErr.code : null;
-  const messageParts = [anyErr?.message, anyErr?.details]
-    .filter((v): v is string => typeof v === "string" && v.length > 0);
+  // apiFetch already turns a failed response into an Error carrying the
+  // server's own sentence, so there is nothing left to unwrap. The old
+  // Postgres/RLS code inspection went with Supabase.
   const message =
-    messageParts.length > 0
-      ? messageParts.join(" — ")
-      : err instanceof Error
-        ? err.message
-        : String(err);
-  // 42501 = insufficient_privilege (permission denied), what RLS returns.
-  // "new row violates row-level security policy" is the WITH CHECK failure
-  // message; guard on the substring too because different Postgres versions
-  // surface the code slightly differently through PostgREST.
-  const isRlsDenied =
-    code === "42501" ||
-    /row-level security/i.test(typeof anyErr?.message === "string" ? anyErr.message : "");
-  return { code, message, isRlsDenied };
+    err instanceof Error && err.message
+      ? err.message
+      : typeof err === "string"
+        ? err
+        : "Something went wrong. Please try again.";
+  return { code: null, message, isRlsDenied: false };
 }
 
 function ParentRowFields({

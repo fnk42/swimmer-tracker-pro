@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSupabase } from "@/lib/supabase";
+import { q, json, fail } from "@/lib/db";
+import { requireAdmin } from "@/lib/session";
 
 interface SwimmerStatus {
   id: string;
@@ -13,86 +14,70 @@ interface SwimmerStatus {
   payments: Array<{ reference: string; amount: number; created_at: string }>;
 }
 
+const TOTAL_KES = 20910;
+
+type SwimmerRow = { id: string; name: string; age: number | null; gender: "Male" | "Female" | null };
+type PaymentRow = {
+  swimmer_id: string; swimmer_ids: string[] | null; child_count: number | null;
+  amount: string | number; reference: string; created_at: string;
+};
+
 export const Route = createFileRoute("/api/admin/status")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
+        const denied = requireAdmin(request);
+        if (denied) return denied;
         try {
-          const sb = getSupabase();
-          const { data: swimmers, error: swimmersError } = await sb
-            .from("swimmers")
-            .select("*");
+          const [swimmers, registrations, payments] = await Promise.all([
+            q<SwimmerRow>(`select id, name, age, gender from public.swimmers order by name`),
+            q<{ swimmer_id: string }>(`select swimmer_id from public.registrations`),
+            q<PaymentRow>(
+              `select swimmer_id, swimmer_ids, child_count, amount, reference, created_at
+               from public.payments order by created_at desc`,
+            ),
+          ]);
 
-          if (swimmersError) throw swimmersError;
+          const registeredIds = new Set(registrations.map((r) => r.swimmer_id));
 
-          const { data: registrations, error: regsError } = await sb
-            .from("registrations")
-            .select("swimmer_id");
-
-          if (regsError) throw regsError;
-
-          const { data: payments, error: paymentsError } = await sb
-            .from("payments")
-            .select("swimmer_id, swimmer_ids, child_count, amount, reference, created_at");
-
-          if (paymentsError) throw paymentsError;
-
-          const TOTAL_KES = 20910;
-          const registeredIds = new Set(
-            registrations?.map((r: any) => r.swimmer_id) || [],
-          );
-          const paymentsBySwimmer: Record<string, any[]> = {};
-
-          payments?.forEach((p: any) => {
-            const covered: string[] =
+          // A multi-child payment covers every swimmer listed in swimmer_ids,
+          // and its amount is split across child_count of them.
+          const bySwimmer: Record<string, PaymentRow[]> = {};
+          for (const p of payments) {
+            const covered =
               Array.isArray(p.swimmer_ids) && p.swimmer_ids.length > 0
                 ? p.swimmer_ids
                 : [p.swimmer_id];
-            covered.forEach((sid) => {
-              if (!paymentsBySwimmer[sid]) paymentsBySwimmer[sid] = [];
-              paymentsBySwimmer[sid].push(p);
-            });
-          });
+            for (const sid of covered) (bySwimmer[sid] ??= []).push(p);
+          }
 
-          const status: SwimmerStatus[] = (swimmers || []).map((s: any) => {
-            const payments_for_swimmer = paymentsBySwimmer[s.id] || [];
-            const paid = payments_for_swimmer.reduce((sum: number, p: any) => {
-              const n =
-                Number.isInteger(p.child_count) && p.child_count > 0
-                  ? p.child_count
-                  : 1;
-              return sum + p.amount / n;
+          const status: SwimmerStatus[] = swimmers.map((s) => {
+            const mine = bySwimmer[s.id] ?? [];
+            const paid = mine.reduce((sum, p) => {
+              const n = Number.isInteger(p.child_count) && (p.child_count as number) > 0
+                ? (p.child_count as number) : 1;
+              return sum + Number(p.amount) / n;
             }, 0);
-            const balance = Math.max(0, TOTAL_KES - paid);
-            const statusValue =
-              paid <= 0 ? "Unpaid" : paid >= TOTAL_KES ? "Paid" : "Partial";
-
             return {
               id: s.id,
               name: s.name,
-              age: s.age,
-              gender: s.gender,
+              age: s.age ?? undefined,
+              gender: s.gender ?? undefined,
               paid,
-              balance,
-              status: statusValue,
+              balance: Math.max(0, TOTAL_KES - paid),
+              status: paid <= 0 ? "Unpaid" : paid >= TOTAL_KES ? "Paid" : "Partial",
               registered: registeredIds.has(s.id),
-              payments: payments_for_swimmer.map((p: any) => ({
+              payments: mine.map((p) => ({
                 reference: p.reference,
-                amount: p.amount,
+                amount: Number(p.amount),
                 created_at: p.created_at,
               })),
             };
           });
 
-          return new Response(JSON.stringify(status), {
-            headers: { "content-type": "application/json" },
-          });
+          return json(status);
         } catch (err) {
-          console.error("GET /api/admin/status error:", err);
-          return new Response(
-            JSON.stringify({ error: "Failed to fetch admin status" }),
-            { status: 500, headers: { "content-type": "application/json" } },
-          );
+          return fail("GET /api/admin/status", err, "Failed to fetch admin status");
         }
       },
     },
