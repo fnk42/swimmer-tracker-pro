@@ -28,7 +28,12 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
   font-family:'Sora',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.6;
-  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;
+  /* each nav item is its own view, so a short view must not leave the footer
+     stranded halfway up the screen */
+  min-height:100vh;display:flex;flex-direction:column}
+.shell{flex:1 0 auto}
+footer{flex-shrink:0}
 .wrap{max-width:1140px;margin:0 auto;padding-inline:20px}
 h1,h2,h3{text-wrap:balance;margin:0}
 .display{font-family:'Anton',Impact,sans-serif;font-weight:400;letter-spacing:.5px;text-transform:uppercase;line-height:1.05}
@@ -261,8 +266,10 @@ details.grp > summary{padding:16px 18px;display:grid;grid-template-columns:auto 
   gap:14px;align-items:center;cursor:pointer}
 details.grp > summary:hover{background:var(--sunken)}
 details.grp .gn{font-family:'Anton',sans-serif;font-size:26px;line-height:1;min-width:34px}
-details.grp .gt{font-size:15px;font-weight:700}
-details.grp .gd{font-size:12.3px;color:var(--muted);margin-top:2px}
+/* both are inline spans in one cell; without display:block the label and its
+   description run together ("Progressing fastbiggest gains...") */
+details.grp .gt{display:block;font-size:15px;font-weight:700}
+details.grp .gd{display:block;font-size:12.3px;color:var(--muted);margin-top:2px}
 details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
 .g-fast .gn{color:#7C4DFF}.g-improving .gn{color:var(--ok-t)}.g-stable .gn{color:var(--gold-t)}
 .g-review .gn{color:var(--alert-t)}.g-unrated .gn{color:var(--muted)}
@@ -290,21 +297,21 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
   <div class="wrap">
     <img class="logo" src="/nextgen-logo-dark.png" alt="NextGen Multi Sport Academy">
     <div class="eyebrow">NextGen Analytics</div>
-    <h1 class="display">Squad <span style="color:var(--cyan)">Development</span></h1>
-    <p>Every verified swim by a NextGen athlete, 2024 to 2026. Pick a season, then open any
+    <h1 class="display">Athlete <span style="color:var(--cyan)">Development</span></h1>
+    <p id="herosub">Every verified swim by a NextGen athlete. Pick a season, then open any
        swimmer to see what they are actually doing stroke by stroke.</p>
     <div class="years" role="tablist" id="years"></div>
   </div>
 </header>
 
 <div class="shell">
-  <nav class="sidenav" id="sidenav" aria-label="Sections">
-    <div class="navtitle">Sections</div>
-    <a href="#s1"><span class="n">01</span><span>Programme</span></a>
-    <a href="#s2"><span class="n">02</span><span>Age groups</span></a>
-    <a href="#s3"><span class="n">03</span><span>Swimmers</span></a>
-    <a href="#s4"><span class="n">04</span><span>Meets</span></a>
-    <a href="#s5"><span class="n">05</span><span>Decisions</span></a>
+  <nav class="sidenav" id="sidenav" aria-label="Views">
+    <div class="navtitle">Views</div>
+    <a href="#/programme"  data-page="programme"><span class="n">01</span><span>Programme</span></a>
+    <a href="#/age-groups" data-page="age-groups"><span class="n">02</span><span>Age groups</span></a>
+    <a href="#/swimmers"   data-page="swimmers"><span class="n">03</span><span>Swimmers</span></a>
+    <a href="#/meets"      data-page="meets"><span class="n">04</span><span>Meets</span></a>
+    <a href="#/decisions"  data-page="decisions"><span class="n">05</span><span>Decisions</span></a>
   </nav>
   <main id="app"></main>
 </div>
@@ -322,7 +329,7 @@ let DATA = { generated: "", thresholds: { n: 0, fast: 0, improving: 0, stable_hi
 const CLS = {fast:'Fast progression', improving:'Improving', stable:'Stable',
              review:'Review', unrated:'Not enough data'};
 const GROUPS = [
-  {k:'fast',      t:'🚀 Progressing fast',  d:'biggest gains in the squad — keep doing what is working'},
+  {k:'fast',      t:'🚀 Progressing fast',  d:'biggest gains in the club — keep doing what is working'},
   {k:'improving', t:'🟢 Improving',         d:'moving in the right direction'},
   {k:'stable',    t:'🟡 Stable',            d:'holding their level — watch for a plateau'},
   {k:'review',    t:'🔴 Review',            d:'slower than they were — investigate before changing anything'},
@@ -462,7 +469,7 @@ function render(){
   // swimmer watch lists
   const W = Y.watch || {};
   const wdef = [
-    ['fast','p','Progressing fast','biggest gains in the squad'],
+    ['fast','p','Progressing fast','biggest gains in the club'],
     ['risers','g','Rising from behind','fewer podiums, improving quickly'],
     ['plateau','a','Beginning to plateau','was improving, now flat'],
     ['stalled','a','Strong but stalled','high podium rate, progress has stopped'],
@@ -504,7 +511,7 @@ function render(){
     </div>`;}).join('');
 
   document.getElementById('app').innerHTML = `
-  <section class="wrap" id="s1">
+  <section class="wrap" id="s1" data-page="programme">
     <div class="sec-head"><span class="sec-num">01</span><h2>Is the programme working?</h2></div>
     <p class="sec-sub">${s.swimmers} athletes raced ${s.swims} times across ${s.meets} meet${s.meets===1?'':'s'}
       ${year==='all'?`between ${Y.meets[Y.meets.length-1].date.slice(0,7)} and ${Y.meets[0].date.slice(0,7)}`:'in '+year}.
@@ -512,8 +519,8 @@ function render(){
     ${year==='all' ? `<div class="caution" style="background:rgba(22,166,232,.10);border-color:rgba(22,166,232,.38)">
       <strong style="color:var(--electric-deep)">This is the career view.</strong>
       Each swimmer's trend compares their first and last swim in every event they repeated,
-      across all three seasons — so it shows development since they started with the club, not
-      form this term. Use the season tabs for current form.</div>` : ''}
+      across every season on record — so it shows development since they started with the club,
+      not form this term. Use the season tabs for current form.</div>` : ''}
     ${!s.reliable ? `<div class="caution"><strong>Read the trend with care.</strong>
       ${year}'s meets span only ${s.span_days} day${s.span_days===1?'':'s'}, and just ${s.rated} swimmers
       have repeat swims to compare. A development trend needs a season, not a fortnight — treat the
@@ -527,7 +534,7 @@ function render(){
     </div>
 
     <div class="classbar">
-      <h3>Squad development — ${s.rated} rated swimmers</h3>
+      <h3>Development spread — ${s.rated} rated swimmers</h3>
       <div class="cbar">${cbar}</div>
       <div class="legend">
         <span><span class="dot d-fast"></span><b>${s.n_fast}</b> fast progression</span>
@@ -536,8 +543,8 @@ function render(){
         <span><span class="dot d-review"></span><b>${s.n_review}</b> review</span>
       </div>
       <p class="note" style="margin-top:12px;font-size:12.5px;color:var(--muted)">
-        Bands are set from NextGen's own record — ${DATA.thresholds.n} event-series across all three
-        seasons — not from borrowed numbers. Fast progression is a gain of
+        Bands are set from NextGen's own record — ${DATA.thresholds.n} event-series across every
+        season on record — not from borrowed numbers. Fast progression is a gain of
         ${Math.abs(DATA.thresholds.fast).toFixed(1)}% or better; improving is
         ${Math.abs(DATA.thresholds.improving).toFixed(1)}% or better; stable runs to
         ${pct(DATA.thresholds.stable_hi)}; slower than that is review.</p>
@@ -545,7 +552,7 @@ function render(){
 
     <div class="grid2">
       <div class="panel"><div class="kick">Stroke development</div>
-        <h3>Where the squad is gaining time</h3>
+        <h3>Where the club is gaining time</h3>
         <div class="bars">${strokeBars||'<p class="note">No comparable repeat swims this season.</p>'}</div>
         <p class="note">Median change across every swimmer who raced the stroke twice. Negative is faster.</p>
       </div>
@@ -562,9 +569,9 @@ function render(){
     </div>
   </section>
 
-  <section class="wrap" id="s2">
+  <section class="wrap" id="s2" data-page="age-groups">
     <div class="sec-head"><span class="sec-num">02</span><h2>Which group needs attention?</h2></div>
-    <p class="sec-sub">Improving / stable / review counts by age band, so the squad with the problem
+    <p class="sec-sub">Improving / stable / review counts by age band, so the age band with the problem
       is visible before you open a single swimmer.</p>
     <div class="toggrow">
       <div class="seg" id="agemode">
@@ -587,15 +594,15 @@ function render(){
 
     ${watchCards?`<h3 style="margin-top:28px;font-size:15px;font-weight:700">Swimmers to look at</h3>
     <p class="sec-sub" style="margin-top:4px">Five patterns worth a coach's attention, pulled
-      out of the squad automatically.</p>
+      out of the club automatically.</p>
     <div class="watch">${watchCards}</div>`:''}
   </section>
 
-  <section class="wrap" id="s3">
+  <section class="wrap" id="s3" data-page="swimmers">
     <div class="sec-head"><span class="sec-num">03</span><h2>Who specifically?</h2></div>
     <p class="sec-sub">Grouped by how they are developing. Open a group to see its swimmers,
       then open a swimmer for their stroke and distance profile and every event they repeated
-      ${year==='all'?'across the three seasons':'this season'}. Searching a name opens whichever
+      ${year==='all'?'across every season on record':'this season'}. Searching a name opens whichever
       group they are in.</p>
     <div class="filters">
       <label>Age</label>
@@ -630,7 +637,7 @@ function render(){
       </details>`;}).join('')}</div>
   </section>
 
-  <section class="wrap" id="s4">
+  <section class="wrap" id="s4" data-page="meets">
     <div class="sec-head"><span class="sec-num">04</span><h2>Did it translate into performance?</h2></div>
     <p class="sec-sub">Every meet judged on what each swimmer had already achieved — not on
       absolute times. "At or above form" means they swam within 1% of their own previous best,
@@ -638,14 +645,15 @@ function render(){
     <div class="comps">${compCards}</div>
   </section>
 
-  <section class="wrap" id="s5">
+  <section class="wrap" id="s5" data-page="decisions">
     <div class="sec-head"><span class="sec-num">05</span><h2>So what do we do?</h2></div>
-    <p class="sec-sub">Every finding above should resolve into one of three decisions.</p>
+    <p class="sec-sub">Every finding in the other four views should resolve into one of
+      three decisions.</p>
     <div class="decisions">
       <div class="dec"><h3>🟢 Continue</h3><p>Progress is appropriate. Keep the current approach
         and check again after the next meet.</p></div>
       <div class="dec i"><h3>🟡 Investigate</h3><p>Progress is slowing or inconsistent. Review the
-        swimmer, squad or programme before changing anything.</p></div>
+        swimmer, age group or programme before changing anything.</p></div>
       <div class="dec c"><h3>🔴 Change</h3><p>A sustained pattern says the current approach is not
         producing development. Agree an intervention, apply it, and measure the response.</p></div>
     </div>
@@ -668,7 +676,35 @@ function render(){
   };
   document.getElementById('fq').oninput = e => { fQ = e.target.value.toLowerCase(); filter(); };
   filter();
+  showPage(page);
 }
+
+// ---------------------------------------------------------------------------
+// Routing. Each nav item is its own page, not a scroll position: only the
+// active section is in the document flow, and the hash makes a view linkable
+// and survives a reload or the back button.
+const PAGES = ['programme','age-groups','swimmers','meets','decisions'];
+let page = routeFromHash();
+
+function routeFromHash(){
+  const h = (location.hash || '').replace(/^#\/?/, '');
+  return PAGES.includes(h) ? h : PAGES[0];
+}
+
+function showPage(p){
+  page = PAGES.includes(p) ? p : PAGES[0];
+  document.querySelectorAll('#app section[data-page]').forEach(sec => {
+    sec.hidden = sec.dataset.page !== page;
+  });
+  document.querySelectorAll('#sidenav a').forEach(a => {
+    a.setAttribute('aria-current', String(a.dataset.page === page));
+  });
+}
+
+window.addEventListener('hashchange', () => {
+  showPage(routeFromHash());
+  window.scrollTo({ top: 0, behavior: 'auto' });
+});
 
 function filter(){
   const filtering = ageLo !== null || ageHi !== null || !!fQ;
@@ -728,26 +764,15 @@ async function boot(){
   year = 'all';
   document.getElementById('foot').textContent =
     DATA.thresholds.n + ' comparable event-series · bands derived from NextGen data · built ' + DATA.generated;
+  const seasons = YEARS.filter(y => y !== 'all');
+  const sub = document.getElementById('herosub');
+  if (sub && seasons.length) {
+    sub.textContent = 'Every verified swim by a NextGen athlete, '
+      + seasons[seasons.length-1] + ' to ' + seasons[0]
+      + '. Pick a season, then open any swimmer to see what they are actually doing '
+      + 'stroke by stroke.';
+  }
   tabs(); render();
-  watchSections();
-}
-
-// Mark the section currently in view, so the nav says where you are.
-let sectionWatcher = null;
-function watchSections(){
-  if (sectionWatcher) sectionWatcher.disconnect();
-  const links = [...document.querySelectorAll('#sidenav a')];
-  const ids = links.map(a => a.getAttribute('href').slice(1));
-  const seen = new Map();
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(e => seen.set(e.target.id, e.intersectionRatio));
-    let best = null, bestRatio = 0;
-    ids.forEach(id => { const r = seen.get(id) ?? 0; if (r > bestRatio) { bestRatio = r; best = id; } });
-    links.forEach(a => a.setAttribute('aria-current',
-      String(best !== null && a.getAttribute('href') === '#' + best)));
-  }, { threshold: [0, .15, .35, .6, .9] });
-  sectionWatcher = io;
-  ids.forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
 }
 
 boot();
