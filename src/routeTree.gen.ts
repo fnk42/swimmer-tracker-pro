@@ -21,6 +21,7 @@ import { Route as ApiPaymentsRouteImport } from './routes/api/payments'
 import { Route as ApiPaymentRouteImport } from './routes/api/payment'
 import { Route as ApiParentsRouteImport } from './routes/api/parents'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
+import { Route as ApiTrackerSummaryRouteImport } from './routes/api/tracker/summary'
 import { Route as ApiTrackerDataRouteImport } from './routes/api/tracker/data'
 import { Route as ApiSwimmersIdRouteImport } from './routes/api/swimmers/$id'
 import { Route as ApiParentsLinkRouteImport } from './routes/api/parents/link'
@@ -92,6 +93,11 @@ const ApiParentsRoute = ApiParentsRouteImport.update({
 const ApiHealthRoute = ApiHealthRouteImport.update({
   id: '/api/health',
   path: '/api/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTrackerSummaryRoute = ApiTrackerSummaryRouteImport.update({
+  id: '/api/tracker/summary',
+  path: '/api/tracker/summary',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiTrackerDataRoute = ApiTrackerDataRouteImport.update({
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
   '/api/tracker/data': typeof ApiTrackerDataRoute
+  '/api/tracker/summary': typeof ApiTrackerSummaryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
   '/api/tracker/data': typeof ApiTrackerDataRoute
+  '/api/tracker/summary': typeof ApiTrackerSummaryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -233,6 +241,7 @@ export interface FileRoutesById {
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
   '/api/tracker/data': typeof ApiTrackerDataRoute
+  '/api/tracker/summary': typeof ApiTrackerSummaryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -261,6 +270,7 @@ export interface FileRouteTypes {
     | '/api/parents/link'
     | '/api/swimmers/$id'
     | '/api/tracker/data'
+    | '/api/tracker/summary'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -287,6 +297,7 @@ export interface FileRouteTypes {
     | '/api/parents/link'
     | '/api/swimmers/$id'
     | '/api/tracker/data'
+    | '/api/tracker/summary'
   id:
     | '__root__'
     | '/'
@@ -313,6 +324,7 @@ export interface FileRouteTypes {
     | '/api/parents/link'
     | '/api/swimmers/$id'
     | '/api/tracker/data'
+    | '/api/tracker/summary'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -338,6 +350,7 @@ export interface RootRouteChildren {
   ApiMePaymentRoute: typeof ApiMePaymentRoute
   ApiMeRegistrationRoute: typeof ApiMeRegistrationRoute
   ApiTrackerDataRoute: typeof ApiTrackerDataRoute
+  ApiTrackerSummaryRoute: typeof ApiTrackerSummaryRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -424,6 +437,13 @@ declare module '@tanstack/react-router' {
       path: '/api/health'
       fullPath: '/api/health'
       preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tracker/summary': {
+      id: '/api/tracker/summary'
+      path: '/api/tracker/summary'
+      fullPath: '/api/tracker/summary'
+      preLoaderRoute: typeof ApiTrackerSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/tracker/data': {
@@ -560,6 +580,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMePaymentRoute: ApiMePaymentRoute,
   ApiMeRegistrationRoute: ApiMeRegistrationRoute,
   ApiTrackerDataRoute: ApiTrackerDataRoute,
+  ApiTrackerSummaryRoute: ApiTrackerSummaryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

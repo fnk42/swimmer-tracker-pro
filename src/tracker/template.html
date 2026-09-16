@@ -178,6 +178,7 @@ details[open] .chev{transform:rotate(45deg)}
 
 /* section navigation — the page is long for a coordinator, so give them a
    way to jump rather than scroll. On a phone it becomes a scrollable strip. */
+.shell[hidden]{display:none}
 .shell{display:grid;grid-template-columns:186px minmax(0,1fr);gap:28px;
   max-width:1180px;margin:0 auto;padding-inline:20px;align-items:start}
 .sidenav{position:sticky;top:18px;padding-block:28px;display:grid;gap:2px;align-content:start}
@@ -309,11 +310,89 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
 .gate .hint{margin-top:14px;font-size:12.4px;color:var(--muted)}
 .gate .back{margin-top:10px;background:none;color:var(--muted);font-weight:500;font-size:13px}
 .gate .back:hover{background:none;color:var(--ink)}
+
+/* ---------------------------------------------------------------------------
+   Landing page for performance.nextgenkenya.com. This is what a signed-out
+   visitor sees, so it has to stand on its own: what the archive is, how big it
+   is, how it was built, and a way in. Aggregate counts only — every figure here
+   is already public on the club's SwimCloud page. */
+#landing[hidden]{display:none}
+.lp-hero{background:
+   radial-gradient(1200px 420px at 78% -12%, rgba(22,166,232,.30), transparent 62%),
+   linear-gradient(168deg, var(--navy) 0%, var(--navy-2) 100%);
+  color:#fff;position:relative;overflow:hidden}
+/* eight lane ropes, because that is what the data is a record of */
+.lp-hero::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background:repeating-linear-gradient(to bottom, transparent 0 62px,
+    rgba(70,211,240,.10) 62px, rgba(70,211,240,.10) 63px);
+  mask-image:linear-gradient(to bottom, transparent, #000 38%, #000 72%, transparent)}
+.lp-wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;
+  padding-inline:20px;padding-block:74px 64px;
+  display:grid;grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);
+  gap:52px;align-items:start}
+.lp-logo{height:52px;width:auto;display:block;margin-bottom:24px}
+.lp-eyebrow{font-size:11px;font-weight:700;letter-spacing:2.4px;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:18px}
+.lp-h1{font-family:'Anton',sans-serif;font-weight:400;font-size:clamp(40px,6.4vw,70px);
+  line-height:.96;letter-spacing:-.5px;text-transform:uppercase;margin:0;text-wrap:balance}
+.lp-h1 em{font-style:normal;color:var(--cyan)}
+.lp-lede{margin:22px 0 0;max-width:52ch;font-size:16.5px;line-height:1.62;color:#C8D8EA}
+.lp-stats{margin-top:38px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:1px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.14);
+  border-radius:14px;overflow:hidden}
+.lp-stat{background:rgba(10,27,51,.72);padding:16px 16px 15px}
+.lp-stat b{display:block;font-family:'Anton',sans-serif;font-weight:400;font-size:30px;
+  line-height:1;color:#fff}
+.lp-stat span{display:block;margin-top:7px;font-size:10.5px;font-weight:700;letter-spacing:1.4px;
+  text-transform:uppercase;color:#8FA9C4}
+/* the shape of the archive, season by season */
+.lp-seasons{margin-top:30px}
+.lp-seasons .cap{font-size:10.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:#8FA9C4;margin-bottom:12px}
+.lp-bars{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,46px);gap:16px;
+  align-items:end;height:74px;justify-content:start}
+.lp-bar{display:grid;align-content:end;gap:7px;text-align:center}
+.lp-bar i{display:block;border-radius:4px 4px 2px 2px;
+  background:linear-gradient(to top, var(--electric-deep), var(--cyan));min-height:4px}
+.lp-bar u{display:block;text-decoration:none;font-size:10.5px;color:#8FA9C4;letter-spacing:.6px}
+.lp-bar b{display:block;font-size:11px;color:#C8D8EA;font-weight:700}
+
+.lp-card{background:var(--surface);color:var(--ink);border-radius:18px;padding:26px 24px 24px;
+  box-shadow:0 26px 60px rgba(4,14,28,.44);border:1px solid rgba(255,255,255,.1)}
+.lp-card h2{margin:0 0 5px;font-size:19px;letter-spacing:-.2px}
+.lp-card .sub{margin:0 0 20px;font-size:13.4px;color:var(--muted);line-height:1.55}
+
+.lp-inside{background:var(--bg);border-top:1px solid var(--line)}
+.lp-inside .lp-wrap{display:block;padding-block:52px 56px}
+.lp-inside h3{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin:0 0 22px}
+.lp-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.lp-step{background:var(--surface);padding:20px 18px 22px}
+.lp-step em{font-style:normal;font-family:'Anton',sans-serif;font-size:12px;letter-spacing:1.4px;
+  color:var(--electric-deep)}
+.lp-step b{display:block;margin:9px 0 6px;font-size:15px}
+.lp-step span{display:block;font-size:12.8px;line-height:1.5;color:var(--muted)}
+
+.lp-how{background:var(--navy);color:#C8D8EA}
+.lp-how .lp-wrap{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:34px;
+  padding-block:46px 52px}
+.lp-how h4{margin:0 0 8px;font-size:13.5px;color:#fff;letter-spacing:.2px}
+.lp-how p{margin:0;font-size:13.2px;line-height:1.62}
+.lp-how .k{font-size:10.5px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;
+  color:var(--cyan);margin-bottom:11px}
+
+@media (max-width:900px){
+  .lp-wrap{grid-template-columns:minmax(0,1fr);gap:34px;padding-block:52px 46px}
+  .lp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .lp-steps{grid-template-columns:minmax(0,1fr)}
+  .lp-how .lp-wrap{grid-template-columns:minmax(0,1fr);gap:26px}
+}
 footer{border-top:1px solid var(--line);margin-top:22px;padding-block:24px 36px;color:var(--muted);font-size:12px}
 footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 </style>
 
-<header class="hero">
+<header class="hero" id="hero">
   <div class="wrap">
     <img class="logo" src="/nextgen-logo-dark.png" alt="NextGen Multi Sport Academy">
     <div class="eyebrow">NextGen Analytics</div>
@@ -324,7 +403,9 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
   </div>
 </header>
 
-<div class="shell">
+<div id="landing" hidden></div>
+
+<div class="shell" id="shell">
   <nav class="sidenav" id="sidenav" aria-label="Views">
     <div class="navtitle">Views</div>
     <a href="#/programme"  data-page="programme"><span class="n">01</span><span>Programme</span></a>
@@ -765,35 +846,125 @@ document.getElementById('years').addEventListener('click', e => {
 
 
 // ---------------------------------------------------------------------------
-// Sign-in. This page is the landing page for the performance domain, so a
-// signed-out coordinator has to be able to get in from here rather than being
-// sent to the event portal. Same six-digit-code endpoints the portal uses.
-function gate(step, email, msg){
-  const app = document.getElementById('app');
-  document.getElementById('sidenav').hidden = true;
-  document.getElementById('years').innerHTML = '';
+// The landing page for performance.nextgenkenya.com, and the way in. A
+// signed-out visitor gets the shape and provenance of the archive plus a
+// sign-in; the individual data needs a coordinator session and comes from
+// /api/tracker/data. Counts come from /api/tracker/summary, which is
+// aggregates only.
+let LP = null;
+
+async function gate(step, email, msg){
+  document.getElementById('hero').hidden = true;
+  document.getElementById('shell').hidden = true;
+  const el = document.getElementById('landing');
+  el.hidden = false;
   step = step || 'email';
 
-  app.innerHTML = `
-  <section class="wrap"><div class="gate">
-    <h2>${step === 'email' ? 'Performance analytics' : 'Check your email'}</h2>
-    <p class="lead">${step === 'email'
-      ? 'Every verified swim by a NextGen athlete, by season, age group and swimmer. Coordinator access only.'
-      : 'We sent a six-digit code to <strong>' + esc(email) + '</strong>. It expires in 10 minutes.'}</p>
-    ${step === 'email'
-      ? `<label for="g-email">Email address</label>
-         <input id="g-email" type="email" inputmode="email" autocomplete="email"
-                placeholder="you@example.com" value="${esc(email || '')}">
-         <button id="g-send" type="button">Send me a code</button>`
-      : `<label for="g-code">Six-digit code</label>
-         <input id="g-code" type="text" inputmode="numeric" autocomplete="one-time-code"
-                maxlength="6" placeholder="000000">
-         <button id="g-verify" type="button">Sign in</button>
-         <button id="g-back" class="back" type="button">Use a different address</button>`}
-    ${msg ? `<div class="err">${esc(msg)}</div>` : ''}
-    <p class="hint">Access is by email address — there is no shared password.
-       If your address is not recognised, nothing is sent.</p>
-  </div></section>`;
+  if (!LP) {
+    try { LP = await fetch('/api/tracker/summary').then(r => r.ok ? r.json() : null); }
+    catch (e) { LP = null; }
+  }
+
+  const n = v => v == null ? '—' : v.toLocaleString('en-GB');
+  const stat = (v, l) => `<div class="lp-stat"><b>${n(v)}</b><span>${l}</span></div>`;
+
+  const seasons = (LP && LP.perSeason) ? LP.perSeason : [];
+  const peak = Math.max(1, ...seasons.map(x => x.meets));
+  const bars = seasons.map(x => `<div class="lp-bar">
+      <b>${x.meets}</b>
+      <i style="height:${Math.round(6 + (x.meets / peak) * 40)}px"></i>
+      <u>${x.year}</u></div>`).join('');
+
+  el.innerHTML = `
+  <section class="lp-hero">
+    <div class="lp-wrap">
+      <div>
+        <img class="lp-logo" src="/nextgen-logo.png" alt="NextGen Multi Sport Academy">
+        <div class="lp-eyebrow">NextGen Multi Sport Academy</div>
+        <h1 class="lp-h1">Every swim<br>we have <em>ever raced</em></h1>
+        <p class="lp-lede">The club's complete competitive record${
+          LP ? `, ${LP.from} to ${LP.to}` : ''} — parsed from the timing
+          system's own export for every meet and checked, row by row, against
+          the official published results.</p>
+
+        <div class="lp-stats">
+          ${stat(LP && LP.meets, 'meets')}
+          ${stat(LP && LP.swims, 'swims')}
+          ${stat(LP && LP.swimmers, 'swimmers')}
+          ${stat(LP && LP.podiums, 'podiums')}
+        </div>
+
+        ${seasons.length ? `<div class="lp-seasons">
+          <div class="cap">Meets per season</div>
+          <div class="lp-bars">${bars}</div>
+        </div>` : ''}
+      </div>
+
+      <div class="lp-card gate">
+        <h2>${step === 'email' ? 'Coordinator sign-in' : 'Check your email'}</h2>
+        <p class="sub">${step === 'email'
+          ? 'Swimmer-level results are restricted. Sign in with your coordinator email address to open the analytics.'
+          : 'We sent a six-digit code to <strong>' + esc(email) + '</strong>. It expires in 10 minutes.'}</p>
+        ${step === 'email'
+          ? `<label for="g-email">Email address</label>
+             <input id="g-email" type="email" inputmode="email" autocomplete="email"
+                    placeholder="you@example.com" value="${esc(email || '')}">
+             <button id="g-send" type="button">Send me a code</button>`
+          : `<label for="g-code">Six-digit code</label>
+             <input id="g-code" type="text" inputmode="numeric" autocomplete="one-time-code"
+                    maxlength="6" placeholder="000000">
+             <button id="g-verify" type="button">Sign in</button>
+             <button id="g-back" class="back" type="button">Use a different address</button>`}
+        ${msg ? `<div class="err">${esc(msg)}</div>` : ''}
+        <p class="hint">Access is by email address — there is no shared password.
+           If an address is not recognised, nothing is sent.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="lp-inside">
+    <div class="lp-wrap">
+      <h3>What is inside</h3>
+      <div class="lp-steps">
+        <div class="lp-step"><em>01</em><b>Programme</b><span>Is the club as a whole
+          getting faster, and by how much.</span></div>
+        <div class="lp-step"><em>02</em><b>Age groups</b><span>Which age band is
+          gaining and which has stalled.</span></div>
+        <div class="lp-step"><em>03</em><b>Swimmers</b><span>Every athlete, stroke by
+          stroke and distance by distance.</span></div>
+        <div class="lp-step"><em>04</em><b>Meets</b><span>Whether the training
+          translated on the day.</span></div>
+        <div class="lp-step"><em>05</em><b>Decisions</b><span>Continue, investigate
+          or change — one of the three.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="lp-how">
+    <div class="lp-wrap">
+      <div>
+        <div class="k">Two sources, not one</div>
+        <h4>Checked against the official results</h4>
+        <p>Each meet is read from its Hy-Tek export and compared against the
+           published results PDF. A swim has to appear in both${
+           LP ? ` — ${n(LP.meets)} meets` : ''} before it counts.</p>
+      </div>
+      <div>
+        <div class="k">Like for like</div>
+        <h4>Course is kept with every time</h4>
+        <p>A 25m time is never compared against a 50m one. Progress is measured
+           within the same event and the same course${
+           LP ? `, across ${n(LP.series)} comparable series` : ''}.</p>
+      </div>
+      <div>
+        <div class="k">Nothing borrowed</div>
+        <h4>Bands come from NextGen's own record</h4>
+        <p>What counts as improving is derived from what these swimmers have
+           actually done, not from a national standard written for someone
+           else's squad.</p>
+      </div>
+    </div>
+  </section>`;
 
   const post = async (url, body, btn, onOk) => {
     btn.disabled = true;
@@ -818,14 +989,18 @@ function gate(step, email, msg){
     };
     document.getElementById('g-send').onclick = go;
     inp.onkeydown = e => { if (e.key === 'Enter') go(); };
-    inp.focus();
   } else {
     const inp = document.getElementById('g-code');
     const go = () => {
       const c = inp.value.trim();
       if (!/^\d{6}$/.test(c)) { gate('code', email, 'Enter the 6-digit code from your email'); return; }
       post('/api/auth/verify-code', {email: email, code: c}, document.getElementById('g-verify'),
-           () => { document.getElementById('sidenav').hidden = false; boot(); });
+           () => {
+             document.getElementById('landing').hidden = true;
+             document.getElementById('hero').hidden = false;
+             document.getElementById('shell').hidden = false;
+             boot();
+           });
     };
     document.getElementById('g-verify').onclick = go;
     document.getElementById('g-back').onclick = () => gate('email', email);
