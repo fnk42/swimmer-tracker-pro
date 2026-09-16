@@ -115,8 +115,29 @@ function parentFromDb(p: ParentRow): Parent {
 async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
   if (!res.ok) {
+    // Our routes answer with { error: "a sentence for the person reading it" }.
+    // Use that sentence. Dumping the raw body put things like
+    //   409 : {"error":"That swimmer is already registered..."}
+    // in front of parents, which is noise wrapped around the useful part.
     const text = await res.text().catch(() => "");
-    throw new Error(`${res.status} ${res.statusText}: ${text}`);
+    let message = "";
+    try {
+      const body = JSON.parse(text) as { error?: string };
+      if (typeof body?.error === "string") message = body.error;
+    } catch {
+      /* not JSON — fall through */
+    }
+    if (!message) {
+      message =
+        res.status === 401
+          ? "Your session has expired. Please sign in again."
+          : res.status === 403
+            ? "You do not have access to that."
+            : res.status >= 500
+              ? "Something went wrong at our end. Please try again."
+              : "That didn't work. Please try again.";
+    }
+    throw new Error(message);
   }
   return (await res.json()) as T;
 }

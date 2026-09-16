@@ -80,6 +80,29 @@ function AdminPage() {
   const swimmers = swimmersQ.data ?? [];
   const registrations = registrationsQ.data ?? [];
   const payments = paymentsQ.data ?? [];
+
+  // Club-level totals. paidForSwimmer already divides a multi-child payment by
+  // the number of children it covers, so summing it never double-counts.
+  const totals = useMemo(() => {
+    const registeredIds = new Set(registrations.map((r) => r.swimmerId));
+    let collected = 0;
+    let paidInFull = 0;
+    for (const s of swimmers) {
+      const paid = paidForSwimmer(payments, s.id);
+      collected += paid;
+      if (paid >= EVENT.totalKes) paidInFull += 1;
+    }
+    return {
+      collected,
+      // What the club is still owed by everyone on the roster.
+      outstanding: swimmers.reduce(
+        (sum, s) => sum + Math.max(0, EVENT.totalKes - paidForSwimmer(payments, s.id)),
+        0,
+      ),
+      registered: registeredIds.size,
+      paidInFull,
+    };
+  }, [swimmers, registrations, payments]);
   const parents = parentsQ.data ?? [];
   const links = linksQ.data ?? [];
 
@@ -142,6 +165,26 @@ function AdminPage() {
             <FileDown className="h-4 w-4" /> Export all (CSV)
           </Button>
         </div>
+
+        {!loading && !errored && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: "Collected", value: formatKes(totals.collected), tone: "text-emerald-700" },
+              { label: "Outstanding", value: formatKes(totals.outstanding), tone: "text-amber-700" },
+              { label: "Registered", value: `${totals.registered} of ${swimmers.length}`, tone: "" },
+              { label: "Paid in full", value: `${totals.paidInFull} of ${swimmers.length}`, tone: "" },
+            ].map((s) => (
+              <Card key={s.label}>
+                <CardContent className="py-4">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                    {s.label}
+                  </div>
+                  <div className={`text-lg font-semibold mt-1 ${s.tone}`}>{s.value}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {loading ? (
           <Card>
