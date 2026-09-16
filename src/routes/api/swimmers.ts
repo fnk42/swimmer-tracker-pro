@@ -1,118 +1,79 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSupabase } from "@/lib/supabase";
+import { q, one, json, fail } from "@/lib/db";
+
+type SwimmerRow = {
+  id: string; name: string; age: number | null;
+  gender: "Male" | "Female" | null; created_at: string; updated_at: string;
+};
 
 export const Route = createFileRoute("/api/swimmers")({
   server: {
     handlers: {
       GET: async () => {
         try {
-          const { data, error } = await getSupabase()
-            .from("swimmers")
-            .select("*")
-            .order("created_at", { ascending: false });
-
-          if (error) throw error;
-
-          return new Response(JSON.stringify(data || []), {
-            headers: { "content-type": "application/json" },
-          });
-        } catch (err) {
-          console.error("GET /api/swimmers error:", err);
-          return new Response(
-            JSON.stringify({ error: "Failed to fetch swimmers" }),
-            { status: 500, headers: { "content-type": "application/json" } },
+          return json(
+            await q<SwimmerRow>(
+              `select * from public.swimmers order by created_at desc`,
+            ),
           );
+        } catch (err) {
+          return fail("GET /api/swimmers", err, "Failed to fetch swimmers");
         }
       },
-      // Single body → add one swimmer. Array body → bulk import (dedupes by
-      // name against existing roster + within the batch).
+
+      // Single body -> add one swimmer. Array body -> bulk import, deduped by
+      // name against the existing roster and within the batch itself.
       POST: async ({ request }) => {
         try {
           const body = await request.json();
-          const sb = getSupabase();
 
           if (Array.isArray(body)) {
-            if (body.length === 0) {
-              return new Response(
-                JSON.stringify({ imported: [], skipped: [] }),
-                { headers: { "content-type": "application/json" } },
-              );
-            }
-            const { data: existing, error: existingErr } = await sb
-              .from("swimmers")
-              .select("name");
-            if (existingErr) throw existingErr;
-            const seen = new Set(
-              (existing ?? []).map((s: { name: string }) => s.name.trim().toLowerCase()),
-            );
+            if (body.length === 0) return json({ imported: [], skipped: [] });
 
-            const toInsert: Array<{
-              name: string;
-              age?: number;
-              gender?: "Male" | "Female";
-            }> = [];
+            const existing = await q<{ name: string }>(
+              `select name from public.swimmers`,
+            );
+            const seen = new Set(existing.map((s) => s.name.trim().toLowerCase()));
+
+            const toInsert: Array<{ name: string; age?: number; gender?: string }> = [];
             const skipped: Array<{ name: string; reason: string }> = [];
-            body.forEach((r: { name?: string; age?: number; gender?: "Male" | "Female" }) => {
+            for (const r of body as Array<{ name?: string; age?: number; gender?: "Male" | "Female" }>) {
               const key = (r.name ?? "").trim().toLowerCase();
-              if (!key) {
-                skipped.push({ name: r.name ?? "", reason: "Missing name" });
-                return;
-              }
+              if (!key) { skipped.push({ name: r.name ?? "", reason: "Missing name" }); continue; }
               if (seen.has(key)) {
-                skipped.push({
-                  name: r.name ?? "",
-                  reason: "Duplicate — already in roster",
-                });
-                return;
+                skipped.push({ name: r.name ?? "", reason: "Duplicate — already in roster" });
+                continue;
               }
               seen.add(key);
-              toInsert.push({
-                name: (r.name ?? "").trim(),
-                age: r.age,
-                gender: r.gender,
-              });
-            });
-            if (toInsert.length === 0) {
-              return new Response(JSON.stringify({ imported: [], skipped }), {
-                headers: { "content-type": "application/json" },
-              });
+              toInsert.push({ name: (r.name ?? "").trim(), age: r.age, gender: r.gender });
             }
-            const { data: inserted, error } = await sb
-              .from("swimmers")
-              .insert(toInsert)
-              .select();
-            if (error) throw error;
-            return new Response(
-              JSON.stringify({ imported: inserted ?? [], skipped }),
-              { headers: { "content-type": "application/json" } },
+            if (toInsert.length === 0) return json({ imported: [], skipped });
+
+            // one multi-row INSERT rather than a round trip per swimmer
+            const vals: unknown[] = [];
+            const tuples = toInsert.map((r, i) => {
+              vals.push(r.name, r.age ?? null, r.gender ?? null);
+              return `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`;
+            });
+            const imported = await q<SwimmerRow>(
+              `insert into public.swimmers (name, age, gender)
+               values ${tuples.join(", ")} returning *`,
+              vals,
             );
+            return json({ imported, skipped });
           }
 
           if (!body.name || !String(body.name).trim()) {
-            return new Response(
-              JSON.stringify({ error: "name required" }),
-              { status: 400, headers: { "content-type": "application/json" } },
-            );
+            return json({ error: "name required" }, 400);
           }
-          const { data, error } = await sb
-            .from("swimmers")
-            .insert({
-              name: String(body.name).trim(),
-              age: body.age,
-              gender: body.gender,
-            })
-            .select()
-            .single();
-          if (error) throw error;
-          return new Response(JSON.stringify(data), {
-            headers: { "content-type": "application/json" },
-          });
-        } catch (err) {
-          console.error("POST /api/swimmers error:", err);
-          return new Response(
-            JSON.stringify({ error: "Failed to add swimmer(s)" }),
-            { status: 500, headers: { "content-type": "application/json" } },
+          const row = await one<SwimmerRow>(
+            `insert into public.swimmers (name, age, gender)
+             values ($1, $2, $3) returning *`,
+            [String(body.name).trim(), body.age ?? null, body.gender ?? null],
           );
+          return json(row);
+        } catch (err) {
+          return fail("POST /api/swimmers", err, "Failed to add swimmer(s)");
         }
       },
     },

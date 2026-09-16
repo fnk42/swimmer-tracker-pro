@@ -1,61 +1,40 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSupabase } from "@/lib/supabase";
+import { one, json, fail, tx } from "@/lib/db";
 
 export const Route = createFileRoute("/api/swimmers/$id")({
   server: {
     handlers: {
       PATCH: async ({ request, params }) => {
         try {
-          const { id } = params;
           const body = await request.json();
           const name = String(body?.name ?? "").trim();
-          if (!name) {
-            return new Response(
-              JSON.stringify({ error: "name required" }),
-              { status: 400, headers: { "content-type": "application/json" } },
-            );
-          }
-          const { data, error } = await getSupabase()
-            .from("swimmers")
-            .update({ name })
-            .eq("id", id)
-            .select()
-            .single();
-          if (error) throw error;
-          return new Response(JSON.stringify(data), {
-            headers: { "content-type": "application/json" },
-          });
-        } catch (err) {
-          console.error("PATCH /api/swimmers/:id error:", err);
-          return new Response(
-            JSON.stringify({ error: "Failed to update swimmer" }),
-            { status: 500, headers: { "content-type": "application/json" } },
+          if (!name) return json({ error: "name required" }, 400);
+          const row = await one(
+            `update public.swimmers set name = $1, updated_at = now()
+             where id = $2 returning *`,
+            [name, params.id],
           );
+          if (!row) return json({ error: "Not found" }, 404);
+          return json(row);
+        } catch (err) {
+          return fail("PATCH /api/swimmers/:id", err, "Failed to update swimmer");
         }
       },
-      // Best-effort cascade: payments + registrations + swimmer itself. If
-      // multi-child payments cover other swimmers in swimmer_ids, they
-      // remain (still covers the remaining kids). Data-integrity cleanup
-      // for the multi-child case is a follow-up.
+
+      // Payments and registrations cascade from the foreign keys, but doing it
+      // explicitly inside one transaction means a partial failure rolls back
+      // rather than leaving a swimmer with orphaned money attached.
       DELETE: async ({ params }) => {
         try {
-          const { id } = params;
-          const sb = getSupabase();
-          const p = await sb.from("payments").delete().eq("swimmer_id", id);
-          if (p.error) throw p.error;
-          const r = await sb.from("registrations").delete().eq("swimmer_id", id);
-          if (r.error) throw r.error;
-          const s = await sb.from("swimmers").delete().eq("id", id);
-          if (s.error) throw s.error;
-          return new Response(JSON.stringify({ ok: true }), {
-            headers: { "content-type": "application/json" },
+          await tx(async (c) => {
+            await c.query(`delete from public.payments where swimmer_id = $1`, [params.id]);
+            await c.query(`delete from public.registrations where swimmer_id = $1`, [params.id]);
+            await c.query(`delete from public.swimmer_parents where swimmer_id = $1`, [params.id]);
+            await c.query(`delete from public.swimmers where id = $1`, [params.id]);
           });
+          return json({ ok: true });
         } catch (err) {
-          console.error("DELETE /api/swimmers/:id error:", err);
-          return new Response(
-            JSON.stringify({ error: "Failed to delete swimmer" }),
-            { status: 500, headers: { "content-type": "application/json" } },
-          );
+          return fail("DELETE /api/swimmers/:id", err, "Failed to delete swimmer");
         }
       },
     },
