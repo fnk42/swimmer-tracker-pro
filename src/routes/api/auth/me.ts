@@ -22,6 +22,12 @@ export const Route = createFileRoute("/api/auth/me")({
             signedIn: true,
             email: s.email,
             isAdmin: s.isAdmin,
+            // Which sections of the portal this person gets. Everyone signed in
+            // sees Performance; Events is for the people actually involved in
+            // the meet. Today the database only holds Machakos registrants, so
+            // every parent has both — the distinction matters once parents of
+            // non-registered swimmers can sign in too.
+            sections: { performance: true, events: s.isAdmin || !!s.parentId },
             parent: p
               ? { id: p.id, fullName: p.full_name, email: p.email, phone: p.phone }
               : null,

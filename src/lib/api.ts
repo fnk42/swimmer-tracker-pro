@@ -348,6 +348,7 @@ export type Me = {
   signedIn: boolean;
   email?: string;
   isAdmin?: boolean;
+  sections?: { performance: boolean; events: boolean };
   parent: Parent | null;
 };
 
@@ -371,6 +372,7 @@ export function useMe() {
         signedIn: !!d.signedIn,
         email: d.email,
         isAdmin: !!d.isAdmin,
+        sections: d.sections ?? { performance: true, events: true },
         parent: d.parent
           ? {
               id: d.parent.id,

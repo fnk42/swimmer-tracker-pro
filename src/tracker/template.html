@@ -26,6 +26,11 @@
   --shadow:0 20px 60px -30px rgba(0,0,0,.75); --shadow-sm:0 8px 24px -14px rgba(0,0,0,.6);
 }
 *{box-sizing:border-box}
+/* Any class here that sets `display` outranks the user-agent [hidden] rule,
+   so el.hidden = true silently does nothing. That has now caught the sidenav,
+   the shell, a nav item and a menu entry — one global rule ends it. */
+[hidden]{display:none !important}
+
 body{margin:0;background:var(--bg);color:var(--ink);
   font-family:'Sora',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.6;
   -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;
@@ -178,12 +183,9 @@ details[open] .chev{transform:rotate(45deg)}
 
 /* section navigation — the page is long for a coordinator, so give them a
    way to jump rather than scroll. On a phone it becomes a scrollable strip. */
-.shell[hidden]{display:none}
 .shell{display:grid;grid-template-columns:186px minmax(0,1fr);gap:28px;
   max-width:1180px;margin:0 auto;padding-inline:20px;align-items:start}
 .sidenav{position:sticky;top:18px;padding-block:28px;display:grid;gap:2px;align-content:start}
-/* the class sets display, which beats the UA [hidden] rule — the gate needs this */
-.sidenav[hidden]{display:none}
 .sidenav .navtitle{font-size:10.5px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;
   color:var(--muted);padding:0 12px 10px}
 .sidenav a{display:grid;grid-template-columns:22px 1fr;gap:6px;align-items:baseline;
@@ -316,7 +318,6 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
    visitor sees, so it has to stand on its own: what the archive is, how big it
    is, how it was built, and a way in. Aggregate counts only — every figure here
    is already public on the club's SwimCloud page. */
-#landing[hidden]{display:none}
 .lp-hero{background:
    radial-gradient(1200px 420px at 78% -12%, rgba(22,166,232,.30), transparent 62%),
    linear-gradient(168deg, var(--navy) 0%, var(--navy-2) 100%);
@@ -388,6 +389,35 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
   .lp-steps{grid-template-columns:minmax(0,1fr)}
   .lp-how .lp-wrap{grid-template-columns:minmax(0,1fr);gap:26px}
 }
+/* portal bar — matches AppHeader on the React pages, because it is the same
+   portal and the same sign-in; only the rendering differs */
+.pbar{background:var(--navy);border-bottom:1px solid rgba(255,255,255,.10);
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:40}
+.pbar .in{max-width:1180px;margin:0 auto;padding:0 20px;height:56px;
+  display:flex;align-items:center;gap:14px}
+.pbar img{height:34px;width:auto;flex:0 0 auto}
+.pbar .club{font-size:11px;color:#8FA9C4;white-space:nowrap}
+.pbar nav{margin-left:auto;display:flex;align-items:center;gap:4px;position:relative}
+.pbar a.t,.pbar button.t{font:inherit;font-size:13.5px;padding:7px 13px;border-radius:8px;
+  border:0;background:none;color:#C8D8EA;cursor:pointer;text-decoration:none;
+  display:flex;align-items:center;gap:6px;transition:background .15s,color .15s}
+.pbar a.t:hover,.pbar button.t:hover{background:rgba(255,255,255,.09);color:#fff}
+.pbar .t[aria-current="true"]{background:rgba(255,255,255,.14);color:#fff;font-weight:600}
+.pbar .menu{position:absolute;right:0;top:46px;width:264px;background:var(--surface);
+  border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 18px 44px rgba(4,14,28,.4)}
+.pbar .menu .cap{padding:7px 11px 6px;font-size:10px;font-weight:700;letter-spacing:1.4px;
+  text-transform:uppercase;color:var(--muted)}
+.pbar .menu a{display:block;padding:9px 11px;border-radius:8px;text-decoration:none}
+.pbar .menu a:hover{background:var(--sunken)}
+.pbar .menu b{display:block;font-size:13.5px;color:var(--ink)}
+.pbar .menu span{display:block;font-size:11.8px;color:var(--muted);margin-top:1px}
+.pbar .out{font-size:12px;color:#8FA9C4;background:none;border:0;cursor:pointer;
+  padding:7px 4px;margin-left:6px;font-family:inherit}
+.pbar .out:hover{color:#fff}
+@media (max-width:640px){ .pbar .club{display:none} }
+.scopenote{margin:14px 0 0;padding:11px 14px;border-left:3px solid var(--electric);
+  background:var(--sunken);border-radius:0 8px 8px 0;font-size:13px;color:var(--muted)}
+.scopenote strong{color:var(--ink)}
 footer{border-top:1px solid var(--line);margin-top:22px;padding-block:24px 36px;color:var(--muted);font-size:12px}
 .gpline{margin-top:16px;padding-top:15px;border-top:1px solid var(--line);
   justify-content:center;font-size:11.5px;letter-spacing:.3px;color:var(--muted)}
@@ -395,9 +425,27 @@ footer{border-top:1px solid var(--line);margin-top:22px;padding-block:24px 36px;
 footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 </style>
 
+<div class="pbar" id="pbar" hidden>
+  <div class="in">
+    <img src="/nextgen-logo.png" alt="NextGen Swim Club">
+    <span class="club">NextGen Multi Sport Academy</span>
+    <nav aria-label="Portal sections">
+      <a class="t" href="/tracker" aria-current="true">Performance</a>
+      <button class="t" id="pb-events" type="button" aria-haspopup="menu" aria-expanded="false"
+              hidden>Events <span aria-hidden style="font-size:10px">&#9662;</span></button>
+      <div class="menu" id="pb-menu" hidden>
+        <div class="cap">Machakos County</div>
+        <a href="/parent"><b>Swimming Nationals</b><span>19&ndash;22 Nov 2026 &middot; register &amp; pay</span></a>
+        <a href="/admin" id="pb-admin" hidden><b>Coordinator view</b><span>Every registration and payment</span></a>
+      </div>
+      <button class="out" id="pb-out" type="button">Log out</button>
+    </nav>
+  </div>
+</div>
+
 <header class="hero" id="hero">
   <div class="wrap">
-    <img class="logo" src="/nextgen-logo-dark.png" alt="NextGen Multi Sport Academy">
+    <img class="logo" src="/nextgen-logo.png" alt="NextGen Multi Sport Academy">
     <div class="eyebrow">NextGen Analytics</div>
     <h1 class="display">Athlete <span style="color:var(--cyan)">Development</span></h1>
     <p id="herosub">Every verified swim by a NextGen athlete. Pick a season, then open any
@@ -625,6 +673,9 @@ function render(){
     <p class="sec-sub">${s.swimmers} athletes raced ${s.swims} times across ${s.meets} meet${s.meets===1?'':'s'}
       ${year==='all'?`between ${Y.meets[Y.meets.length-1].date.slice(0,7)} and ${Y.meets[0].date.slice(0,7)}`:'in '+year}.
       Every swim reconciled against the official published results.</p>
+    ${SCOPE==='family' ? `<p class="scopenote"><strong>Club-wide view.</strong>
+      Percentages, medians and counts for the squad as a whole. Individual swimmers
+      are not listed: other families' results are theirs, not ours to publish.</p>` : ''}
     ${year==='all' ? `<div class="caution" style="background:rgba(22,166,232,.10);border-color:rgba(22,166,232,.38)">
       <strong style="color:var(--electric-deep)">This is the career view.</strong>
       Each swimmer's trend compares their first and last swim in every event they repeated,
@@ -792,12 +843,24 @@ function render(){
 // Routing. Each nav item is its own page, not a scroll position: only the
 // active section is in the document flow, and the hash makes a view linkable
 // and survives a reload or the back button.
-const PAGES = ['programme','age-groups','swimmers','meets','decisions'];
+const ALL_PAGES = ['programme','age-groups','swimmers','meets','decisions'];
+// 'club' sees every swimmer by name; 'family' gets the club-wide picture only,
+// which is aggregate throughout. The server decides which, and sends only what
+// that scope is allowed — this just keeps the nav honest about it.
+let SCOPE = 'club';
+let PAGES = ALL_PAGES;
 let page = routeFromHash();
 
 function routeFromHash(){
   const h = (location.hash || '').replace(/^#\/?/, '');
   return PAGES.includes(h) ? h : PAGES[0];
+}
+
+function applyScope(){
+  PAGES = SCOPE === 'family' ? ALL_PAGES.filter(p => p !== 'swimmers') : ALL_PAGES;
+  document.querySelectorAll('#sidenav a').forEach(a => {
+    a.hidden = !PAGES.includes(a.dataset.page);
+  });
 }
 
 function showPage(p){
@@ -862,6 +925,7 @@ document.getElementById('years').addEventListener('click', e => {
 let LP = null;
 
 async function gate(step, email, msg){
+  document.getElementById('pbar').hidden = true;
   document.getElementById('hero').hidden = true;
   document.getElementById('shell').hidden = true;
   const el = document.getElementById('landing');
@@ -1017,9 +1081,43 @@ async function gate(step, email, msg){
   }
 }
 
+
+// Portal bar. Shown once we know who is signed in, because which sections
+// exist is the session's answer, not this page's.
+function portalBar(me){
+  const bar = document.getElementById('pbar');
+  if (!me || !me.signedIn) { bar.hidden = true; return; }
+  bar.hidden = false;
+
+  const sections = me.sections || {performance:true, events:true};
+  const evBtn = document.getElementById('pb-events');
+  const menu  = document.getElementById('pb-menu');
+  evBtn.hidden = !sections.events;
+  document.getElementById('pb-admin').hidden = !me.isAdmin;
+
+  const close = () => { menu.hidden = true; evBtn.setAttribute('aria-expanded','false'); };
+  evBtn.onclick = e => {
+    e.stopPropagation();
+    const nowOpen = menu.hidden;
+    menu.hidden = !nowOpen;
+    evBtn.setAttribute('aria-expanded', String(nowOpen));
+  };
+  document.addEventListener('mousedown', e => { if (!menu.contains(e.target) && e.target !== evBtn) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+  document.getElementById('pb-out').onclick = async () => {
+    try { await fetch('/api/auth/me', {method:'DELETE'}); } catch (e) {}
+    location.href = '/';
+  };
+}
+
 async function boot(){
   const app = document.getElementById('app');
   app.innerHTML = '<section class="wrap"><p class="sec-sub">Loading…</p></section>';
+  let me = null;
+  try { me = await fetch('/api/auth/me').then(r => r.ok ? r.json() : null); } catch (e) {}
+  portalBar(me);
+
   try {
     const res = await fetch('/api/tracker/data');
     if (res.status === 401 || res.status === 403) { gate(); return; }
@@ -1030,6 +1128,8 @@ async function boot(){
       + 'Please refresh, or tell Felix if it keeps happening.</div></section>';
     return;
   }
+  SCOPE = DATA.scope === 'family' ? 'family' : 'club';
+  applyScope();
   YEARS = ['all'].concat(Object.keys(DATA.years).filter(y=>y!=='all').sort().reverse());
   year = 'all';
   document.getElementById('foot').textContent =
