@@ -143,3 +143,190 @@
     color: var(--color-foreground);
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * NextGen design layer.
+ *
+ * Lifted from welcome.nextgenkenya.com (fnk42/welcomenextgen) so the portal is
+ * recognisably the same club as the site parents already know: the same navy
+ * water, the same electric blue, Anton for display and Sora for everything
+ * else. Written as plain CSS rather than Tailwind tokens because the values
+ * come from that site verbatim — one source of truth, easy to diff against it.
+ */
+:root {
+  --ng-navy: #0a1b33;
+  --ng-navy-2: #12294a;
+  --ng-electric: #16a6e8;
+  --ng-electric-deep: #0e7fc0;
+  --ng-cyan: #46d3f0;
+  --ng-ice: #eaf6fd;
+  --ng-foam: #f4fafe;
+  --ng-ink: #0a1b33;
+  --ng-muted: #5c7390;
+  --ng-line: rgba(10, 27, 51, 0.1);
+  --ng-gold: #ffc24b;
+  --ng-ok: #1fb67a;
+  --ng-shadow: 0 20px 60px -25px rgba(10, 27, 51, 0.45);
+  --ng-shadow-sm: 0 8px 24px -12px rgba(10, 27, 51, 0.35);
+}
+
+.ng-display {
+  font-family: "Anton", sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 0.95;
+}
+.ng-sora {
+  font-family: "Sora", system-ui, sans-serif;
+}
+
+/* The water the whole club site sits on. Fixed, so it stays put while the
+   content scrolls over it. */
+.ng-water {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(1100px 650px at 82% -12%, rgba(26, 58, 102, 0.9) 0%, transparent 60%),
+    radial-gradient(900px 600px at -8% 112%, rgba(13, 43, 80, 0.9) 0%, transparent 55%),
+    linear-gradient(160deg, #071427 0%, #0a1b33 55%, #08284a 100%);
+}
+/* Light refracting off moving water. Decorative, and it drifts — so it stops
+   for anyone who has asked motion to stop. */
+.ng-caustics {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.5;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background:
+    repeating-linear-gradient(115deg, rgba(70, 211, 240, 0.05) 0 2px, transparent 2px 9px),
+    repeating-linear-gradient(65deg, rgba(22, 166, 232, 0.045) 0 2px, transparent 2px 11px);
+  animation: ng-drift 22s linear infinite;
+}
+@keyframes ng-drift {
+  to {
+    background-position:
+      300px 200px,
+      -300px 180px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ng-caustics {
+    animation: none;
+  }
+}
+
+.ng-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--ng-cyan);
+  font-weight: 600;
+}
+.ng-eyebrow .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ng-cyan);
+  box-shadow: 0 0 12px var(--ng-cyan);
+}
+
+.ng-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 15px 26px;
+  border-radius: 14px;
+  font-size: 15.5px;
+  transition:
+    transform 0.15s,
+    box-shadow 0.2s,
+    background 0.2s;
+}
+.ng-btn:active {
+  transform: translateY(1px);
+}
+.ng-btn-primary {
+  background: linear-gradient(135deg, var(--ng-electric), var(--ng-electric-deep));
+  color: #fff;
+  box-shadow: 0 12px 26px -12px rgba(22, 166, 232, 0.8);
+}
+.ng-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 16px 34px -12px rgba(22, 166, 232, 0.95);
+  transform: translateY(-2px);
+}
+.ng-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.ng-btn-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+}
+.ng-btn-ghost:hover {
+  border-color: var(--ng-electric);
+  color: var(--ng-cyan);
+  background: rgba(22, 166, 232, 0.12);
+}
+
+/* Glass panel on the water. */
+.ng-panel {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  backdrop-filter: blur(6px);
+}
+.ng-field {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px 15px;
+  font: inherit;
+  font-size: 16px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+}
+.ng-field::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+.ng-field:focus-visible {
+  outline: none;
+  border-color: var(--ng-electric);
+  box-shadow: 0 0 0 3px rgba(22, 166, 232, 0.25);
+}
+.ng-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--ng-cyan);
+  margin-bottom: 7px;
+}
+/* Icon tile, as used on the club site's feature rows. */
+.ng-ic {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(22, 166, 232, 0.16);
+  border: 1px solid rgba(22, 166, 232, 0.3);
+  color: var(--ng-cyan);
+}

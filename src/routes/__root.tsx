@@ -78,17 +78,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "NextGen Swim Club — Nationals Payment Tracker" },
+      { title: "NextGen Swim Club — Parent Portal" },
       {
         name: "description",
         content:
-          "Register your NextGen swimmer and log M-Pesa payments for the Swimming Nationals in Machakos County.",
+          "One sign-in for NextGen parents: the events your child is entered for, and how their swimming has developed at the club.",
       },
-      { property: "og:title", content: "NextGen Swim Club — Nationals Payment Tracker" },
+      { property: "og:title", content: "NextGen Swim Club — Parent Portal" },
       {
         property: "og:description",
         content:
-          "Register your swimmer and track accommodation payments for the Nationals in Machakos.",
+          "The events your child is entered for, and how their swimming has developed at the club.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -100,7 +100,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+        href:
+          "https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700" +
+          "&family=Sora:wght@300;400;500;600;700;800&display=swap",
       },
     ],
   }),

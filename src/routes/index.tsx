@@ -1,20 +1,21 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { EVENT } from "@/lib/event-config";
 import { useMe, useRequestCode, useVerifyCode } from "@/lib/api";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/")({
-  component: LoginPage,
+  component: PortalLanding,
 });
 
-// One sign-in for everyone. A six-digit code to the address already on the
-// registration; coordinators are recognised by that same address, so there is
-// no second password to circulate and nothing secret in this bundle.
-function LoginPage() {
+// The front door for the whole portal, not for any one meet.
+//
+// This used to be the Machakos sign-in, which made sense when the meet was the
+// only thing here. It is now one sign-in that opens two things — the events a
+// child is entered for, and that child's swimming since they joined — so the
+// page says that rather than naming a meet that is over in November.
+//
+// Styling follows welcome.nextgenkenya.com: the same navy water, the same
+// electric blue, Anton over Sora. A parent should recognise it as the club.
+function PortalLanding() {
   const navigate = useNavigate();
   const me = useMe();
   const requestCode = useRequestCode();
@@ -54,116 +55,166 @@ function LoginPage() {
     }
   }
 
+  const features = [
+    {
+      title: "Events",
+      body: "What your child is entered for, what is still owed, and how to pay.",
+      path: "M8 2v3m8-3v3M3.5 9.5h17M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z",
+    },
+    {
+      title: "Performance",
+      body: "How swimming at the club is developing — season by season, stroke by stroke, by age group.",
+      path: "M4 19V10m5 9V5m5 14v-6m5 6V8",
+    },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex flex-col">
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md">
+    <div className="ng-sora relative flex min-h-screen flex-col">
+      <div className="ng-water" aria-hidden />
+      <div className="ng-caustics" aria-hidden />
+
+      <main className="mx-auto grid w-full max-w-5xl flex-1 items-center gap-12 px-5 py-14 lg:grid-cols-[minmax(0,1fr)_minmax(340px,395px)] lg:py-20">
+        <div className="text-white">
           <img
-            src="/nextgen-logo-dark.png"
-            alt="NextGen Swim Club"
-            className="mx-auto h-28 w-auto mb-6"
+            src="/nextgen-logo.png"
+            alt="NextGen Multi Sport Academy"
+            className="mb-7 h-[70px] w-auto"
             width={395}
             height={265}
           />
-          <div className="text-center mb-8 space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight">{EVENT.name}</h1>
-            <p className="text-sm text-muted-foreground">{EVENT.location}</p>
-            <p className="text-xs text-muted-foreground">
-              {EVENT.startDate} – {EVENT.endDate}
-            </p>
-          </div>
+          <p className="ng-eyebrow mb-5">
+            <span className="dot" aria-hidden />
+            NextGen Multi Sport Academy
+          </p>
+          <h1 className="ng-display text-[clamp(38px,6.2vw,62px)]" style={{ textWrap: "balance" }}>
+            One sign-in for
+            <span className="block" style={{ color: "var(--ng-electric)" }}>
+              your swimmer
+            </span>
+          </h1>
+          <p className="mt-5 max-w-[48ch] text-[16.5px] leading-relaxed text-white/70">
+            See the events your child is entered for, and how their swimming has developed over
+            their time at the club — every race, every season.
+          </p>
 
-          <Card>
-            {step === "email" ? (
-              <>
-                <CardHeader>
-                  <CardTitle>Sign in</CardTitle>
-                  <CardDescription>
-                    Enter the email address on your child's registration. We'll send you a
-                    six-digit code.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={onSendCode} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email address</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        inputMode="email"
-                        autoComplete="email"
-                        placeholder="you@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                    {error && <p className="text-sm text-destructive">{error}</p>}
-                    <Button
-                      type="submit"
-                      className="w-full h-11"
-                      disabled={requestCode.isPending}
-                    >
-                      {requestCode.isPending ? "Sending…" : "Send me a code"}
-                    </Button>
-                  </form>
-                </CardContent>
-              </>
-            ) : (
-              <>
-                <CardHeader>
-                  <CardTitle>Check your email</CardTitle>
-                  <CardDescription>
-                    If <span className="font-medium">{email}</span> is on a registration, a
-                    six-digit code is on its way. It expires in 10 minutes.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={onVerify} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="code">Six-digit code</Label>
-                      <Input
-                        id="code"
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                        pattern="[0-9]{6}"
-                        maxLength={6}
-                        placeholder="000000"
-                        className="text-center text-lg tracking-[0.4em]"
-                        value={code}
-                        onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                        required
-                      />
-                    </div>
-                    {devNote && (
-                      <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-                        Development mode — email is not configured, so the code was printed to
-                        the server console.
-                      </p>
-                    )}
-                    {error && <p className="text-sm text-destructive">{error}</p>}
-                    <Button type="submit" className="w-full h-11" disabled={verifyCode.isPending}>
-                      {verifyCode.isPending ? "Checking…" : "Sign in"}
-                    </Button>
-                    <button
-                      type="button"
-                      onClick={() => { setStep("email"); setCode(""); setError(null); }}
-                      className="w-full text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
-                    >
-                      Use a different email, or send a new code
-                    </button>
-                  </form>
-                </CardContent>
-              </>
-            )}
-            <CardContent className="pt-0">
-              <p className="text-xs text-muted-foreground text-center">
-                Your details are visible only to you and the coordinators.
-              </p>
-            </CardContent>
-          </Card>
+          <ul className="ng-panel mt-9 max-w-[520px] px-6 py-1">
+            {features.map((f, i) => (
+              <li
+                key={f.title}
+                className={"flex gap-4 py-4 " + (i === 0 ? "border-b border-white/10" : "")}
+              >
+                <span className="ng-ic" aria-hidden>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-5 w-5"
+                  >
+                    <path d={f.path} />
+                  </svg>
+                </span>
+                <span>
+                  <span className="block text-[15.5px] font-semibold text-white">{f.title}</span>
+                  <span className="block text-sm text-white/65">{f.body}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
-      </div>
+
+        <div className="ng-panel p-7 text-white">
+          {step === "email" ? (
+            <form onSubmit={onSendCode}>
+              <h2 className="text-[20px] font-semibold">Sign in</h2>
+              <p className="mb-6 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
+                Use the email address the club has for you. We send a six-digit code — there is
+                no password to remember.
+              </p>
+              <label className="ng-label" htmlFor="email">
+                Email address
+              </label>
+              <input
+                id="email"
+                className="ng-field"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              {error && <p className="mt-3 text-sm font-medium text-[#FFC24B]">{error}</p>}
+              <button
+                type="submit"
+                className="ng-btn ng-btn-primary mt-4 w-full"
+                disabled={requestCode.isPending}
+              >
+                {requestCode.isPending ? "Sending…" : "Send me a code"}
+              </button>
+              <p className="mt-4 text-xs leading-relaxed text-white/45">
+                If an address is not recognised, nothing is sent. Your details are visible only to
+                you and the club's coordinators.
+              </p>
+            </form>
+          ) : (
+            <form onSubmit={onVerify}>
+              <h2 className="text-[20px] font-semibold">Check your email</h2>
+              <p className="mb-6 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
+                If <span className="font-semibold text-white">{email}</span> is known to the club,
+                a six-digit code is on its way. It expires in 10 minutes.
+              </p>
+              <label className="ng-label" htmlFor="code">
+                Six-digit code
+              </label>
+              <input
+                id="code"
+                className="ng-field text-center text-lg tracking-[0.4em]"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                placeholder="000000"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                required
+              />
+              {devNote && (
+                <p className="mt-3 rounded-lg border border-[#FFC24B]/40 bg-[#FFC24B]/10 p-2 text-xs text-[#FFC24B]">
+                  Email is not configured on this deployment, so the code was printed to the server
+                  log.
+                </p>
+              )}
+              {error && <p className="mt-3 text-sm font-medium text-[#FFC24B]">{error}</p>}
+              <button
+                type="submit"
+                className="ng-btn ng-btn-primary mt-4 w-full"
+                disabled={verifyCode.isPending}
+              >
+                {verifyCode.isPending ? "Checking…" : "Sign in"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("email");
+                  setCode("");
+                  setError(null);
+                }}
+                className="mt-3 w-full text-xs text-white/50 underline-offset-4 hover:text-white hover:underline"
+              >
+                Use a different email, or send a new code
+              </button>
+            </form>
+          )}
+        </div>
+      </main>
+
+      <footer className="relative px-5 pb-8 text-center text-[11.5px] text-white/35">
+        A product of <span className="font-semibold text-white/55">Golden Pipit Solutions</span>
+      </footer>
     </div>
   );
 }
