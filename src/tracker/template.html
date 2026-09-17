@@ -343,6 +343,54 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
 .scopenote{margin:14px 0 0;padding:11px 14px;border-left:3px solid var(--electric);
   background:var(--sunken);border-radius:0 8px 8px 0;font-size:13px;color:var(--muted)}
 .scopenote strong{color:var(--ink)}
+/* meets drill-down */
+.comp[data-meet]{cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.comp[data-meet]:hover{border-color:var(--electric)}
+.comp[data-meet]:focus-visible{outline:2px solid var(--electric);outline-offset:2px}
+.comp .opener{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:11px;font-weight:600;
+  letter-spacing:.06em;color:var(--electric-deep);white-space:nowrap}
+.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-bottom:14px;font-size:13px}
+.crumbs button{font:inherit;background:none;border:0;padding:6px 2px;color:var(--electric-deep);
+  cursor:pointer;text-decoration:underline;text-underline-offset:3px;min-height:44px}
+.crumbs button:hover{color:var(--ink)}
+.crumbs span.sep{color:var(--muted)}
+.crumbs span.here{color:var(--muted)}
+.meetbar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  margin:0 0 18px}
+.meetbar div{background:var(--surface);padding:11px 13px}
+.meetbar b{display:block;font-family:'Anton',sans-serif;font-size:21px;line-height:1;color:var(--ink);
+  font-variant-numeric:tabular-nums}
+.meetbar span{display:block;margin-top:6px;font-size:10.5px;font-weight:700;letter-spacing:1.1px;
+  text-transform:uppercase;color:var(--muted)}
+details.ev{background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  margin-bottom:8px;overflow:hidden}
+details.ev[open]{border-color:var(--electric)}
+details.ev > summary{padding:13px 16px;cursor:pointer;list-style:none;display:flex;
+  align-items:baseline;gap:10px;min-height:44px}
+details.ev > summary::-webkit-details-marker{display:none}
+details.ev > summary:hover{background:var(--sunken)}
+details.ev .evname{font-size:14.5px;font-weight:600;color:var(--ink)}
+details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:11px;color:var(--muted);white-space:nowrap}
+.rows{border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:baseline;
+  padding:9px 16px;border-bottom:1px solid var(--line);font-size:13.6px}
+.row:last-child{border-bottom:none}
+.row .pl{font-family:'Anton',sans-serif;font-size:15px;color:var(--muted);text-align:right}
+.row .pl.pod{color:var(--gold)}
+.row .who{min-width:0}
+.row .who b{display:block;font-weight:600;color:var(--ink);font-size:13.8px}
+.row .who small{display:block;color:var(--muted);font-size:11.5px;margin-top:1px}
+.row .tm{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums;
+  font-weight:600;color:var(--ink);text-align:right;white-space:nowrap}
+.row .tm .pbtag{display:block;font-family:'Sora',sans-serif;font-size:9.5px;font-weight:700;
+  letter-spacing:.9px;text-transform:uppercase;color:var(--ok);margin-top:2px}
+.row .tm .st{color:var(--muted);font-weight:500}
+@media(max-width:560px){
+  .row{grid-template-columns:28px 1fr auto;gap:8px;padding:9px 12px}
+  .meetbar{grid-template-columns:repeat(2,1fr)}
+}
 footer{border-top:1px solid var(--line);margin-top:22px;padding-block:24px 36px;color:var(--muted);font-size:12px}
 .gpline{margin-top:16px;padding-top:15px;border-top:1px solid var(--line);
   justify-content:center;font-size:11.5px;letter-spacing:.3px;color:var(--muted)}
@@ -571,9 +619,10 @@ function render(){
       ${c.above>0?`<span class="fb-above" style="width:${c.above}%">${c.above>11?c.above+'% at or above form':''}</span>`:''}
       ${c.below>0?`<span class="fb-below" style="width:${c.below}%">${c.below>11?c.below+'% below':''}</span>`:''}
     </div>`;
-    return `<div class="comp">
+    return `<div class="comp" data-meet="${esc(c.id)}" role="button" tabindex="0"
+                 aria-label="Open results for ${esc(c.name)}">
       <div class="comphead">
-        <div><h3>${esc(c.name)}</h3>
+        <div><h3>${esc(c.name)} <span class="opener" aria-hidden>results &rsaquo;</span></h3>
           <div class="when">${c.date} · ${c.course||'—'} · ${c.swimmers} swimmers · ${c.swims} swims · ${c.podiums} podiums</div></div>
         ${c.median!==null?`<span class="pill ${c.median<=-2?'p-improving':c.median<=0.6?'p-stable':'p-review'}">${pct(c.median)} vs form</span>`:''}
       </div>
@@ -873,6 +922,115 @@ function portalBar(me){
     location.href = '/';
   };
 }
+
+
+// ---------------------------------------------------------------------------
+// Meets drill-down: Meets -> a meet -> its events -> the results.
+//
+// The meet list is part of the analytics payload, but the races are not — all
+// 61 meets in full is about 600 KB, so one meet is fetched when it is opened.
+// Going back restores the list and the scroll position, because losing your
+// place after reading one meet is the thing that makes a drill-down annoying.
+let meetCache = {};
+let meetReturn = 0;
+
+function fmtTime(t){ return t || '—'; }
+
+async function openMeet(id){
+  const app = document.getElementById('app');
+  meetReturn = window.scrollY;
+
+  if (!meetCache[id]) {
+    app.innerHTML = `<section class="wrap"><p class="sec-sub">Loading the results…</p></section>`;
+    try {
+      const r = await fetch('/api/meet/detail?id=' + encodeURIComponent(id));
+      if (!r.ok) throw new Error(String(r.status));
+      meetCache[id] = await r.json();
+    } catch (e) {
+      app.innerHTML = `<section class="wrap"><div class="caution">
+        <strong>Could not load that meet.</strong> Go back and try again.</div>
+        <p style="margin-top:12px"><button class="crumbs" onclick="closeMeet()">Back to meets</button></p>
+        </section>`;
+      return;
+    }
+  }
+  renderMeet(meetCache[id]);
+}
+
+function renderMeet(m){
+  const app = document.getElementById('app');
+  const span = m.end && m.end !== m.date ? `${m.date} to ${m.end}` : m.date;
+
+  const events = m.events.map(e => {
+    const rows = e.rows.map(r => {
+      const pod = r.p && r.p <= 3;
+      const meta = [r.a ? 'age ' + r.a : '', r.r || '', r.off ? 'for ' + r.off : '']
+        .filter(Boolean).join(' · ');
+      // A time that is not a time is a status: DQ, NS, SCR.
+      const isStatus = r.t && !/^[\d]/.test(r.t);
+      return `<div class="row">
+        <span class="pl ${pod ? 'pod' : ''}">${r.p ?? '—'}</span>
+        <span class="who"><b>${esc(r.n)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}</span>
+        <span class="tm">${isStatus ? `<span class="st">${esc(r.t)}</span>` : esc(fmtTime(r.t))}
+          ${r.pb ? '<span class="pbtag">Personal best</span>' : ''}</span>
+      </div>`;
+    }).join('');
+    const pbs = e.rows.filter(r => r.pb).length;
+    return `<details class="ev">
+      <summary>
+        <span class="evname">${esc(e.event)}</span>
+        <span class="evmeta">${[e.course || '—', e.rows.length + ' swim' + (e.rows.length===1?'':'s'),
+          pbs ? pbs + ' PB' : ''].filter(Boolean).join(' · ')}</span>
+      </summary>
+      <div class="rows">${rows}</div>
+    </details>`;
+  }).join('');
+
+  app.innerHTML = `
+  <section class="wrap">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <button type="button" onclick="closeMeet()">Meets</button>
+      <span class="sep" aria-hidden>&rsaquo;</span>
+      <span class="here">${esc(m.name)}</span>
+    </nav>
+
+    <div class="sec-head"><h2>${esc(m.name)}</h2></div>
+    <p class="sec-sub">${span} · ${m.course === 'SCM' ? '25m short course' : m.course === 'LCM' ? '50m long course' : m.course || '—'}</p>
+
+    <div class="meetbar">
+      <div><b>${m.swimmers}</b><span>Swimmers</span></div>
+      <div><b>${m.swims}</b><span>Swims</span></div>
+      <div><b>${m.pbs}</b><span>Personal bests</span></div>
+      <div><b>${m.podiums}</b><span>Podiums</span></div>
+    </div>
+
+    ${m.scope === 'pending' ? `<div class="caution">Swimmer names appear once a coordinator has
+      confirmed you as a parent or guardian.</div>` : ''}
+
+    ${events}
+  </section>`;
+
+  window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+function closeMeet(){
+  render();
+  showPage('meets');
+  // Put them back where they were in the list.
+  window.scrollTo({ top: meetReturn, behavior: 'auto' });
+}
+window.closeMeet = closeMeet;
+
+// Delegated, so it survives every re-render of the meets list.
+document.addEventListener('click', e => {
+  const card = e.target.closest?.('.comp[data-meet]');
+  if (card) openMeet(card.dataset.meet);
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const card = e.target.closest?.('.comp[data-meet]');
+  if (card) { e.preventDefault(); openMeet(card.dataset.meet); }
+});
 
 async function boot(){
   const app = document.getElementById('app');

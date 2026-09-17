@@ -26,6 +26,7 @@ import { Route as ApiTrackerSummaryRouteImport } from './routes/api/tracker/summ
 import { Route as ApiTrackerDataRouteImport } from './routes/api/tracker/data'
 import { Route as ApiSwimmersIdRouteImport } from './routes/api/swimmers/$id'
 import { Route as ApiParentsLinkRouteImport } from './routes/api/parents/link'
+import { Route as ApiMeetDetailRouteImport } from './routes/api/meet/detail'
 import { Route as ApiMeRegistrationRouteImport } from './routes/api/me/registration'
 import { Route as ApiMeRegisterRouteImport } from './routes/api/me/register'
 import { Route as ApiMePaymentRouteImport } from './routes/api/me/payment'
@@ -38,6 +39,7 @@ import { Route as ApiAuthRequestCodeRouteImport } from './routes/api/auth/reques
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAthleteAssessmentRouteImport } from './routes/api/athlete/assessment'
 import { Route as ApiAdminStatusRouteImport } from './routes/api/admin/status'
+import { Route as ApiAdminParentImportRouteImport } from './routes/api/admin/parent-import'
 import { Route as ApiAdminClaimsRouteImport } from './routes/api/admin/claims'
 
 const WelcomeRoute = WelcomeRouteImport.update({
@@ -125,6 +127,11 @@ const ApiParentsLinkRoute = ApiParentsLinkRouteImport.update({
   path: '/link',
   getParentRoute: () => ApiParentsRoute,
 } as any)
+const ApiMeetDetailRoute = ApiMeetDetailRouteImport.update({
+  id: '/api/meet/detail',
+  path: '/api/meet/detail',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMeRegistrationRoute = ApiMeRegistrationRouteImport.update({
   id: '/api/me/registration',
   path: '/api/me/registration',
@@ -185,6 +192,11 @@ const ApiAdminStatusRoute = ApiAdminStatusRouteImport.update({
   path: '/api/admin/status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminParentImportRoute = ApiAdminParentImportRouteImport.update({
+  id: '/api/admin/parent-import',
+  path: '/api/admin/parent-import',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminClaimsRoute = ApiAdminClaimsRouteImport.update({
   id: '/api/admin/claims',
   path: '/api/admin/claims',
@@ -206,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/claims': typeof ApiAdminClaimsRoute
+  '/api/admin/parent-import': typeof ApiAdminParentImportRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -218,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/api/me/payment': typeof ApiMePaymentRoute
   '/api/me/register': typeof ApiMeRegisterRoute
   '/api/me/registration': typeof ApiMeRegistrationRoute
+  '/api/meet/detail': typeof ApiMeetDetailRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
   '/api/tracker/data': typeof ApiTrackerDataRoute
@@ -238,6 +252,7 @@ export interface FileRoutesByTo {
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/claims': typeof ApiAdminClaimsRoute
+  '/api/admin/parent-import': typeof ApiAdminParentImportRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -250,6 +265,7 @@ export interface FileRoutesByTo {
   '/api/me/payment': typeof ApiMePaymentRoute
   '/api/me/register': typeof ApiMeRegisterRoute
   '/api/me/registration': typeof ApiMeRegistrationRoute
+  '/api/meet/detail': typeof ApiMeetDetailRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
   '/api/tracker/data': typeof ApiTrackerDataRoute
@@ -271,6 +287,7 @@ export interface FileRoutesById {
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/claims': typeof ApiAdminClaimsRoute
+  '/api/admin/parent-import': typeof ApiAdminParentImportRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -283,6 +300,7 @@ export interface FileRoutesById {
   '/api/me/payment': typeof ApiMePaymentRoute
   '/api/me/register': typeof ApiMeRegisterRoute
   '/api/me/registration': typeof ApiMeRegistrationRoute
+  '/api/meet/detail': typeof ApiMeetDetailRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
   '/api/tracker/data': typeof ApiTrackerDataRoute
@@ -305,6 +323,7 @@ export interface FileRouteTypes {
     | '/api/swimmer-parents'
     | '/api/swimmers'
     | '/api/admin/claims'
+    | '/api/admin/parent-import'
     | '/api/admin/status'
     | '/api/athlete/assessment'
     | '/api/auth/me'
@@ -317,6 +336,7 @@ export interface FileRouteTypes {
     | '/api/me/payment'
     | '/api/me/register'
     | '/api/me/registration'
+    | '/api/meet/detail'
     | '/api/parents/link'
     | '/api/swimmers/$id'
     | '/api/tracker/data'
@@ -337,6 +357,7 @@ export interface FileRouteTypes {
     | '/api/swimmer-parents'
     | '/api/swimmers'
     | '/api/admin/claims'
+    | '/api/admin/parent-import'
     | '/api/admin/status'
     | '/api/athlete/assessment'
     | '/api/auth/me'
@@ -349,6 +370,7 @@ export interface FileRouteTypes {
     | '/api/me/payment'
     | '/api/me/register'
     | '/api/me/registration'
+    | '/api/meet/detail'
     | '/api/parents/link'
     | '/api/swimmers/$id'
     | '/api/tracker/data'
@@ -369,6 +391,7 @@ export interface FileRouteTypes {
     | '/api/swimmer-parents'
     | '/api/swimmers'
     | '/api/admin/claims'
+    | '/api/admin/parent-import'
     | '/api/admin/status'
     | '/api/athlete/assessment'
     | '/api/auth/me'
@@ -381,6 +404,7 @@ export interface FileRouteTypes {
     | '/api/me/payment'
     | '/api/me/register'
     | '/api/me/registration'
+    | '/api/meet/detail'
     | '/api/parents/link'
     | '/api/swimmers/$id'
     | '/api/tracker/data'
@@ -402,6 +426,7 @@ export interface RootRouteChildren {
   ApiSwimmerParentsRoute: typeof ApiSwimmerParentsRoute
   ApiSwimmersRoute: typeof ApiSwimmersRouteWithChildren
   ApiAdminClaimsRoute: typeof ApiAdminClaimsRoute
+  ApiAdminParentImportRoute: typeof ApiAdminParentImportRoute
   ApiAdminStatusRoute: typeof ApiAdminStatusRoute
   ApiAthleteAssessmentRoute: typeof ApiAthleteAssessmentRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
@@ -414,6 +439,7 @@ export interface RootRouteChildren {
   ApiMePaymentRoute: typeof ApiMePaymentRoute
   ApiMeRegisterRoute: typeof ApiMeRegisterRoute
   ApiMeRegistrationRoute: typeof ApiMeRegistrationRoute
+  ApiMeetDetailRoute: typeof ApiMeetDetailRoute
   ApiTrackerDataRoute: typeof ApiTrackerDataRoute
   ApiTrackerSummaryRoute: typeof ApiTrackerSummaryRoute
 }
@@ -539,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiParentsLinkRouteImport
       parentRoute: typeof ApiParentsRoute
     }
+    '/api/meet/detail': {
+      id: '/api/meet/detail'
+      path: '/api/meet/detail'
+      fullPath: '/api/meet/detail'
+      preLoaderRoute: typeof ApiMeetDetailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/me/registration': {
       id: '/api/me/registration'
       path: '/api/me/registration'
@@ -623,6 +656,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/parent-import': {
+      id: '/api/admin/parent-import'
+      path: '/api/admin/parent-import'
+      fullPath: '/api/admin/parent-import'
+      preLoaderRoute: typeof ApiAdminParentImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/claims': {
       id: '/api/admin/claims'
       path: '/api/admin/claims'
@@ -672,6 +712,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSwimmerParentsRoute: ApiSwimmerParentsRoute,
   ApiSwimmersRoute: ApiSwimmersRouteWithChildren,
   ApiAdminClaimsRoute: ApiAdminClaimsRoute,
+  ApiAdminParentImportRoute: ApiAdminParentImportRoute,
   ApiAdminStatusRoute: ApiAdminStatusRoute,
   ApiAthleteAssessmentRoute: ApiAthleteAssessmentRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
@@ -684,6 +725,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMePaymentRoute: ApiMePaymentRoute,
   ApiMeRegisterRoute: ApiMeRegisterRoute,
   ApiMeRegistrationRoute: ApiMeRegistrationRoute,
+  ApiMeetDetailRoute: ApiMeetDetailRoute,
   ApiTrackerDataRoute: ApiTrackerDataRoute,
   ApiTrackerSummaryRoute: ApiTrackerSummaryRoute,
 }

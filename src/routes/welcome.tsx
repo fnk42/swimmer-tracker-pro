@@ -84,7 +84,8 @@ function Welcome() {
         return;
       }
       await me.refetch();
-      navigate({ to: "/parent" });
+      // Straight into the analytics, same as a returning sign-in.
+      window.location.href = "/tracker";
     } catch {
       setError("Could not reach the server. Please try again.");
     } finally {

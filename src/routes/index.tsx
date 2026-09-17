@@ -30,11 +30,12 @@ function PortalLanding() {
 
   useEffect(() => {
     if (me.isLoading || !me.data?.signedIn) return;
-    // Coordinators go straight in — they are never held behind registration.
-    if (me.data.isAdmin) { navigate({ to: "/admin" }); return; }
-    // Everyone else finishes registration first, including the families who
-    // registered for the Nationals: their consent was never captured.
-    navigate({ to: me.data.needsRegistration ? "/welcome" : "/parent" });
+    // Everyone lands on the analytics. It is the thing people actually come
+    // back for, and it is the best-looking page we have — Events is one click
+    // away in the bar. Coordinators are never held behind registration.
+    if (me.data.isAdmin) { window.location.href = "/tracker"; return; }
+    if (me.data.needsRegistration) { navigate({ to: "/welcome" }); return; }
+    window.location.href = "/tracker";
   }, [me.isLoading, me.data, navigate]);
 
   async function onSendCode(e: React.FormEvent) {
@@ -54,9 +55,11 @@ function PortalLanding() {
     setError(null);
     try {
       const r = await verifyCode.mutateAsync({ email: email.trim(), code: code.trim() });
-      if (r.isAdmin) { navigate({ to: "/admin" }); return; }
+      if (r.isAdmin) { window.location.href = "/tracker"; return; }
       const who = await fetch("/api/auth/me").then((x) => x.json()).catch(() => null);
-      navigate({ to: who?.needsRegistration ? "/welcome" : "/parent" });
+      if (who?.needsRegistration) { navigate({ to: "/welcome" }); return; }
+      // Plain anchor navigation: /tracker is its own HTML document, not a route.
+      window.location.href = "/tracker";
     } catch {
       setError("That code is wrong or has expired. Check the email, or send a new code.");
     }

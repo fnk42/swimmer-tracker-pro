@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { RosterManager } from "@/components/RosterManager";
 import { ClaimQueue } from "@/components/ClaimQueue";
+import { ParentImport } from "@/components/ParentImport";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -207,7 +208,10 @@ function AdminPage() {
               links={links}
             />
 
-            {/* Approvals first: a claim nobody looks at is a parent locked out. */}
+            {/* The ask first: the parent list is what unblocks every family. */}
+            <ParentImport onDone={() => swimmersQ.refetch()} />
+
+            {/* Then approvals: a claim nobody looks at is a parent locked out. */}
             <ClaimQueue />
 
             <Card>
