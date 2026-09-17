@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as TrackerRouteImport } from './routes/tracker'
 import { Route as ParentRouteImport } from './routes/parent'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -26,6 +27,7 @@ import { Route as ApiTrackerDataRouteImport } from './routes/api/tracker/data'
 import { Route as ApiSwimmersIdRouteImport } from './routes/api/swimmers/$id'
 import { Route as ApiParentsLinkRouteImport } from './routes/api/parents/link'
 import { Route as ApiMeRegistrationRouteImport } from './routes/api/me/registration'
+import { Route as ApiMeRegisterRouteImport } from './routes/api/me/register'
 import { Route as ApiMePaymentRouteImport } from './routes/api/me/payment'
 import { Route as ApiMeParentRouteImport } from './routes/api/me/parent'
 import { Route as ApiMeLinkRouteImport } from './routes/api/me/link'
@@ -37,6 +39,11 @@ import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAthleteAssessmentRouteImport } from './routes/api/athlete/assessment'
 import { Route as ApiAdminStatusRouteImport } from './routes/api/admin/status'
 
+const WelcomeRoute = WelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TrackerRoute = TrackerRouteImport.update({
   id: '/tracker',
   path: '/tracker',
@@ -122,6 +129,11 @@ const ApiMeRegistrationRoute = ApiMeRegistrationRouteImport.update({
   path: '/api/me/registration',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMeRegisterRoute = ApiMeRegisterRouteImport.update({
+  id: '/api/me/register',
+  path: '/api/me/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMePaymentRoute = ApiMePaymentRouteImport.update({
   id: '/api/me/payment',
   path: '/api/me/payment',
@@ -178,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/parent': typeof ParentRoute
   '/tracker': typeof TrackerRoute
+  '/welcome': typeof WelcomeRoute
   '/api/health': typeof ApiHealthRoute
   '/api/parents': typeof ApiParentsRouteWithChildren
   '/api/payment': typeof ApiPaymentRoute
@@ -196,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/api/me/link': typeof ApiMeLinkRoute
   '/api/me/parent': typeof ApiMeParentRoute
   '/api/me/payment': typeof ApiMePaymentRoute
+  '/api/me/register': typeof ApiMeRegisterRoute
   '/api/me/registration': typeof ApiMeRegistrationRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
@@ -207,6 +221,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/parent': typeof ParentRoute
   '/tracker': typeof TrackerRoute
+  '/welcome': typeof WelcomeRoute
   '/api/health': typeof ApiHealthRoute
   '/api/parents': typeof ApiParentsRouteWithChildren
   '/api/payment': typeof ApiPaymentRoute
@@ -225,6 +240,7 @@ export interface FileRoutesByTo {
   '/api/me/link': typeof ApiMeLinkRoute
   '/api/me/parent': typeof ApiMeParentRoute
   '/api/me/payment': typeof ApiMePaymentRoute
+  '/api/me/register': typeof ApiMeRegisterRoute
   '/api/me/registration': typeof ApiMeRegistrationRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
@@ -237,6 +253,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/parent': typeof ParentRoute
   '/tracker': typeof TrackerRoute
+  '/welcome': typeof WelcomeRoute
   '/api/health': typeof ApiHealthRoute
   '/api/parents': typeof ApiParentsRouteWithChildren
   '/api/payment': typeof ApiPaymentRoute
@@ -255,6 +272,7 @@ export interface FileRoutesById {
   '/api/me/link': typeof ApiMeLinkRoute
   '/api/me/parent': typeof ApiMeParentRoute
   '/api/me/payment': typeof ApiMePaymentRoute
+  '/api/me/register': typeof ApiMeRegisterRoute
   '/api/me/registration': typeof ApiMeRegistrationRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
@@ -268,6 +286,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/parent'
     | '/tracker'
+    | '/welcome'
     | '/api/health'
     | '/api/parents'
     | '/api/payment'
@@ -286,6 +305,7 @@ export interface FileRouteTypes {
     | '/api/me/link'
     | '/api/me/parent'
     | '/api/me/payment'
+    | '/api/me/register'
     | '/api/me/registration'
     | '/api/parents/link'
     | '/api/swimmers/$id'
@@ -297,6 +317,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/parent'
     | '/tracker'
+    | '/welcome'
     | '/api/health'
     | '/api/parents'
     | '/api/payment'
@@ -315,6 +336,7 @@ export interface FileRouteTypes {
     | '/api/me/link'
     | '/api/me/parent'
     | '/api/me/payment'
+    | '/api/me/register'
     | '/api/me/registration'
     | '/api/parents/link'
     | '/api/swimmers/$id'
@@ -326,6 +348,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/parent'
     | '/tracker'
+    | '/welcome'
     | '/api/health'
     | '/api/parents'
     | '/api/payment'
@@ -344,6 +367,7 @@ export interface FileRouteTypes {
     | '/api/me/link'
     | '/api/me/parent'
     | '/api/me/payment'
+    | '/api/me/register'
     | '/api/me/registration'
     | '/api/parents/link'
     | '/api/swimmers/$id'
@@ -356,6 +380,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ParentRoute: typeof ParentRoute
   TrackerRoute: typeof TrackerRoute
+  WelcomeRoute: typeof WelcomeRoute
   ApiHealthRoute: typeof ApiHealthRoute
   ApiParentsRoute: typeof ApiParentsRouteWithChildren
   ApiPaymentRoute: typeof ApiPaymentRoute
@@ -374,6 +399,7 @@ export interface RootRouteChildren {
   ApiMeLinkRoute: typeof ApiMeLinkRoute
   ApiMeParentRoute: typeof ApiMeParentRoute
   ApiMePaymentRoute: typeof ApiMePaymentRoute
+  ApiMeRegisterRoute: typeof ApiMeRegisterRoute
   ApiMeRegistrationRoute: typeof ApiMeRegistrationRoute
   ApiTrackerDataRoute: typeof ApiTrackerDataRoute
   ApiTrackerSummaryRoute: typeof ApiTrackerSummaryRoute
@@ -381,6 +407,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/welcome': {
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tracker': {
       id: '/tracker'
       path: '/tracker'
@@ -500,6 +533,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMeRegistrationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/me/register': {
+      id: '/api/me/register'
+      path: '/api/me/register'
+      fullPath: '/api/me/register'
+      preLoaderRoute: typeof ApiMeRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/me/payment': {
       id: '/api/me/payment'
       path: '/api/me/payment'
@@ -602,6 +642,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ParentRoute: ParentRoute,
   TrackerRoute: TrackerRoute,
+  WelcomeRoute: WelcomeRoute,
   ApiHealthRoute: ApiHealthRoute,
   ApiParentsRoute: ApiParentsRouteWithChildren,
   ApiPaymentRoute: ApiPaymentRoute,
@@ -620,6 +661,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMeLinkRoute: ApiMeLinkRoute,
   ApiMeParentRoute: ApiMeParentRoute,
   ApiMePaymentRoute: ApiMePaymentRoute,
+  ApiMeRegisterRoute: ApiMeRegisterRoute,
   ApiMeRegistrationRoute: ApiMeRegistrationRoute,
   ApiTrackerDataRoute: ApiTrackerDataRoute,
   ApiTrackerSummaryRoute: ApiTrackerSummaryRoute,

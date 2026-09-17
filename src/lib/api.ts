@@ -349,6 +349,12 @@ export type Me = {
   email?: string;
   isAdmin?: boolean;
   sections?: { performance: boolean; events: boolean };
+  scope?: "coach" | "community" | "pending";
+  needsRegistration?: boolean;
+  needsProfile?: boolean;
+  needsConsent?: boolean;
+  pendingClaims?: number;
+  myAthletes?: number;
   parent: Parent | null;
 };
 
@@ -373,6 +379,12 @@ export function useMe() {
         email: d.email,
         isAdmin: !!d.isAdmin,
         sections: d.sections ?? { performance: true, events: true },
+        scope: d.scope,
+        needsRegistration: !!d.needsRegistration,
+        needsProfile: !!d.needsProfile,
+        needsConsent: !!d.needsConsent,
+        pendingClaims: d.pendingClaims ?? 0,
+        myAthletes: d.myAthletes ?? 0,
         parent: d.parent
           ? {
               id: d.parent.id,

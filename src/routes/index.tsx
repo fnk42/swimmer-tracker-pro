@@ -30,7 +30,11 @@ function PortalLanding() {
 
   useEffect(() => {
     if (me.isLoading || !me.data?.signedIn) return;
-    navigate({ to: me.data.isAdmin ? "/admin" : "/parent" });
+    // Coordinators go straight in — they are never held behind registration.
+    if (me.data.isAdmin) { navigate({ to: "/admin" }); return; }
+    // Everyone else finishes registration first, including the families who
+    // registered for the Nationals: their consent was never captured.
+    navigate({ to: me.data.needsRegistration ? "/welcome" : "/parent" });
   }, [me.isLoading, me.data, navigate]);
 
   async function onSendCode(e: React.FormEvent) {
@@ -50,7 +54,9 @@ function PortalLanding() {
     setError(null);
     try {
       const r = await verifyCode.mutateAsync({ email: email.trim(), code: code.trim() });
-      navigate({ to: r.isAdmin ? "/admin" : "/parent" });
+      if (r.isAdmin) { navigate({ to: "/admin" }); return; }
+      const who = await fetch("/api/auth/me").then((x) => x.json()).catch(() => null);
+      navigate({ to: who?.needsRegistration ? "/welcome" : "/parent" });
     } catch {
       setError("That code is wrong or has expired. Check the email, or send a new code.");
     }

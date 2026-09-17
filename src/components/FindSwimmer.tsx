@@ -13,7 +13,10 @@ import { useClaimable, useClaimSwimmer } from "@/lib/api";
 //
 // The roster is searched rather than listed: these are children's names, so
 // nothing appears until someone types a name they already know.
-export function FindSwimmer({ onClaimed }: { onClaimed?: () => void }) {
+// `dark` renders it on the navy registration screens; the default light form is
+// for the parent dashboard.
+export function FindSwimmer({ onClaimed, dark = false }:
+  { onClaimed?: () => void; dark?: boolean }) {
   const [term, setTerm] = useState("");
   const [debounced, setDebounced] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -48,35 +51,41 @@ export function FindSwimmer({ onClaimed }: { onClaimed?: () => void }) {
           onChange={(e) => setTerm(e.target.value)}
           placeholder="Search your child's name…"
           aria-label="Search for your swimmer by name"
-          className="h-11"
+          className={dark ? "ng-field" : "h-11"}
         />
-        <p className="mt-1.5 text-xs text-muted-foreground">
-          Type at least two letters. Two adults can be on the same swimmer.
+        <p className={"mt-1.5 text-xs " + (dark ? "text-white/45" : "text-muted-foreground")}>
+          Type at least two letters. Two adults can be on the same swimmer. A coordinator
+          confirms each one.
         </p>
       </div>
 
       {error && <p className="text-sm font-medium text-destructive">{error}</p>}
 
       {searching && results.isLoading && (
-        <p className="text-xs text-muted-foreground">Searching…</p>
+        <p className={"text-xs " + (dark ? "text-white/50" : "text-muted-foreground")}>Searching…</p>
       )}
 
       {searching && !results.isLoading && found.length === 0 && (
-        <p className="rounded-lg bg-secondary px-3 py-2.5 text-xs text-muted-foreground">
+        <p className={"rounded-lg px-3 py-2.5 text-xs " +
+          (dark ? "bg-white/[.06] text-white/60" : "bg-secondary text-muted-foreground")}>
           No swimmer matches that name, or the ones that do already have two adults on the
           record. Ask the coordinator if that is not right.
         </p>
       )}
 
       {found.length > 0 && (
-        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+        <ul className={"overflow-hidden rounded-xl border " +
+          (dark ? "divide-y divide-white/10 border-white/15" : "divide-y divide-border border-border")}>
           {found.map((s) => (
-            <li key={s.id} className="flex items-center gap-3 bg-card px-3.5 py-2.5">
+            <li key={s.id} className={"flex items-center gap-3 px-3.5 py-2.5 " +
+              (dark ? "bg-white/[.03]" : "bg-card")}>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium">{s.name}</span>
-                <span className="block text-xs text-muted-foreground">
+                <span className={"block truncate text-sm font-medium " + (dark ? "text-white" : "")}>
+                  {s.name}
+                </span>
+                <span className={"block text-xs " + (dark ? "text-white/50" : "text-muted-foreground")}>
                   {s.mine
-                    ? "Already on your record"
+                    ? "On your record"
                     : s.adults === 0
                       ? "No adult linked yet"
                       : "One adult already linked · one place left"}

@@ -7,10 +7,11 @@ import { q, one } from "@/lib/db";
 import { sessionFromRequest } from "@/lib/session";
 import type { Scope } from "@/lib/tiers";
 
-// Bump when the consent text changes. Guardians who accepted an older version
-// are asked to accept the new one before they reach the dashboard.
-export const CONSENT_VERSION = "2026-09-17";
-export const CONSENT_DOCUMENT = "guardian_data_consent";
+// Re-exported so server routes keep importing entitlement facts from one place,
+// while the constants themselves live in a module a client component can also
+// import without pulling in the database driver.
+export { CONSENT_VERSION, CONSENT_DOCUMENT } from "@/lib/consent-version";
+import { CONSENT_VERSION, CONSENT_DOCUMENT } from "@/lib/consent-version";
 
 export type Viewer = {
   email: string;
@@ -39,17 +40,34 @@ export async function viewer(request: Request): Promise<Viewer | null> {
   const s = sessionFromRequest(request);
   if (!s) return null;
 
-  // Coaches and coordinators are recognised by the allowlist, so they need no
-  // parent record and no claim.
-  if (s.isAdmin && !s.parentId) {
+  // Coaches and coordinators are recognised by the allowlist. They are NEVER
+  // held at the registration gate, whether or not they also have a parent
+  // record — and several do, because Boit and the other coordinators have
+  // children who swim. Gating a coordinator behind a consent form they have
+  // not seen yet would lock the club out of its own coordinator view, which is
+  // exactly how the last lockout happened.
+  //
+  // Their own profile and consent are still tracked, so they can complete them
+  // as a parent; it just never blocks the coach view.
+  if (s.isAdmin) {
+    const athletes = s.parentId
+      ? await q<{ analytics_name: string }>(
+          `select sw.analytics_name
+             from public.swimmer_parents sp
+             join public.swimmers sw on sw.id = sp.swimmer_id
+            where sp.parent_id = $1 and sp.status = 'approved'
+              and sw.analytics_name is not null`,
+          [s.parentId],
+        )
+      : [];
     return {
       email: s.email,
-      parentId: null,
+      parentId: s.parentId ?? null,
       isAdmin: true,
       scope: "coach",
       needsProfile: false,
       needsConsent: false,
-      myAthletes: [],
+      myAthletes: athletes.map((r) => r.analytics_name),
       pendingClaims: 0,
     };
   }

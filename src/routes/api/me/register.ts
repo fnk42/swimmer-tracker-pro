@@ -1,0 +1,105 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { one, json, fail, tx } from "@/lib/db";
+import { sessionFromRequest } from "@/lib/session";
+import { CONSENT_DOCUMENT, CONSENT_VERSION } from "@/lib/scope";
+import { sendParentInvite } from "@/lib/mailer";
+
+// Finish registration: profile, an optional second guardian, and consent.
+//
+// One POST rather than three, because a half-registered account is a support
+// problem — a guardian who accepted the consent but whose phone did not save,
+// or an invite sent for a profile that was abandoned. It all lands or none of
+// it does.
+//
+// The children a guardian claims are handled by /api/me/link, which is
+// separate on purpose: claims carry a status and can be approved or rejected
+// later, while this is a one-off.
+export const Route = createFileRoute("/api/me/register")({
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        try {
+          const s = sessionFromRequest(request);
+          if (!s?.parentId) return json({ error: "Not signed in" }, 401);
+          const pid = s.parentId;
+
+          const b = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+          const fullName = String(b.fullName ?? "").trim();
+          const phone = String(b.phone ?? "").trim();
+          const relationship = String(b.relationship ?? "").trim().toLowerCase();
+          const consentData = b.consentData === true;
+          const consentCommunity = b.consentCommunity === true;
+          const second = (b.secondParent ?? null) as { name?: string; email?: string } | null;
+
+          if (fullName.length < 2) return json({ error: "Enter your full name" }, 400);
+          if (phone.replace(/\D/g, "").length < 9) {
+            return json({ error: "Enter a phone number we can reach you on" }, 400);
+          }
+          if (!["mother", "father", "guardian"].includes(relationship)) {
+            return json({ error: "Tell us whether you are the mother, father or guardian" }, 400);
+          }
+
+          // Both ticks are required and neither is pre-ticked in the UI.
+          // Registration cannot finish without them — a brief requirement, and
+          // consent that was not actively given is not consent.
+          if (!consentData || !consentCommunity) {
+            return json(
+              { error: "Both boxes need to be ticked before we can finish setting you up" },
+              400,
+            );
+          }
+
+          // One connection, one transaction. q() takes an arbitrary
+          // connection from the pool, so BEGIN/COMMIT through it would not wrap
+          // anything.
+          const invited = await tx(async (c) => {
+            await c.query(
+              `update public.parents
+                  set full_name = $2, phone = $3, relationship = $4,
+                      profile_complete = true, updated_at = now()
+                where id = $1`,
+              [pid, fullName, phone, relationship],
+            );
+
+            // Versioned, and a withdrawal is a separate row rather than a
+            // delete, so the sequence of what was permitted when survives.
+            await c.query(
+              `insert into public.consents (parent_id, document, version)
+               values ($1, $2, $3)
+               on conflict (parent_id, document, version) where withdrawn_at is null
+               do nothing`,
+              [pid, CONSENT_DOCUMENT, CONSENT_VERSION],
+            );
+
+            if (!second?.email || !second?.name) return null;
+            const email = String(second.email).trim().toLowerCase();
+            const name = String(second.name).trim();
+            if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return null;
+            if (email === s.email.toLowerCase()) return null; // inviting yourself
+
+            // A second guardian is a person with their own account, not a name
+            // on someone else's record — they consent for themselves.
+            const existing = await c.query(`select id from public.parents where lower(email) = $1`, [
+              email,
+            ]);
+            if (existing.rowCount === 0) {
+              await c.query(
+                `insert into public.parents (full_name, email, invited_by) values ($1, $2, $3)`,
+                [name, email, pid],
+              );
+            }
+            return email;
+          });
+
+          // Outside the transaction: a mail failure must not undo a
+          // registration the guardian has already completed.
+          if (invited) await sendParentInvite(invited, fullName).catch(() => {});
+
+          return json({ ok: true, invited });
+        } catch (err) {
+          return fail("POST /api/me/register", err, "Could not finish setting up your account");
+        }
+      },
+    },
+  },
+});
