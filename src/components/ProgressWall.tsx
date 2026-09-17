@@ -7,8 +7,10 @@ import { useEffect, useState } from "react";
 // The y-axis is inverted so a falling time draws as a rising line — a parent
 // reads "up is better" before they read the axis.
 //
-// Names arrive as "Sophia S." from /api/tracker/summary. The server does the
-// shortening; this component never sees a full name.
+// Names are pseudonyms assigned in tools/progress.py — the times and the shape
+// of every curve are real, the name attached to them is invented. This page is
+// public, so no real child is named on it at all. This component never receives
+// a real name to begin with.
 
 type Point = { d: string; t: number };
 type Athlete = {
@@ -107,7 +109,7 @@ export function ProgressWall() {
       </div>
       <p className="mb-6 max-w-[62ch] text-[14px] leading-relaxed text-white/60">
         Each line is one swimmer in one event, every time they have raced it. Times fall as they
-        improve, so the line climbs. Swimmers are shown by first name only.
+        improve, so the line climbs. Real results — names changed, because these are children.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
