@@ -1,12 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { one, json, fail } from "@/lib/db";
+import { q, one, json, fail } from "@/lib/db";
 import { sessionFromRequest } from "@/lib/session";
+
+const MAX_ADULTS = 2;
 
 export const Route = createFileRoute("/api/me/link")({
   server: {
     handlers: {
-      // Claim a swimmer as mine. Refused if another parent already holds them,
-      // which is what stops one family seeing another family's child.
+      // Claim a swimmer as mine.
+      //
+      // A child normally has two adults who both need to see the registration,
+      // the balance and the swimming, so two may hold the same swimmer. The
+      // third is refused: past two it stops being a household and starts being
+      // someone seeing a child who is not theirs.
+      //
+      // The database enforces the same cap (migration/04_two_parents.sql), so a
+      // race between two adults claiming the last slot at the same moment fails
+      // on the unique index rather than quietly adding a third.
       POST: async ({ request }) => {
         try {
           const s = sessionFromRequest(request);
@@ -15,28 +25,52 @@ export const Route = createFileRoute("/api/me/link")({
           const swimmerId = String(b?.swimmerId ?? "");
           if (!swimmerId) return json({ error: "swimmerId required" }, 400);
 
-          const taken = await one<{ parent_id: string }>(
-            `select parent_id from public.swimmer_parents
-             where swimmer_id = $1 and parent_id <> $2 limit 1`,
-            [swimmerId, s.parentId],
+          const held = await q<{ parent_id: string; sort_order: number }>(
+            `select parent_id, sort_order from public.swimmer_parents
+             where swimmer_id = $1 order by sort_order`,
+            [swimmerId],
           );
-          if (taken) {
+
+          const mine = held.find((h) => h.parent_id === s.parentId);
+          if (mine) {
+            return json({
+              swimmer_id: swimmerId,
+              parent_id: s.parentId,
+              sort_order: mine.sort_order,
+            });
+          }
+
+          if (held.length >= MAX_ADULTS) {
             return json(
-              { error: "That swimmer is already registered by another parent. " +
-                       "Contact the coordinator if this is wrong." },
+              {
+                error:
+                  "Two adults are already linked to that swimmer, which is the limit. " +
+                  "Ask the coordinator if one of them should be changed.",
+              },
               409,
             );
           }
 
+          const slot = held.some((h) => h.sort_order === 1) ? 2 : 1;
           const row = await one(
             `insert into public.swimmer_parents (swimmer_id, parent_id, sort_order)
-             values ($1, $2, 1)
-             on conflict (swimmer_id, parent_id) do update set sort_order = 1
+             values ($1, $2, $3)
              returning *`,
-            [swimmerId, s.parentId],
+            [swimmerId, s.parentId, slot],
           );
           return json(row);
         } catch (err) {
+          // The unique index fires when two adults claim the last slot at once.
+          if (String((err as { code?: string })?.code) === "23505") {
+            return json(
+              {
+                error:
+                  "Someone else was linked to that swimmer a moment ago. " +
+                  "Refresh to see who is on the record.",
+              },
+              409,
+            );
+          }
           return fail("POST /api/me/link", err, "Could not link that swimmer");
         }
       },

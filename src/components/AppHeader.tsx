@@ -51,7 +51,7 @@ export function AppHeader() {
   const tabBase = "text-sm px-3 py-1.5 rounded-md transition-colors";
   const tabActive = "bg-white/15 text-white font-medium";
   const tabIdle = "text-white/70 hover:bg-white/10 hover:text-white";
-  const itemCls = "block rounded-md px-3 py-2 hover:bg-slate-100";
+  const itemCls = "block rounded-md px-3 py-2 hover:bg-secondary";
 
   return (
     <header
@@ -99,9 +99,9 @@ export function AppHeader() {
               {open && (
                 <div
                   role="menu"
-                  className="absolute right-0 z-40 mt-1.5 w-64 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg"
+                  className="absolute right-0 z-40 mt-1.5 w-64 rounded-xl border border-border bg-white p-1.5 shadow-lg"
                 >
-                  <div className="px-3 pt-1.5 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                  <div className="px-3 pt-1.5 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {EVENT.location}
                   </div>
                   <Link
@@ -110,8 +110,8 @@ export function AppHeader() {
                     onClick={() => setOpen(false)}
                     className={itemCls}
                   >
-                    <span className="block text-sm font-medium text-slate-900">{EVENT.name}</span>
-                    <span className="block text-xs text-slate-500">
+                    <span className="block text-sm font-medium text-foreground">{EVENT.name}</span>
+                    <span className="block text-xs text-muted-foreground">
                       {EVENT.startDate} – {EVENT.endDate} · register &amp; pay
                     </span>
                   </Link>
@@ -122,10 +122,10 @@ export function AppHeader() {
                       onClick={() => setOpen(false)}
                       className={itemCls}
                     >
-                      <span className="block text-sm font-medium text-slate-900">
+                      <span className="block text-sm font-medium text-foreground">
                         Coordinator view
                       </span>
-                      <span className="block text-xs text-slate-500">
+                      <span className="block text-xs text-muted-foreground">
                         Every registration and payment
                       </span>
                     </Link>

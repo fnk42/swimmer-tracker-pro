@@ -1,0 +1,171 @@
+decision,analytics_name,db_name,db_id,age,sex,db_parents
+link,"Gichogo, Renzo","Renzo Gichogo",884f8d66-3d10-482f-a1a5-11ff99650971,12,Male,1
+link,"Kasaine, Leshan","Leshan Kasaine",5db56482-8622-4913-86ab-a57d1162a5bd,10,Male,0
+link,"Kasaine, Leyian","Leyian Kasaine",abb86963-161d-46fc-8a80-6c42af619c5b,12,Male,0
+link,"Salah, Ahmed","Ahmed Salah",39e18079-a728-4b34-9eca-4b7f7c7c24f0,15,Male,0
+link,"Boit, Pagiel","Pagiel Boit",f65a559b-7962-474a-8495-45689c35a335,13,Male,1
+link,"Gitonga, Isaiah M","Isaiah Gitonga",8431e394-2c54-49a6-9f59-9ecedc5fd75f,16,Male,1
+link,"Maina, Nathan M","Nathan Maina",4d434cbf-6428-48e2-bad0-7e2f281229e8,11,Male,1
+link,"Makau, Zion","Zion Makau",d4eafbad-b460-4b22-b109-a958ac9454d7,14,Male,0
+link,"Thiga, Ethan","Ethan Thiga",fdadbdab-cb57-406b-921d-bd1c4962b986,15,Male,0
+link,"Wakhu, Amara","Amara Wakhu",f7bfa58c-67c6-496e-a7a8-6e08ad88400f,13,Female,1
+link,"Wakhu, Maisha","Maisha Wakhu",d3341185-0df0-48fe-9c4c-0b2cbd232d7b,12,Female,1
+link,"Wakhu, Tando","Tando Wakhu",f1f70990-701a-4b33-abfb-db1ce3a3bd4c,16,Male,1
+link,"Githui, Lavina N","Lavina Githui",f9697090-f75c-434f-8085-a1ea59c80364,15,Female,0
+link,"Githui, Lowena M","Lowena Githui",4946b166-2a51-4d34-9e6c-638ef5cd68d6,15,Female,0
+link,"Maina, Kamwelle","Kamwelle Maina",d66921c6-4991-4d46-adc1-ff763708f48a,15,Female,0
+link,"Mathaara, Alfred T","Alfred Mathaara",26755b07-bf5a-4c7d-ae6a-d49a085a2d2c,14,Male,1
+link,"Ndirangu, Billy W","Billy Ndirangu",e30c9484-9aea-4a41-83f7-a2aa69359e13,10,Male,0
+link,"Ndirangu, Don","Don Ndirangu",90da6867-b7f5-476a-b062-acee55f30bf8,13,Male,0
+link,"Ndirangu, Nicole J","Nicole Ndirangu",72a8e199-ca52-4865-8b6c-e8663257acfa,16,Female,0
+link,"Njenga, Daniel","Daniel Njenga",0bed4aaa-4a3a-4854-be4b-10dc4170b6c6,10,Male,1
+link,"Onderi, Jabu","Jabu Onderi",12e98d49-3ca5-43cc-aba1-6f98b1965e4d,12,Male,1
+link,"Azu, Nuru N","Azu Nuru",0fa02dcd-a39c-4461-bd8d-05ed37322a5a,17,Female,1
+link,"Bengi, Allan","Allan Bengi",c5a4b62a-79db-4b8c-ab41-08dd28a27ffc,10,Male,1
+link,"Bengi, Eann","Eann Bengi",dbcba376-b068-4f8e-aa98-596df1684b6e,13,Male,1
+link,"Kadede, Nathan","Nathan Kadede",d8a45a28-63d7-4320-9e05-4b9cc6a101c1,11,Male,1
+link,"Karebe, Muthoni","Muthoni Karebe",3bc0dfcd-181b-40ab-a830-5ce1a9383b1e,11,Female,1
+link,"Kimathi, Zara","Zara Kimathi",5183bc2d-e47a-4ae2-b859-e9ce2b60dab6,12,Female,1
+link,"Kiragu, Noni","Noni Kiragu",0a18480b-f5cd-4b39-98e2-2d38c01e84ec,13,Female,1
+link,"Muthigani, Naima","Naima Muthigani",409806f0-bff9-4ee3-8845-eaf11449b65c,13,Female,0
+link,"Okuthe, Frank","Frank Okuthe",900d6fd6-0cce-454c-98f3-720654780334,15,Male,1
+link,"Waswa, Bongani","Bongani Waswa",e72ae936-53a4-4188-b9ec-4df2832c4b11,18,Male,0
+link,"Waswa, Lakisha A","Lakisha Waswa",54fbf0c0-3da5-49f4-8bed-e034977490ac,16,Female,0
+link,"Waweru, Wema","Wema Waweru",348ede79-3e7a-4a97-b315-9298ef9b9c33,12,Female,1
+link,"Waweru, Tevin W","Tevin Waweru",21260990-33d9-46c2-9507-2a73fad8e0a1,15,Male,0
+link,"Mbui, Jewel","Jewel Mbui",f9d38f88-ed13-4027-93fb-fa691536c5cb,15,Female,0
+link,"Muthigani, Keila","Keila Muthigani",7608cc76-26b0-4ce0-bf9c-b4f478c04a59,11,Female,0
+link,"Olengo, Naya","Naya Olengo",76635cb1-709c-4a25-b230-09ea9209dd16,10,Female,0
+link,"Waweru, Makena","Makena Waweru",578aa1c8-55ab-4150-ae28-b4ed397555b8,14,Female,1
+link,"Weru, Jonathan K","Jonathan Weru",720453af-e191-4ad2-a01e-487ec7157eeb,18,Male,1
+link,"Loki, Jermaine","Jermaine Loki",4b72b272-bf44-4411-a1fa-79a1b8c2debe,11,Male,0
+link,"Mochu, Liam M","Liam Mochu",7a9c8f87-fea9-4117-a5b1-1b0d0efcd2bc,10,Male,0
+link,"Summaiya, Sophie A","Sophie Summaiya",fd9cd5bd-67b6-46eb-b182-f1a49a5d3caf,11,Female,1
+REVIEW,"Ziori, Makau","Zion Makau",d4eafbad-b460-4b22-b109-a958ac9454d7,,,0
+REVIEW,"Kosgei, Kemuel","Kemuel Kosgey",732f8e97-e08e-4703-9766-e4f2461302e8,10,Male,0
+REVIEW,"Kosgei, Kenan","Kenan Kosgey",7e13e179-5d4f-47e9-813b-a86cfc7c15e9,12,Male,0
+insert,"Muinde, Nolan",,,11,Male,0
+insert,"Boit, Dr. Edwin K",,,35,Male,0
+insert,"Omondi, Lucas",,,26,Male,0
+insert,"Ondieki, Stephanie",,,28,Female,0
+insert,"Shabano, Hamid",,,19,Male,0
+insert,"Makau, Anita K",,,43,Female,0
+insert,"Hachi, Kiteto",,,7,Female,0
+insert,"Jerry, Collins",,,27,Male,0
+insert,"Kiteto, Heri",,,12,Female,0
+insert,"Kuria, Ezekiel",,,13,Male,0
+insert,"Mahaja, Ethan",,,12,Male,0
+insert,"Makori, Abigail",,,15,Female,0
+insert,"Muinde, Nyle",,,6,Male,0
+insert,"Musyoka, Loki J",,,11,Male,0
+insert,"Njeri, Lisa",,,8,Female,0
+insert,"Nyambura, Amanda",,,12,Female,0
+insert,"Okondo, Mitxel S",,,11,Male,0
+insert,"Omondi, Cian K",,,27,Male,0
+insert,"Othany, Bethany",,,12,Female,0
+insert,"Othany, Javan",,,15,Male,0
+insert,"Otieno, Neola M",,,8,Female,0
+insert,"Otieno, Zuriel J",,,10,Male,0
+insert,"Wakhu, Emunah",,,8,Female,0
+insert,"Wangeci, Sandra",,,22,Female,0
+insert,"Munene, Daniel",,,10,Male,0
+insert,"Nato, Alvin",,,7,Male,0
+insert,"Njenga, Sierra",,,14,Female,0
+insert,"Nyambura, Louisa",,,9,Female,0
+insert,"Nyokabi, Kyla",,,17,Female,0
+insert,"Ojwangi, Rhoda M",,,38,Female,0
+insert,"Onderi, Tunu",,,9,Female,0
+insert,"Makena, Zoey",,,,,0
+insert,"Njenga, Caleb",,,8,Male,0
+insert,"Njenga, Sekai",,,12,Female,0
+insert,"Thuku, Adiela",,,8,Female,0
+insert,"Thuku, Aleeza",,,10,Female,0
+insert,"Boit, Fred",,,10,Male,0
+insert,"Ogendi, Jari",,,8,Male,0
+insert,"Maina, Lisa Njeri",,,6,Female,0
+insert,"Collins, Jerry",,,25,Male,0
+insert,"Gichia, Nyagaki",,,36,Female,0
+insert,"Muthigani, Robert",,,42,Male,0
+insert,"Hassan, Seth",,,16,Male,0
+insert,"Odula, Chedi",,,14,Female,0
+insert,"Osunga, Fadhili",,,11,Male,0
+insert,"Summaiya, Sophia Anne N",,,12,Female,0
+insert,"Shah, Anya",,,9,Female,0
+insert,"Adier, Tio",,,9,Male,0
+insert,"Amira, Keeya",,,7,Female,0
+insert,"Asee, Joseph",,,,,0
+insert,"Gaceri, Karebe",,,7,Female,0
+insert,"Gichuki, Enam",,,,,0
+insert,"Gichuki, Kendi",,,,,0
+insert,"Gichuki, Nyachihi",,,,,0
+insert,"Kahare, Bariki",,,,,0
+insert,"Kanja, Wema",,,9,Female,0
+insert,"Karebe, Waruguru",,,10,Female,0
+insert,"Kariuki, Taji",,,7,Male,0
+insert,"Kariuki, Wema",,,10,Female,0
+insert,"Kibuka, Wambui W",,,9,Female,0
+insert,"Kimathi, Jayden",,,14,Male,0
+insert,"Kiragu, Darrel",,,13,Male,0
+insert,"Kirimi, Gilad",,,15,Male,0
+insert,"Kisoso, Zane",,,7,Male,0
+insert,"Mageka, Robyn",,,,,0
+insert,"Makau, Zavier",,,11,Male,0
+insert,"Makopa, Jabali M",,,8,Male,0
+insert,"Makopa, Upendo",,,12,Female,0
+insert,"Manda, Ivan",,,,,0
+insert,"Masua, John Paul",,,9,Male,0
+insert,"Masua, Michael",,,16,Male,0
+insert,"Matikanya, Richard",,,10,Male,0
+insert,"Mburu, Zidi",,,11,Female,0
+insert,"Menzi, Hansel K",,,13,Male,0
+insert,"Mombo, Chiku",,,,,0
+insert,"Muchina, Nathan",,,8,Male,0
+insert,"Muchina, Roman",,,8,Male,0
+insert,"Muchiri, Gakenia",,,,,0
+insert,"Mugisha, Lloyd",,,,,0
+insert,"Mukolwe, Alexandra",,,11,Female,0
+insert,"Mukolwe, Myana",,,8,Female,0
+insert,"Mule, Janaya",,,,,0
+insert,"Muthigani, Ziva",,,7,Female,0
+insert,"Mutwiri, Natanie",,,12,Female,0
+insert,"Mwai, Khalid",,,,,0
+insert,"Mwai, Nadia",,,11,Female,0
+insert,"Mwai, Rahma",,,8,Female,0
+insert,"Ng'Ang'A, Etana G",,,9,Female,0
+insert,"Ng'ang'a, Eliana A",,,7,Female,0
+insert,"Njagah, Taya",,,14,Male,0
+insert,"Njogah, Tugi",,,,,0
+insert,"Nyokabi, Makenna",,,9,Female,0
+insert,"Okuthe, Jessica W",,,10,Female,0
+insert,"Omondi, Sifa",,,,,0
+insert,"Onderi, Zara",,,7,Female,0
+insert,"Onyango, Cristian",,,,,0
+insert,"Waithera, Mayah",,,9,Female,0
+insert,"Wangui, Gianna",,,10,Female,0
+insert,"Wanyee, Nathan",,,,,0
+insert,"Waweru, Zuri",,,8,Female,0
+insert,"Koimburi, Mercy",,,45,Female,0
+insert,"Kahare, Samuel D",,,46,Male,0
+insert,"Kiomburi, Mercy",,,44,Female,0
+insert,"Lukundo, Leo",,,12,Male,0
+insert,"Njagah, Tugi",,,12,Female,0
+insert,"Wainaina, Akira W",,,10,Female,0
+insert,"Wakhu, Melisa",,,44,Female,0
+insert,"McCaul, Aoife",,,29,Female,0
+insert,"Orwa, Sonia",,,39,Female,0
+insert,"Soita, Martha",,,28,Female,0
+insert,"Gatwiri, Sani N",,,14,Female,0
+insert,"Jamaar, Damian",,,9,Male,0
+insert,"Kamanguya, Iluu",,,6,Female,0
+insert,"Maina, Kagure",,,19,Female,0
+insert,"Musyoka, Makenzi",,,8,Male,0
+insert,"Muthomi, Gilad",,,16,Male,0
+insert,"Mwaura, Nyambura",,,15,Female,0
+insert,"Namoit, Carson N",,,15,Male,0
+insert,"Njagah, Tio",,,9,Male,0
+insert,"Njeri, Grace",,,8,Female,0
+insert,"Nona, Samba M",,,11,Female,0
+insert,"Ochieng, Cedric F",,,15,Male,0
+insert,"Savai, Naomi",,,14,Female,0
+insert,"Tajbhai, Raileigh",,,15,Female,0
+insert,"Wendo, Ella Mabel A",,,14,Female,0

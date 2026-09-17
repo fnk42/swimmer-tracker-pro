@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { TermsPanel } from "@/components/TermsPanel";
+import { FindSwimmer } from "@/components/FindSwimmer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -202,7 +203,7 @@ function ParentPage() {
   if (!sessionLoading && !session) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-secondary">
       <AppHeader />
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         <div>
@@ -243,14 +244,14 @@ function ParentPage() {
                     {groupSwimmers.map((s) => (
                       <span
                         key={s.id}
-                        className="inline-flex items-center gap-1 rounded-full bg-sky-100 text-sky-900 text-xs font-medium pl-3 pr-1 py-1"
+                        className="inline-flex items-center gap-1 rounded-full bg-accent text-accent-foreground text-xs font-medium pl-3 pr-1 py-1"
                       >
                         {s.name}
                         {registeredIds.has(s.id) ? " ✓" : ""}
                         <button
                           type="button"
                           onClick={() => removeChild(s.id)}
-                          className="rounded-full hover:bg-sky-200 p-0.5"
+                          className="rounded-full hover:bg-accent p-0.5"
                           aria-label={`Remove ${s.name}`}
                         >
                           <X className="h-3 w-3" />
@@ -277,15 +278,17 @@ function ParentPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                ) : groupSwimmers.length > 0 ? (
-                  <p className="text-xs text-muted-foreground">
-                    No more swimmers available to add.
+                ) : null}
+
+                {/* Whether or not they already hold a swimmer, a parent needs a
+                    way onto a child's record — the second adult in a household
+                    starts here with nothing linked at all. */}
+                <div className="border-t border-border pt-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {swimmers.length === 0 ? "Find your swimmer" : "Add another child"}
                   </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Roster is empty — ask the event coordinator to add you.
-                  </p>
-                )}
+                  <FindSwimmer />
+                </div>
               </CardContent>
             </Card>
 
@@ -878,7 +881,7 @@ function ParentRowFields({
             </SelectContent>
           </Select>
           {row.stayingOvernight === "Yes" && (
-            <p className="mt-1.5 rounded-md border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-[11px] leading-snug text-sky-900">
+            <p className="mt-1.5 rounded-md border border-border bg-accent px-2.5 py-1.5 text-[11px] leading-snug text-accent-foreground">
               Parent accommodation is available at an additional cost. We're finalising the
               price now — once it's set, you'll be able to pay for it right here in this
               same app, and we'll let you know when it's ready.
@@ -893,7 +896,7 @@ function ParentRowFields({
 
 function SavedCrumb({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50/70 px-2.5 py-1 text-xs font-medium text-emerald-700">
       <Check className="h-3 w-3" aria-hidden />
       {label}
     </span>
@@ -1110,7 +1113,7 @@ function PaymentSection({
       {!collapsed && (
         <CardContent className="space-y-6">
           {childCount > 1 && (
-            <div className="rounded-lg border bg-slate-50 p-3 text-sm">
+            <div className="rounded-lg border bg-secondary p-3 text-sm">
               <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                 Paying for
               </div>
@@ -1131,7 +1134,7 @@ function PaymentSection({
             </div>
           )}
 
-          <div className="rounded-lg border bg-sky-50/60 p-4 space-y-3">
+          <div className="rounded-lg border bg-accent/60 p-4 space-y-3">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <div>
                 <div className="text-xs text-muted-foreground">Total</div>
@@ -1218,7 +1221,7 @@ function PaymentSection({
               </Button>
             </form>
           ) : (
-            <div className="rounded-md border bg-emerald-50 border-emerald-200 p-4 text-sm text-emerald-800">
+            <div className="rounded-md border bg-emerald-50/70 border-emerald-200 p-4 text-sm text-emerald-700">
               🎉 Fully paid. Thank you!
             </div>
           )}
@@ -1253,9 +1256,9 @@ function PaymentSection({
 
 function StatusBadge({ status }: { status: "Unpaid" | "Partial" | "Paid" }) {
   const map = {
-    Unpaid: "bg-slate-100 text-slate-700",
-    Partial: "bg-amber-100 text-amber-800",
-    Paid: "bg-emerald-100 text-emerald-800",
+    Unpaid: "bg-secondary text-foreground",
+    Partial: "bg-amber-100/70 text-amber-700",
+    Paid: "bg-emerald-100/70 text-emerald-700",
   };
   return (
     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${map[status]}`}>{status}</span>

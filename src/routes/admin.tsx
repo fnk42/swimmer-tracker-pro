@@ -141,7 +141,7 @@ function AdminPage() {
   if (me.isLoading || !me.data?.isAdmin) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-secondary">
       <AppHeader />
       <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -411,7 +411,7 @@ function SwimmerRow({
                 <Pencil className="h-3.5 w-3.5" />
               </button>
               {hasFlag && (
-                <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200 text-[10px]">
+                <Badge variant="outline" className="bg-amber-50/70 text-amber-700 border-amber-200 text-[10px]">
                   Health note
                 </Badge>
               )}
@@ -434,7 +434,7 @@ function SwimmerRow({
       </TableRow>
       {open && (
         <TableRow>
-          <TableCell colSpan={9} className="bg-slate-50 p-0">
+          <TableCell colSpan={9} className="bg-secondary p-0">
             <div className="p-4 space-y-4">
               {reg ? (
                 <div className="space-y-4">
@@ -517,7 +517,7 @@ function Info({
   return (
     <div>
       <div className="text-[11px] text-muted-foreground uppercase tracking-wide">{label}</div>
-      <div className={`text-sm ${highlight ? "text-amber-800 font-medium" : ""}`}>{value}</div>
+      <div className={`text-sm ${highlight ? "text-amber-700 font-medium" : ""}`}>{value}</div>
     </div>
   );
 }
@@ -561,9 +561,9 @@ function ParentDetailBlock({ parents }: { parents: Parent[] }) {
 
 function StatusPill({ status }: { status: "Unpaid" | "Partial" | "Paid" }) {
   const map = {
-    Unpaid: "bg-slate-100 text-slate-700",
-    Partial: "bg-amber-100 text-amber-800",
-    Paid: "bg-emerald-100 text-emerald-800",
+    Unpaid: "bg-secondary text-foreground",
+    Partial: "bg-amber-100/70 text-amber-700",
+    Paid: "bg-emerald-100/70 text-emerald-700",
   };
   return (
     <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${map[status]}`}>{status}</span>
@@ -721,7 +721,7 @@ function SummaryCard({
 function GenderPill({ gender }: { gender: "Male" | "Female" | undefined }) {
   if (gender === "Male") {
     return (
-      <span className="text-xs font-medium bg-sky-100 text-sky-900 px-2 py-0.5 rounded-full">
+      <span className="text-xs font-medium bg-accent text-accent-foreground px-2 py-0.5 rounded-full">
         Male
       </span>
     );

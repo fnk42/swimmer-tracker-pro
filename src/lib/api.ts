@@ -552,6 +552,45 @@ export function useVerifyCode() {
   });
 }
 
+export type ClaimableSwimmer = {
+  id: string;
+  name: string;
+  adults: number;
+  mine: boolean;
+  slotsLeft: number;
+};
+
+/** Search the roster for a swimmer to claim. Searched, never browsed — the
+ *  endpoint wants at least two characters and returns at most eight. */
+export function useClaimable(term: string) {
+  const q = term.trim();
+  return useQuery({
+    queryKey: ["claimable", q],
+    enabled: q.length >= 2,
+    queryFn: () =>
+      apiFetch<{ swimmers: ClaimableSwimmer[] }>(
+        `/api/me/claimable?q=${encodeURIComponent(q)}`,
+      ).then((r) => r.swimmers ?? []),
+  });
+}
+
+/** Put myself on a swimmer's record. Up to two adults may hold the same child. */
+export function useClaimSwimmer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (swimmerId: string) =>
+      apiFetch("/api/me/link", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ swimmerId }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["me"] });
+      qc.invalidateQueries({ queryKey: ["claimable"] });
+    },
+  });
+}
+
 export function useSignOut() {
   const qc = useQueryClient();
   return useMutation({

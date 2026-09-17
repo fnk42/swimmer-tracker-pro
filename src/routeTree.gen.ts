@@ -30,6 +30,7 @@ import { Route as ApiMePaymentRouteImport } from './routes/api/me/payment'
 import { Route as ApiMeParentRouteImport } from './routes/api/me/parent'
 import { Route as ApiMeLinkRouteImport } from './routes/api/me/link'
 import { Route as ApiMeDataRouteImport } from './routes/api/me/data'
+import { Route as ApiMeClaimableRouteImport } from './routes/api/me/claimable'
 import { Route as ApiAuthVerifyCodeRouteImport } from './routes/api/auth/verify-code'
 import { Route as ApiAuthRequestCodeRouteImport } from './routes/api/auth/request-code'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
@@ -140,6 +141,11 @@ const ApiMeDataRoute = ApiMeDataRouteImport.update({
   path: '/api/me/data',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMeClaimableRoute = ApiMeClaimableRouteImport.update({
+  id: '/api/me/claimable',
+  path: '/api/me/claimable',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthVerifyCodeRoute = ApiAuthVerifyCodeRouteImport.update({
   id: '/api/auth/verify-code',
   path: '/api/auth/verify-code',
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/request-code': typeof ApiAuthRequestCodeRoute
   '/api/auth/verify-code': typeof ApiAuthVerifyCodeRoute
+  '/api/me/claimable': typeof ApiMeClaimableRoute
   '/api/me/data': typeof ApiMeDataRoute
   '/api/me/link': typeof ApiMeLinkRoute
   '/api/me/parent': typeof ApiMeParentRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/request-code': typeof ApiAuthRequestCodeRoute
   '/api/auth/verify-code': typeof ApiAuthVerifyCodeRoute
+  '/api/me/claimable': typeof ApiMeClaimableRoute
   '/api/me/data': typeof ApiMeDataRoute
   '/api/me/link': typeof ApiMeLinkRoute
   '/api/me/parent': typeof ApiMeParentRoute
@@ -233,6 +241,7 @@ export interface FileRoutesById {
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/request-code': typeof ApiAuthRequestCodeRoute
   '/api/auth/verify-code': typeof ApiAuthVerifyCodeRoute
+  '/api/me/claimable': typeof ApiMeClaimableRoute
   '/api/me/data': typeof ApiMeDataRoute
   '/api/me/link': typeof ApiMeLinkRoute
   '/api/me/parent': typeof ApiMeParentRoute
@@ -262,6 +271,7 @@ export interface FileRouteTypes {
     | '/api/auth/me'
     | '/api/auth/request-code'
     | '/api/auth/verify-code'
+    | '/api/me/claimable'
     | '/api/me/data'
     | '/api/me/link'
     | '/api/me/parent'
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/api/auth/me'
     | '/api/auth/request-code'
     | '/api/auth/verify-code'
+    | '/api/me/claimable'
     | '/api/me/data'
     | '/api/me/link'
     | '/api/me/parent'
@@ -316,6 +327,7 @@ export interface FileRouteTypes {
     | '/api/auth/me'
     | '/api/auth/request-code'
     | '/api/auth/verify-code'
+    | '/api/me/claimable'
     | '/api/me/data'
     | '/api/me/link'
     | '/api/me/parent'
@@ -344,6 +356,7 @@ export interface RootRouteChildren {
   ApiAuthMeRoute: typeof ApiAuthMeRoute
   ApiAuthRequestCodeRoute: typeof ApiAuthRequestCodeRoute
   ApiAuthVerifyCodeRoute: typeof ApiAuthVerifyCodeRoute
+  ApiMeClaimableRoute: typeof ApiMeClaimableRoute
   ApiMeDataRoute: typeof ApiMeDataRoute
   ApiMeLinkRoute: typeof ApiMeLinkRoute
   ApiMeParentRoute: typeof ApiMeParentRoute
@@ -502,6 +515,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMeDataRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/me/claimable': {
+      id: '/api/me/claimable'
+      path: '/api/me/claimable'
+      fullPath: '/api/me/claimable'
+      preLoaderRoute: typeof ApiMeClaimableRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/verify-code': {
       id: '/api/auth/verify-code'
       path: '/api/auth/verify-code'
@@ -574,6 +594,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthMeRoute: ApiAuthMeRoute,
   ApiAuthRequestCodeRoute: ApiAuthRequestCodeRoute,
   ApiAuthVerifyCodeRoute: ApiAuthVerifyCodeRoute,
+  ApiMeClaimableRoute: ApiMeClaimableRoute,
   ApiMeDataRoute: ApiMeDataRoute,
   ApiMeLinkRoute: ApiMeLinkRoute,
   ApiMeParentRoute: ApiMeParentRoute,

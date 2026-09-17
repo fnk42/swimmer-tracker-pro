@@ -155,20 +155,20 @@ export function RosterManager() {
             <div className="space-y-4 text-sm">
               <div className="flex gap-4">
                 <div className="flex-1 rounded-md border p-3">
-                  <div className="text-2xl font-semibold text-emerald-600">
+                  <div className="text-2xl font-semibold text-emerald-700">
                     {preview.valid.length}
                   </div>
                   <div className="text-xs text-muted-foreground">Valid rows</div>
                 </div>
                 <div className="flex-1 rounded-md border p-3">
-                  <div className="text-2xl font-semibold text-amber-600">
+                  <div className="text-2xl font-semibold text-amber-700">
                     {preview.invalid.length}
                   </div>
                   <div className="text-xs text-muted-foreground">Skipped</div>
                 </div>
               </div>
               {preview.invalid.length > 0 && (
-                <div className="rounded-md border bg-amber-50/50 p-3 max-h-40 overflow-y-auto">
+                <div className="rounded-md border bg-amber-50/70/50 p-3 max-h-40 overflow-y-auto">
                   <div className="text-xs font-medium mb-2">Skipped rows</div>
                   <ul className="space-y-1 text-xs">
                     {preview.invalid.map((r, i) => (

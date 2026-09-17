@@ -330,3 +330,81 @@
   border: 1px solid rgba(22, 166, 232, 0.3);
   color: var(--ng-cyan);
 }
+
+/* ---------------------------------------------------------------------------
+ * The interiors, re-pointed at the NextGen palette.
+ *
+ * Same club as the landing, turned down. The landing is a front door and can
+ * afford a full-bleed navy; /parent and /admin are working screens full of
+ * names, amounts and dates, and reading those against saturated blue is tiring.
+ * So the interiors invert it: a soft blue-grey page, white cards, navy ink, and
+ * electric kept for the few things that are actually actions or accents.
+ *
+ * Done by re-pointing the design tokens rather than editing each screen, so
+ * every card, input, select, dialog and table moves together and nothing is
+ * left behind on the old slate.
+ *
+ * Lines are deliberately soft — #DCE6F0 rather than a grey — because at this
+ * density a hard border on every row reads as a grid of boxes.
+ */
+:root {
+  --radius: 0.75rem;
+
+  --background: oklch(0.978 0.0062 255.475); /* #F5F8FC page */
+  --foreground: oklch(0.2223 0.0524 257.351); /* #0A1B33 navy ink */
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2223 0.0524 257.351);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2223 0.0524 257.351);
+
+  /* Deep electric, not the bright one — it carries white text and it is on
+     every primary button, so it should not shout. */
+  --primary: oklch(0.5727 0.134 242.743); /* #0E7FC0 */
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.9651 0.0097 252.811); /* #EFF4FA sunken */
+  --secondary-foreground: oklch(0.2816 0.0676 257.642);
+
+  --muted: oklch(0.9651 0.0097 252.811);
+  --muted-foreground: oklch(0.5485 0.053 254.463); /* #5C7390 */
+
+  --accent: oklch(0.9662 0.0158 233.018); /* #EAF6FD ice */
+  --accent-foreground: oklch(0.2816 0.0676 257.642);
+
+  --destructive: oklch(0.5433 0.174 29.697);
+  --destructive-foreground: oklch(1 0 0);
+
+  --border: oklch(0.9203 0.0174 248.016); /* #DCE6F0 soft line */
+  --input: oklch(0.9203 0.0174 248.016);
+  --ring: oklch(0.6872 0.1452 236.726); /* #16A6E8 focus only */
+
+  --chart-1: oklch(0.6872 0.1452 236.726);
+  --chart-2: oklch(0.8041 0.1237 214.484);
+  --chart-3: oklch(0.688 0.1488 159.962);
+  --chart-4: oklch(0.849 0.1484 80.728);
+  --chart-5: oklch(0.5727 0.134 242.743);
+}
+
+/* Sora everywhere, and figures that line up in a column. The screens are
+   mostly amounts and dates. */
+body {
+  font-family: "Sora", system-ui, -apple-system, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Soften the default card: less shadow, softer edge, more air. */
+[data-slot="card"] {
+  border-color: var(--color-border);
+  box-shadow: 0 1px 2px rgba(10, 27, 51, 0.04);
+}
+
+/* Dense tables read better with hairlines and a tinted header than with a
+   border on every cell. */
+table {
+  font-variant-numeric: tabular-nums;
+}
+thead th {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
