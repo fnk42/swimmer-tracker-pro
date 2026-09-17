@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMe, useRequestCode, useVerifyCode } from "@/lib/api";
+import { ProgressWall } from "@/components/ProgressWall";
 
 export const Route = createFileRoute("/")({
   component: PortalLanding,
@@ -73,7 +74,7 @@ function PortalLanding() {
       <div className="ng-water" aria-hidden />
       <div className="ng-caustics" aria-hidden />
 
-      <main className="mx-auto grid w-full max-w-5xl flex-1 items-center gap-12 px-5 py-14 lg:grid-cols-[minmax(0,1fr)_minmax(340px,395px)] lg:py-20">
+      <main className="mx-auto grid w-full max-w-5xl items-center gap-12 px-5 pb-6 pt-14 lg:grid-cols-[minmax(0,1fr)_minmax(340px,395px)] lg:pt-20">
         <div className="text-white">
           <img
             src="/nextgen-logo.png"
@@ -211,6 +212,10 @@ function PortalLanding() {
           )}
         </div>
       </main>
+
+      <div className="relative mx-auto w-full max-w-5xl px-5 pb-16">
+        <ProgressWall />
+      </div>
 
       <footer className="relative px-5 pb-8 text-center text-[11.5px] text-white/35">
         A product of <span className="font-semibold text-white/55">Golden Pipit Solutions</span>
