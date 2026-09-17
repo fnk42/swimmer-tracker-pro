@@ -1,5 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { q, one, json, fail } from "@/lib/db";
+import { adminEmails } from "@/lib/session";
+import { sendClaimNotice } from "@/lib/mailer";
+import { normalizeKePhone } from "@/lib/phone";
 import { sessionFromRequest } from "@/lib/session";
 
 const MAX_ADULTS = 2;
@@ -71,6 +74,41 @@ export const Route = createFileRoute("/api/me/link")({
              returning *`,
             [swimmerId, s.parentId, slot],
           );
+
+          // Tell the coordinators. A claim nobody looks at is a parent locked
+          // out, so this is not optional — but a mail failure must not undo a
+          // claim the parent has already made, so it cannot throw.
+          try {
+            const ctx = await one<{
+              swimmer: string;
+              parent_name: string;
+              parent_phone: string;
+              reg_phones: string[] | null;
+            }>(
+              `select sw.name as swimmer,
+                      coalesce(p.full_name, p.email, 'A parent') as parent_name,
+                      coalesce(p.phone,'') as parent_phone,
+                      array_remove(array[r.primary_phone, r.secondary_phone], null) as reg_phones
+                 from public.swimmers sw
+                 join public.parents p on p.id = $2
+                 left join public.registrations r on r.swimmer_id = sw.id
+                where sw.id = $1`,
+              [swimmerId, s.parentId],
+            );
+            if (ctx) {
+              const d = (x: string) => (normalizeKePhone(x) || x || "").replace(/\D/g, "").slice(-9);
+              const mine = d(ctx.parent_phone);
+              await sendClaimNotice(adminEmails(), {
+                parentName: ctx.parent_name,
+                parentEmail: s.email,
+                swimmer: ctx.swimmer,
+                phoneMatch: !!mine && (ctx.reg_phones ?? []).some((p) => d(p) === mine),
+              });
+            }
+          } catch {
+            /* the claim stands whether or not the notice went out */
+          }
+
           return json(row);
         } catch (err) {
           // The unique index fires when two adults claim the last slot at once.

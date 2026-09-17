@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { RosterManager } from "@/components/RosterManager";
+import { ClaimQueue } from "@/components/ClaimQueue";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -148,8 +149,7 @@ function AdminPage() {
           <div>
             <h1 className="text-xl font-semibold">Admin</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {EVENT.name} · {swimmers.length} swimmer{swimmers.length === 1 ? "" : "s"} ·{" "}
-              {formatKes(EVENT.totalKes)} per head
+              {EVENT.name} · {swimmers.length} in the squad · {formatKes(EVENT.totalKes)} per head
             </p>
           </div>
           <Button
@@ -206,6 +206,9 @@ function AdminPage() {
               parents={parents}
               links={links}
             />
+
+            {/* Approvals first: a claim nobody looks at is a parent locked out. */}
+            <ClaimQueue />
 
             <Card>
               <CardHeader>

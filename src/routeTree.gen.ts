@@ -38,6 +38,7 @@ import { Route as ApiAuthRequestCodeRouteImport } from './routes/api/auth/reques
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAthleteAssessmentRouteImport } from './routes/api/athlete/assessment'
 import { Route as ApiAdminStatusRouteImport } from './routes/api/admin/status'
+import { Route as ApiAdminClaimsRouteImport } from './routes/api/admin/claims'
 
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
@@ -184,6 +185,11 @@ const ApiAdminStatusRoute = ApiAdminStatusRouteImport.update({
   path: '/api/admin/status',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminClaimsRoute = ApiAdminClaimsRouteImport.update({
+  id: '/api/admin/claims',
+  path: '/api/admin/claims',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -199,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/api/registrations': typeof ApiRegistrationsRoute
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
+  '/api/admin/claims': typeof ApiAdminClaimsRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -230,6 +237,7 @@ export interface FileRoutesByTo {
   '/api/registrations': typeof ApiRegistrationsRoute
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
+  '/api/admin/claims': typeof ApiAdminClaimsRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -262,6 +270,7 @@ export interface FileRoutesById {
   '/api/registrations': typeof ApiRegistrationsRoute
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
+  '/api/admin/claims': typeof ApiAdminClaimsRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -295,6 +304,7 @@ export interface FileRouteTypes {
     | '/api/registrations'
     | '/api/swimmer-parents'
     | '/api/swimmers'
+    | '/api/admin/claims'
     | '/api/admin/status'
     | '/api/athlete/assessment'
     | '/api/auth/me'
@@ -326,6 +336,7 @@ export interface FileRouteTypes {
     | '/api/registrations'
     | '/api/swimmer-parents'
     | '/api/swimmers'
+    | '/api/admin/claims'
     | '/api/admin/status'
     | '/api/athlete/assessment'
     | '/api/auth/me'
@@ -357,6 +368,7 @@ export interface FileRouteTypes {
     | '/api/registrations'
     | '/api/swimmer-parents'
     | '/api/swimmers'
+    | '/api/admin/claims'
     | '/api/admin/status'
     | '/api/athlete/assessment'
     | '/api/auth/me'
@@ -389,6 +401,7 @@ export interface RootRouteChildren {
   ApiRegistrationsRoute: typeof ApiRegistrationsRoute
   ApiSwimmerParentsRoute: typeof ApiSwimmerParentsRoute
   ApiSwimmersRoute: typeof ApiSwimmersRouteWithChildren
+  ApiAdminClaimsRoute: typeof ApiAdminClaimsRoute
   ApiAdminStatusRoute: typeof ApiAdminStatusRoute
   ApiAthleteAssessmentRoute: typeof ApiAthleteAssessmentRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
@@ -610,6 +623,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/claims': {
+      id: '/api/admin/claims'
+      path: '/api/admin/claims'
+      fullPath: '/api/admin/claims'
+      preLoaderRoute: typeof ApiAdminClaimsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -651,6 +671,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRegistrationsRoute: ApiRegistrationsRoute,
   ApiSwimmerParentsRoute: ApiSwimmerParentsRoute,
   ApiSwimmersRoute: ApiSwimmersRouteWithChildren,
+  ApiAdminClaimsRoute: ApiAdminClaimsRoute,
   ApiAdminStatusRoute: ApiAdminStatusRoute,
   ApiAthleteAssessmentRoute: ApiAthleteAssessmentRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,

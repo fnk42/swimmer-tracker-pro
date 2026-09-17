@@ -16,9 +16,23 @@ export const Route = createFileRoute("/api/swimmers")({
         const denied = requireSignedIn(request);
         if (denied) return denied;
         try {
+          // Defaults to the Machakos SQUAD, not the whole club roster.
+          //
+          // These were the same 46 rows until the archive was ported in. Now
+          // the roster is 190, and the event screens compute the accommodation
+          // fee across whatever this returns — so defaulting to everyone
+          // silently multiplied "outstanding" by four. The event is the caller
+          // that matters, so it gets the safe default; ?all=1 asks for the
+          // club roster explicitly.
+          const all = new URL(request.url).searchParams.get("all") === "1";
           return json(
             await q<SwimmerRow>(
-              `select * from public.swimmers order by created_at desc`,
+              all
+                ? `select * from public.swimmers order by name`
+                : `select * from public.swimmers
+                    where event_squad
+                       or id in (select swimmer_id from public.registrations)
+                    order by created_at desc`,
             ),
           );
         } catch (err) {

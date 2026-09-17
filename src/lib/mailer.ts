@@ -121,3 +121,76 @@ export async function sendParentInvite(email: string, invitedBy: string): Promis
     return { delivered: false, via: "resend", error: String(err) };
   }
 }
+
+/**
+ * Tell the coordinators a claim is waiting.
+ *
+ * Sent when a parent claims a child, because a claim that nobody looks at is a
+ * parent locked out — and an unattended queue is how the club ends up
+ * approving things in bulk without reading them.
+ *
+ * Deliberately carries no approve link. A one-click approval in an email is a
+ * decision made by whoever has the email, which for a claim about a child is
+ * not good enough: the coordinator signs in and sees the evidence.
+ */
+export async function sendClaimNotice(
+  to: string[],
+  claim: { parentName: string; parentEmail: string; swimmer: string; phoneMatch: boolean },
+): Promise<SendResult> {
+  const key = process.env.RESEND_API_KEY;
+  const url = "https://events.nextgenkenya.com/admin";
+  const hint = claim.phoneMatch
+    ? "Their phone number matches the one on that swimmer's registration, so the club already had them down as a contact."
+    : "Their phone number does NOT match that swimmer's registration, so this one is worth a second look.";
+
+  if (!to.length) return { delivered: false, via: "console" };
+
+  if (!key) {
+    console.warn(
+      `\n[mailer] RESEND_API_KEY not set — not emailing.\n` +
+        `[mailer] Claim waiting: ${claim.parentName} -> ${claim.swimmer}\n`,
+    );
+    return { delivered: false, via: "console" };
+  }
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        from: FROM,
+        to,
+        subject: `Approval needed — ${claim.parentName} says they are ${claim.swimmer}'s parent`,
+        text:
+          `A parent has asked to be linked to a NextGen swimmer.\n\n` +
+          `Parent:  ${claim.parentName} (${claim.parentEmail})\n` +
+          `Swimmer: ${claim.swimmer}\n\n` +
+          `${hint}\n\n` +
+          `Until this is approved they cannot see any swimmer by name — only the ` +
+          `club's overall numbers. Approve or decline it here:\n${url}\n\n` +
+          `NextGen Multi Sport Academy`,
+        html:
+          `<p>A parent has asked to be linked to a NextGen swimmer.</p>` +
+          `<table style="font:14px system-ui;border-collapse:collapse">` +
+          `<tr><td style="padding:2px 12px 2px 0;color:#666">Parent</td>` +
+          `<td><strong>${claim.parentName}</strong> (${claim.parentEmail})</td></tr>` +
+          `<tr><td style="padding:2px 12px 2px 0;color:#666">Swimmer</td>` +
+          `<td><strong>${claim.swimmer}</strong></td></tr></table>` +
+          `<p>${hint}</p>` +
+          `<p>Until this is approved they cannot see any swimmer by name — only the ` +
+          `club's overall numbers.</p>` +
+          `<p><a href="${url}">Open the approval queue</a></p>` +
+          `<p style="color:#666;font-size:13px">NextGen Multi Sport Academy</p>`,
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error("[mailer] resend REJECTED the claim notice:", res.status, body);
+      return { delivered: false, via: "resend", error: `${res.status}` };
+    }
+    return { delivered: true, via: "resend" };
+  } catch (err) {
+    console.error("[mailer] resend threw on claim notice:", err);
+    return { delivered: false, via: "resend", error: String(err) };
+  }
+}

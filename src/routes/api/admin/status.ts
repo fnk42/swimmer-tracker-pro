@@ -11,6 +11,7 @@ interface SwimmerStatus {
   balance: number;
   status: "Unpaid" | "Partial" | "Paid";
   registered: boolean;
+  event_squad?: boolean;
   payments: Array<{ reference: string; amount: number; created_at: string }>;
 }
 
@@ -30,7 +31,16 @@ export const Route = createFileRoute("/api/admin/status")({
         if (denied) return denied;
         try {
           const [swimmers, registrations, payments] = await Promise.all([
-            q<SwimmerRow>(`select id, name, age, gender from public.swimmers order by name`),
+            // event_squad separates the Machakos cohort from the club roster.
+            // They were the same 46 rows until the archive was ported in; now
+            // the roster is 190 and the accommodation fee applies only to the
+            // squad, so the two must not be conflated.
+            q<SwimmerRow>(
+              `select id, name, age, gender, event_squad
+                 from public.swimmers
+                where event_squad or id in (select swimmer_id from public.registrations)
+                order by name`,
+            ),
             q<{ swimmer_id: string }>(`select swimmer_id from public.registrations`),
             q<PaymentRow>(
               `select swimmer_id, swimmer_ids, child_count, amount, reference, created_at
