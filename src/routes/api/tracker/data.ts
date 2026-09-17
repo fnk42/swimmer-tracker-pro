@@ -1,47 +1,46 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { sessionFromRequest } from "@/lib/session";
 import { json } from "@/lib/db";
+import { viewer } from "@/lib/scope";
+import { shapeAnalytics } from "@/lib/tiers";
 import data from "../../../tracker/data.json";
 
 // Swim performance for every NextGen athlete, 2022–2026.
 //
-// Two scopes, decided from the session and never from anything the browser
-// sends:
+// Three shapes, decided from the session and the database, never from anything
+// the browser sends. src/lib/tiers.ts holds the field manifest and explains the
+// two tiers; this route's only job is to pick a scope and hand the payload to
+// it.
 //
-//   club    coordinators — the whole record, every swimmer named.
-//   family  parents — the club-wide picture, which is aggregate throughout
-//           (percentages, medians, counts per age band, meet-level form), with
-//           every field that names an individual removed.
+//   coach      coordinators and coaches — the whole record
+//   community  a confirmed guardian of a NextGen swimmer — every athlete by
+//              name with their competition record, and nobody's assessment
+//   pending    signed in, claim not yet approved — club aggregates, no names
 //
-// The fields that name people are `swimmers` (all 191, each with age, times and
-// a development label) and `watch` (the "swimmers to look at" lists).
-// Everything else — summary, strokes, dists, ages, ageYears, alerts, comps,
-// sexes, meets — carries no name and is safe for a parent to see.
-//
-// A parent seeing another family's child flagged "Review" is the thing this
-// guards against, so the filtering happens here: the restricted data never
-// reaches the browser at all, rather than being hidden by the page.
-
-type YearBlock = Record<string, unknown>;
-
-const familyYears = Object.fromEntries(
-  Object.entries(data.years as Record<string, YearBlock>).map(([year, block]) => {
-    const { swimmers: _named, watch: _lists, ...aggregate } = block;
-    return [year, { ...aggregate, swimmers: [], watch: {} }];
-  }),
-);
-
-const clubData = JSON.stringify({ ...data, scope: "club" });
-const familyData = JSON.stringify({ ...data, scope: "family", years: familyYears });
-
+// A guardian reads their own child's assessment from
+// /api/athlete/assessment, one child per request, so no bulk route can carry
+// an assessment even if the check above it were wrong.
 export const Route = createFileRoute("/api/tracker/data")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const s = sessionFromRequest(request);
-        if (!s) return json({ error: "Not signed in" }, 401);
+        const v = await viewer(request);
+        if (!v) return json({ error: "Not signed in" }, 401);
 
-        return new Response(s.isAdmin ? clubData : familyData, {
+        // Registration is not finished; the client sends them back to finish it
+        // rather than showing a half-entitled dashboard.
+        if (v.needsProfile || v.needsConsent) {
+          return json(
+            {
+              error: "Registration incomplete",
+              needsProfile: v.needsProfile,
+              needsConsent: v.needsConsent,
+            },
+            428, // Precondition Required
+          );
+        }
+
+        const body = shapeAnalytics(data as unknown as Record<string, unknown>, v.scope);
+        return new Response(JSON.stringify({ ...body, myAthletes: v.myAthletes }), {
           headers: {
             "content-type": "application/json",
             "cache-control": "private, max-age=300",

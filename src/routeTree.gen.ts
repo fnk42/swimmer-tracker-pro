@@ -34,6 +34,7 @@ import { Route as ApiMeClaimableRouteImport } from './routes/api/me/claimable'
 import { Route as ApiAuthVerifyCodeRouteImport } from './routes/api/auth/verify-code'
 import { Route as ApiAuthRequestCodeRouteImport } from './routes/api/auth/request-code'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
+import { Route as ApiAthleteAssessmentRouteImport } from './routes/api/athlete/assessment'
 import { Route as ApiAdminStatusRouteImport } from './routes/api/admin/status'
 
 const TrackerRoute = TrackerRouteImport.update({
@@ -161,6 +162,11 @@ const ApiAuthMeRoute = ApiAuthMeRouteImport.update({
   path: '/api/auth/me',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAthleteAssessmentRoute = ApiAthleteAssessmentRouteImport.update({
+  id: '/api/athlete/assessment',
+  path: '/api/athlete/assessment',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminStatusRoute = ApiAdminStatusRouteImport.update({
   id: '/api/admin/status',
   path: '/api/admin/status',
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/status': typeof ApiAdminStatusRoute
+  '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/request-code': typeof ApiAuthRequestCodeRoute
   '/api/auth/verify-code': typeof ApiAuthVerifyCodeRoute
@@ -209,6 +216,7 @@ export interface FileRoutesByTo {
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/status': typeof ApiAdminStatusRoute
+  '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/request-code': typeof ApiAuthRequestCodeRoute
   '/api/auth/verify-code': typeof ApiAuthVerifyCodeRoute
@@ -238,6 +246,7 @@ export interface FileRoutesById {
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/status': typeof ApiAdminStatusRoute
+  '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/request-code': typeof ApiAuthRequestCodeRoute
   '/api/auth/verify-code': typeof ApiAuthVerifyCodeRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/api/swimmer-parents'
     | '/api/swimmers'
     | '/api/admin/status'
+    | '/api/athlete/assessment'
     | '/api/auth/me'
     | '/api/auth/request-code'
     | '/api/auth/verify-code'
@@ -296,6 +306,7 @@ export interface FileRouteTypes {
     | '/api/swimmer-parents'
     | '/api/swimmers'
     | '/api/admin/status'
+    | '/api/athlete/assessment'
     | '/api/auth/me'
     | '/api/auth/request-code'
     | '/api/auth/verify-code'
@@ -324,6 +335,7 @@ export interface FileRouteTypes {
     | '/api/swimmer-parents'
     | '/api/swimmers'
     | '/api/admin/status'
+    | '/api/athlete/assessment'
     | '/api/auth/me'
     | '/api/auth/request-code'
     | '/api/auth/verify-code'
@@ -353,6 +365,7 @@ export interface RootRouteChildren {
   ApiSwimmerParentsRoute: typeof ApiSwimmerParentsRoute
   ApiSwimmersRoute: typeof ApiSwimmersRouteWithChildren
   ApiAdminStatusRoute: typeof ApiAdminStatusRoute
+  ApiAthleteAssessmentRoute: typeof ApiAthleteAssessmentRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
   ApiAuthRequestCodeRoute: typeof ApiAuthRequestCodeRoute
   ApiAuthVerifyCodeRoute: typeof ApiAuthVerifyCodeRoute
@@ -543,6 +556,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthMeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/athlete/assessment': {
+      id: '/api/athlete/assessment'
+      path: '/api/athlete/assessment'
+      fullPath: '/api/athlete/assessment'
+      preLoaderRoute: typeof ApiAthleteAssessmentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/status': {
       id: '/api/admin/status'
       path: '/api/admin/status'
@@ -591,6 +611,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSwimmerParentsRoute: ApiSwimmerParentsRoute,
   ApiSwimmersRoute: ApiSwimmersRouteWithChildren,
   ApiAdminStatusRoute: ApiAdminStatusRoute,
+  ApiAthleteAssessmentRoute: ApiAthleteAssessmentRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
   ApiAuthRequestCodeRoute: ApiAuthRequestCodeRoute,
   ApiAuthVerifyCodeRoute: ApiAuthVerifyCodeRoute,

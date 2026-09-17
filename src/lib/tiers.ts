@@ -1,0 +1,159 @@
+// What each kind of viewer is allowed to know about a swimmer.
+//
+// Two tiers, agreed with the club:
+//
+//   tier1  The competition record. Name, age group, the results of meets that
+//          were already published by their organisers, and neutral arithmetic
+//          on those results — personal bests, podium counts, "22.7% faster".
+//          Visible to anyone in the NextGen community who has been confirmed as
+//          the guardian of a NextGen swimmer, the way SwimCloud and Meet Mobile
+//          work.
+//
+//   tier2  The assessment. How NextGen judges a swimmer's development — the
+//          Review label, per-stroke bands, consistency, what to work on. This
+//          is data the club CREATED about a child; no federation published it
+//          and no entry form consented to it. Visible to coaches and to that
+//          child's own guardians, and never in bulk.
+//
+//   coach  Internal. Roster status, and which other clubs a child has raced
+//          for — factually public, but socially loaded in a club this size.
+//
+// THE POINT OF THIS FILE: the tier-1 payload is built by OMITTING tier2 and
+// coach fields, never by hand-picking tier-1 ones. Combined with the test in
+// tiers.test.ts — which fails if any field in the analytics output is not
+// classified here — adding a new metric to analytics.py cannot silently ship it
+// to parents. Someone has to come here and decide what it is.
+
+export const SWIMMER_FIELDS = {
+  tier1: [
+    "name",
+    "age",
+    "band", // age group, e.g. "15-17" — never a date of birth
+    "sex",
+    "seasons",
+    "swims",
+    "pbs",
+    "podiums",
+    "wins",
+    "meets",
+    "trend", // % change over the period: arithmetic on published times
+    "pbRate",
+    "events", // per event: course, first/last time and date, swim count
+  ],
+  tier2: [
+    "cls", // fast / improving / stable / review — the label
+    "consBand",
+    "consistency",
+    "focus", // a coaching recommendation
+    "strokes", // per-stroke label, e.g. { Back: "fast" }
+    "dists", // per-distance label
+    "t3",
+    "t6", // recent form
+    "nocompare",
+  ],
+  coach: [
+    "status", // current / former on the roster
+    "offclub", // other clubs raced for
+  ],
+} as const;
+
+// Fields inside each entry of a swimmer's `events` array. All tier 1: these are
+// published race times and the percentage between two of them.
+export const EVENT_FIELDS = [
+  "event",
+  "course",
+  "pct",
+  "first",
+  "last",
+  "firstDate",
+  "lastDate",
+  "swims",
+] as const;
+
+// Year-level blocks. These are club aggregates — medians, counts per age band,
+// meet summaries — and name nobody, so the community may see them.
+export const YEAR_BLOCKS = {
+  tier1: [
+    "meets",
+    "summary",
+    "strokes",
+    "dists",
+    "ages",
+    "ageYears",
+    "alerts",
+    "comps",
+    "sexes",
+  ],
+  coach: [
+    "watch", // lists of named swimmers to look at — assessment, and cross-child
+  ],
+} as const;
+
+export type Scope =
+  | "coach" // coordinator or coach: everything
+  | "community" // guardian of a confirmed NextGen swimmer: tier 1 for everyone
+  | "pending"; // signed in, no confirmed child yet: aggregates only, no names
+
+const set = (xs: readonly string[]) => new Set<string>(xs);
+const SW_TIER1 = set(SWIMMER_FIELDS.tier1);
+const YR_TIER1 = set(YEAR_BLOCKS.tier1);
+
+type Rec = Record<string, unknown>;
+
+/** Keep only the listed keys. Omission is the mechanism — see the note above. */
+function pick(o: Rec, keep: Set<string>): Rec {
+  const out: Rec = {};
+  for (const k of Object.keys(o)) if (keep.has(k)) out[k] = o[k];
+  return out;
+}
+
+/**
+ * Shape the analytics payload for a viewer.
+ *
+ * `community` gets every swimmer by name with their competition record, and no
+ * assessment of anyone — including their own child, whose assessment is fetched
+ * per-child from its own endpoint so that no bulk route can ever carry it.
+ *
+ * `pending` gets the club aggregates with the swimmer list emptied, so someone
+ * who has signed up but has not yet been confirmed as a guardian sees the shape
+ * of the club without a single child's name.
+ */
+export function shapeAnalytics(data: Rec, scope: Scope): Rec {
+  if (scope === "coach") return { ...data, scope };
+
+  const years = data.years as Record<string, Rec>;
+  const shaped: Record<string, Rec> = {};
+
+  for (const [year, block] of Object.entries(years)) {
+    const kept = pick(block, YR_TIER1);
+
+    if (scope === "community") {
+      const swimmers = (block.swimmers as Rec[] | undefined) ?? [];
+      kept.swimmers = swimmers.map((s) => pick(s, SW_TIER1));
+    } else {
+      kept.swimmers = [];
+    }
+    kept.watch = {}; // coach-only, and cross-child: never leaves the server
+
+    shaped[year] = kept;
+  }
+
+  return { ...data, scope, years: shaped };
+}
+
+/**
+ * One swimmer's assessment, for a caller already authorised to see it.
+ *
+ * Deliberately takes a single analytics name and returns a single record. There
+ * is no variant of this that returns many: if the authorisation check above it
+ * were ever wrong, the worst case is one child rather than the whole club.
+ */
+export function assessmentFor(data: Rec, analyticsName: string): Rec | null {
+  const all = (data.years as Record<string, Rec>)?.all;
+  const swimmers = (all?.swimmers as Rec[] | undefined) ?? [];
+  const found = swimmers.find((s) => s.name === analyticsName);
+  if (!found) return null;
+
+  const keep = set([...SWIMMER_FIELDS.tier2, "name"]);
+  return pick(found, keep);
+}
