@@ -385,6 +385,59 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
   .row{grid-template-columns:28px 1fr auto;gap:8px;padding:9px 12px}
   .meetbar{grid-template-columns:repeat(2,1fr)}
 }
+/* ---------------------------------------------------------------------------
+   Portrait phone. Most of the traffic arrives from a WhatsApp link on a phone
+   held upright, so this is the default case rather than the exception. */
+@media (max-width:640px){
+  /* The hero is an introduction, not the page. Cap it so the numbers people
+     came for are on screen without scrolling. */
+  .hero{padding-block:18px 0}
+  .hero .logo{height:34px}
+  .hero .display{font-size:clamp(26px,8.4vw,34px)}
+  .hero p{font-size:14px;margin-top:10px}
+  .hero .wrap{max-height:25vh;overflow:hidden}
+
+  /* Seasons scroll sideways rather than wrapping to three rows. */
+  .years{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
+    margin-inline:-20px;padding-inline:20px;padding-block:4px 2px}
+  .years::-webkit-scrollbar{display:none}
+  .years .yr{flex:0 0 auto}
+
+  /* One line, body size. A three-line explainer above every section pushed the
+     data off the screen. */
+  .sec-sub{font-size:14px;line-height:1.5;max-height:3em;overflow:hidden}
+  .sec-head h2{font-size:21px}
+
+  /* Filters stack; the search box gets the full width. */
+  .filters{display:grid;gap:10px}
+  .filters .presets{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
+    margin-inline:-20px;padding-inline:20px}
+  .filters .presets::-webkit-scrollbar{display:none}
+  .filters .presets button{flex:0 0 auto;min-height:44px}
+  .filters input#fq{width:100%;box-sizing:border-box;min-height:44px}
+  .filters .count{text-align:left}
+
+  /* Name on line one, everything else small and muted on line two, the number
+     hard right. */
+  details.sw > summary{grid-template-columns:18px minmax(0,1fr) auto;gap:8px;
+    padding:11px 12px;align-items:center;min-height:44px}
+  .sw-name{font-size:14.5px}
+  .sw-meta{font-size:11.5px;line-height:1.35}
+  .trend{font-size:14px;min-width:0;text-align:right}
+  details.grp > summary{padding:13px 13px;min-height:44px}
+
+  .tblwrap{-webkit-overflow-scrolling:touch}
+  .meetbar{grid-template-columns:repeat(2,1fr)}
+}
+
+/* The one element wider than a portrait phone is the age-group table, and it
+   already scrolls inside .tblwrap. Rather than tell people to rotate, fade the
+   right edge so it is obvious there is more to the right. */
+@media (max-width:640px){
+  .tblwrap{position:relative}
+  .tblwrap::after{content:"";position:absolute;inset-block:0;right:0;width:26px;
+    pointer-events:none;background:linear-gradient(to right,transparent,var(--surface))}
+}
 footer{border-top:1px solid var(--line);margin-top:22px;padding-block:24px 36px;color:var(--muted);font-size:12px}
 .gpline{margin-top:16px;padding-top:15px;border-top:1px solid var(--line);
   justify-content:center;font-size:11.5px;letter-spacing:.3px;color:var(--muted)}
@@ -415,8 +468,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
     <img class="logo" src="/nextgen-logo.png" alt="NextGen Multi Sport Academy">
     <div class="eyebrow">NextGen Analytics</div>
     <h1 class="display">Athlete <span style="color:var(--cyan)">Development</span></h1>
-    <p id="herosub">Every verified swim by a NextGen athlete. Pick a season, then open any
-       swimmer to see what they are actually doing stroke by stroke.</p>
+    <p id="herosub">Every race, every season.</p>
     <div class="years" role="tablist" id="years"></div>
   </div>
 
@@ -465,7 +517,32 @@ const GROUPS = [
   {k:'unrated',   t:'Not enough data',      d:'no repeat swim in the same event and course yet'},
 ];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const pct = v => (v>0?'+':'') + v.toFixed(1) + '%';
+// A swimmer who took 22.7% off their time is 22.7% FASTER. Showing that as
+// "-22.7%" made every good result look like a loss, which is exactly backwards
+// for the people this page is for.
+const pct = v => v === null ? '—'
+  : v < 0 ? Math.abs(v).toFixed(1) + '% faster'
+  : v > 0 ? v.toFixed(1) + '% slower'
+  : 'level';
+
+// Short form, for tight places like chart labels and chips.
+const pctShort = v => v === null ? '—'
+  : v < 0 ? Math.abs(v).toFixed(1) + '%'
+  : v > 0 ? '+' + v.toFixed(1) + '%'
+  : '0%';
+
+// Swim times as the sport writes them: mm:ss.hh over a minute, ss.hh under.
+const swimTime = t => {
+  if (!t) return '—';
+  const str = String(t).trim();
+  if (!/^[\d.:]+$/.test(str)) return str;          // DQ, NS, SCR pass through
+  if (str.includes(':')) return str;
+  const n = parseFloat(str);
+  if (!isFinite(n)) return str;
+  if (n < 60) return n.toFixed(2);
+  const m = Math.floor(n / 60), sec = n - m * 60;
+  return m + ':' + (sec < 10 ? '0' : '') + sec.toFixed(2);
+};
 const trendCls = v => v===null ? 't-flat' : v < -0.5 ? 't-up' : v > 0.5 ? 't-down' : 't-flat';
 
 let YEARS = ['all'];
@@ -491,7 +568,7 @@ function swimmerCard(s){
     <div class="evrow">
       <span class="e">${esc(e.event)}</span>
       <span class="c">${e.course}</span>
-      <span class="t">${esc(e.first)} → ${esc(e.last)}${
+      <span class="t">${swimTime(e.first)} → ${swimTime(e.last)}${
         year==='all'&&e.firstDate?` <span style="opacity:.62">(${e.firstDate} → ${e.lastDate})</span>`:''}</span>
       <span class="trend ${trendCls(e.pct)}">${pct(e.pct)}</span>
     </div>`).join('');
@@ -501,9 +578,9 @@ function swimmerCard(s){
       <h4>Coach view</h4>
       <div class="cvgrid">
         <div class="cvitem"><div class="k">Last 3 months</div>
-          <div class="v ${trendCls(s.t3)}">${s.t3===null?'—':pct(s.t3)}</div></div>
+          <div class="v ${trendCls(s.t3)}">${s.t3===null?'—':pctShort(s.t3)}</div></div>
         <div class="cvitem"><div class="k">Last 6 months</div>
-          <div class="v ${trendCls(s.t6)}">${s.t6===null?'—':pct(s.t6)}</div></div>
+          <div class="v ${trendCls(s.t6)}">${s.t6===null?'—':pctShort(s.t6)}</div></div>
         <div class="cvitem"><div class="k">PB rate</div>
           <div class="v">${num(s.pbRate,'%')}</div></div>
         <div class="cvitem"><div class="k">Race consistency</div>
@@ -524,12 +601,13 @@ function swimmerCard(s){
       <span class="chev"></span>
       <span>
         <span class="sw-name">${esc(s.name)}</span>
-        <span class="sw-meta">${s.age?('age '+s.age+' · '):''}${esc(s.band)} · ${s.swims} swims ·
-          ${s.meets} meet${s.meets===1?'':'s'}${s.podiums?' · '+s.podiums+' podium'+(s.podiums===1?'':'s'):''}${
-          year==='all'&&s.seasons?' · '+s.seasons.join(', '):''}${s.status==='former'?' · former member':''}</span>
+        <span class="sw-meta">${esc(s.band)} · ${s.swims} swims · ${s.meets} meet${s.meets===1?'':'s'}${
+          s.podiums?' · '+s.podiums+' podium'+(s.podiums===1?'':'s'):''}${
+          s.status==='former'?' · former member':''}</span>
       </span>
-      <span class="pill p-${s.cls}">${CLS[s.cls]}</span>
-      <span class="trend ${trendCls(s.trend)}">${s.trend===null?'—':pct(s.trend)}</span>
+      <!-- No class pill here: the swimmer already sits inside that group's
+           drawer, so repeating "Fast progression" on every row said nothing. -->
+      <span class="trend ${trendCls(s.trend)}">${s.trend===null?'—':pctShort(s.trend)}</span>
     </summary>
     <div class="sw-body">
       ${none}
@@ -564,14 +642,14 @@ function render(){
     const mx = Math.max(...Object.values(Y.strokes).map(x=>Math.abs(x.median)),1);
     return `<div class="bar"><span class="lab">${esc(k)}</span>
       <span class="track"><span class="fill f-${v.cls}" style="width:${Math.max(4,100*Math.abs(v.median)/mx)}%"></span></span>
-      <span class="val">${pct(v.median)}</span></div>`;}).join('');
+      <span class="val">${pctShort(v.median)}</span></div>`;}).join('');
 
   const distBars = ['Sprint','Middle','Distance'].filter(k=>Y.dists[k]).map(k=>{
     const v = Y.dists[k];
     const mx = Math.max(...Object.values(Y.dists).map(x=>Math.abs(x.median)),1);
     return `<div class="bar"><span class="lab">${k}</span>
       <span class="track"><span class="fill f-${v.cls}" style="width:${Math.max(4,100*Math.abs(v.median)/mx)}%"></span></span>
-      <span class="val">${pct(v.median)}</span></div>`;}).join('');
+      <span class="val">${pctShort(v.median)}</span></div>`;}).join('');
 
   const ageSrc = ageMode === 'year'
     ? Object.keys(Y.ageYears||{}).sort((a,b)=>a-b).map(k=>[k+' yrs', Y.ageYears[k]])
@@ -579,7 +657,7 @@ function render(){
   const ageRows = ageSrc.map(([lab,a])=>
     `<tr><td><strong>${esc(lab)}</strong></td><td class="num">${a.swimmers}</td>
       <td class="num">${a.swims}</td><td class="num">${a.podiums}</td>
-      <td class="num ${trendCls(a.median===undefined?null:a.median)}">${a.median===null||a.median===undefined?'—':pct(a.median)}</td>
+      <td class="num ${trendCls(a.median===undefined?null:a.median)}">${a.median===null||a.median===undefined?'—':pctShort(a.median)}</td>
       <td class="num">${a.rated?`<span style="color:var(--ok-t);font-weight:700">${a.improving}</span> /
         ${a.stable} / <span style="color:var(--alert-t);font-weight:700">${a.review}</span>`:'—'}</td></tr>`).join('');
 
@@ -591,7 +669,7 @@ function render(){
     const v = Y.sexes[k];
     return `<tr><td><strong>${k}</strong></td><td class="num">${v.swimmers}</td>
       <td class="num">${v.swims}</td><td class="num">${v.podiums}</td>
-      <td class="num ${trendCls(v.median)}">${v.median===null?'—':pct(v.median)}</td>
+      <td class="num ${trendCls(v.median)}">${v.median===null?'—':pctShort(v.median)}</td>
       <td class="num">${v.rated?`<span style="color:var(--ok-t);font-weight:700">${v.improving}</span> /
         ${v.stable} / <span style="color:var(--alert-t);font-weight:700">${v.review}</span>`:'—'}</td></tr>`;}).join('');
 
@@ -612,7 +690,7 @@ function render(){
 
   // competition level
   const kv = (o,lbl) => o ? `<div class="cs"><div class="k">${lbl}</div>
-    <div class="v">${esc(o.k)} <small>${pct(o.v)}</small></div></div>` : '';
+    <div class="v">${esc(o.k)} <small>${pctShort(o.v)}</small></div></div>` : '';
   const compCards = (Y.comps||[]).map(c=>{
     const showWorstSt = c.worstStroke && c.bestStroke && c.worstStroke.k !== c.bestStroke.k;
     const showWorstAg = c.worstAge && c.bestAge && c.worstAge.k !== c.bestAge.k;
@@ -625,7 +703,7 @@ function render(){
       <div class="comphead">
         <div><h3>${esc(c.name)} <span class="opener" aria-hidden>results &rsaquo;</span></h3>
           <div class="when">${c.date} · ${c.course||'—'} · ${c.swimmers} swimmers · ${c.swims} swims · ${c.podiums} podiums</div></div>
-        ${c.median!==null?`<span class="pill ${c.median<=-2?'p-improving':c.median<=0.6?'p-stable':'p-review'}">${pct(c.median)} vs form</span>`:''}
+        ${c.median!==null?`<span class="pill ${c.median<=-2?'p-improving':c.median<=0.6?'p-stable':'p-review'}">${pctShort(c.median)} vs form</span>`:''}
       </div>
       ${bar}
       <div class="compstats">
@@ -642,18 +720,15 @@ function render(){
 
   document.getElementById('app').innerHTML = `
   <section class="wrap" id="s1" data-page="programme">
-    <div class="sec-head"><span class="sec-num">01</span><h2>Is the programme working?</h2></div>
-    <p class="sec-sub">${s.swimmers} athletes raced ${s.swims} times across ${s.meets} meet${s.meets===1?'':'s'}
-      ${year==='all'?`between ${Y.meets[Y.meets.length-1].date.slice(0,7)} and ${Y.meets[0].date.slice(0,7)}`:'in '+year}.
-      Every swim reconciled against the official published results.</p>
+    <div class="sec-head"><span class="sec-num">01</span><h2>Is it working?</h2></div>
+    <p class="sec-sub">${s.swimmers} swimmers · ${s.swims} races · ${s.meets} meet${s.meets===1?'':'s'}${
+      year==='all'?', 2022 to 2026':' in '+year}. Every result checked against the official times.</p>
     ${SCOPE==='family' ? `<p class="scopenote"><strong>Club-wide view.</strong>
       Percentages, medians and counts for the squad as a whole. Individual swimmers
       are not listed: other families' results are theirs, not ours to publish.</p>` : ''}
     ${year==='all' ? `<div class="caution" style="background:rgba(22,166,232,.10);border-color:rgba(22,166,232,.38)">
-      <strong style="color:var(--electric-deep)">This is the career view.</strong>
-      Each swimmer's trend compares their first and last swim in every event they repeated,
-      across every season on record — so it shows development since they started with the club,
-      not form this term. Use the season tabs for current form.</div>` : ''}
+      <strong style="color:var(--electric-deep)">This is every season together.</strong>
+      Progress is measured from a swimmer's first race to their most recent. For this term only, pick a year above.</div>` : ''}
     ${!s.reliable ? `<div class="caution"><strong>Read the trend with care.</strong>
       ${year}'s meets span only ${s.span_days} day${s.span_days===1?'':'s'}, and just ${s.rated} swimmers
       have repeat swims to compare. A development trend needs a season, not a fortnight — treat the
@@ -676,11 +751,8 @@ function render(){
         <span><span class="dot d-review"></span><b>${s.n_review}</b> review</span>
       </div>
       <p class="note" style="margin-top:12px;font-size:12.5px;color:var(--muted)">
-        Bands are set from NextGen's own record — ${DATA.thresholds.n} event-series across every
-        season on record — not from borrowed numbers. Fast progression is a gain of
-        ${Math.abs(DATA.thresholds.fast).toFixed(1)}% or better; improving is
-        ${Math.abs(DATA.thresholds.improving).toFixed(1)}% or better; stable runs to
-        ${pct(DATA.thresholds.stable_hi)}; slower than that is review.</p>
+        Fast, improving and stable are measured against what NextGen swimmers actually do —
+        ${DATA.thresholds.n} comparable races, not a standard borrowed from another country.</p>
     </div>
 
     <div class="grid2">
@@ -703,9 +775,8 @@ function render(){
   </section>
 
   <section class="wrap" id="s2" data-page="age-groups">
-    <div class="sec-head"><span class="sec-num">02</span><h2>Which group needs attention?</h2></div>
-    <p class="sec-sub">Improving / stable / review counts by age band, so the age band with the problem
-      is visible before you open a single swimmer.</p>
+    <div class="sec-head"><span class="sec-num">02</span><h2>Which age group?</h2></div>
+    <p class="sec-sub">Where the squad is gaining, and where it has stalled.</p>
     <div class="toggrow">
       <div class="seg" id="agemode">
         <button data-m="band" aria-pressed="${ageMode==='band'}">Age bands</button>
@@ -726,26 +797,18 @@ function render(){
       <tbody>${sexRows}</tbody></table></div>
 
     ${watchCards?`<h3 style="margin-top:28px;font-size:15px;font-weight:700">Swimmers to look at</h3>
-    <p class="sec-sub" style="margin-top:4px">Five patterns worth a coach's attention, pulled
+    <p class="sec-sub" style="margin-top:4px">Worth a coach's attention, pulled
       out of the club automatically.</p>
     <div class="watch">${watchCards}</div>`:''}
   </section>
 
   <section class="wrap" id="s3" data-page="swimmers">
-    <div class="sec-head"><span class="sec-num">03</span><h2>Who specifically?</h2></div>
-    <p class="sec-sub">Grouped by how they are developing. Open a group to see its swimmers,
-      then open a swimmer for their stroke and distance profile and every event they repeated
-      ${year==='all'?'across every season on record':'this season'}. Searching a name opens whichever
-      group they are in.</p>
+    <div class="sec-head"><span class="sec-num">03</span><h2>Which swimmers?</h2></div>
+    <p class="sec-sub">Tap a group, then a swimmer, for their strokes, distances and every
+      event they have raced twice. Or just search a name.</p>
     <div class="filters">
-      <label>Age</label>
-      <span class="rangebox">
-        <select id="alo"><option value="">any</option>${AGES.map(a=>
-          `<option value="${a}"${ageLo==a?' selected':''}>${a}</option>`).join('')}</select>
-        <span>to</span>
-        <select id="ahi"><option value="">any</option>${AGES.map(a=>
-          `<option value="${a}"${ageHi==a?' selected':''}>${a}</option>`).join('')}</select>
-      </span>
+      <!-- Chips only. The "any to any" pair of dropdowns was three taps to do
+           what one chip does, and nobody filters 11 to 13. -->
       <span class="presets" id="presets">
         ${PRESETS.map(p=>`<button data-lo="${p.lo}" data-hi="${p.hi}"
           aria-pressed="${ageLo==p.lo&&ageHi==p.hi}">${p.t}</button>`).join('')}
@@ -771,17 +834,14 @@ function render(){
   </section>
 
   <section class="wrap" id="s4" data-page="meets">
-    <div class="sec-head"><span class="sec-num">04</span><h2>Did it translate into performance?</h2></div>
-    <p class="sec-sub">Every meet judged on what each swimmer had already achieved — not on
-      absolute times. "At or above form" means they swam within 1% of their own previous best,
-      or beat it.</p>
+    <div class="sec-head"><span class="sec-num">04</span><h2>Did it show on the day?</h2></div>
+    <p class="sec-sub">Did the training show up on the day. Tap a meet for every race in it.</p>
     <div class="comps">${compCards}</div>
   </section>
 
   <section class="wrap" id="s5" data-page="decisions">
-    <div class="sec-head"><span class="sec-num">05</span><h2>So what do we do?</h2></div>
-    <p class="sec-sub">Every finding in the other four views should resolve into one of
-      three decisions.</p>
+    <div class="sec-head"><span class="sec-num">05</span><h2>So what now?</h2></div>
+    <p class="sec-sub">Everything here comes down to one of three calls.</p>
     <div class="decisions">
       <div class="dec"><h3>🟢 Continue</h3><p>Progress is appropriate. Keep the current approach
         and check again after the next meet.</p></div>
@@ -801,8 +861,6 @@ function render(){
     ageHi = hi === '' || hi === null ? null : Number(hi);
     render();
   };
-  document.getElementById('alo').onchange = e => setRange(e.target.value, ageHi);
-  document.getElementById('ahi').onchange = e => setRange(ageLo, e.target.value);
   document.getElementById('presets').onclick = e => {
     const b = e.target.closest('button'); if (!b) return;
     setRange(b.dataset.lo, b.dataset.hi);
@@ -972,7 +1030,7 @@ function renderMeet(m){
       return `<div class="row">
         <span class="pl ${pod ? 'pod' : ''}">${r.p ?? '—'}</span>
         <span class="who"><b>${esc(r.n)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}</span>
-        <span class="tm">${isStatus ? `<span class="st">${esc(r.t)}</span>` : esc(fmtTime(r.t))}
+        <span class="tm">${isStatus ? `<span class="st">${esc(r.t)}</span>` : esc(swimTime(r.t))}
           ${r.pb ? '<span class="pbtag">Personal best</span>' : ''}</span>
       </div>`;
     }).join('');
@@ -1059,10 +1117,8 @@ async function boot(){
   const seasons = YEARS.filter(y => y !== 'all');
   const sub = document.getElementById('herosub');
   if (sub && seasons.length) {
-    sub.textContent = 'Every verified swim by a NextGen athlete, '
-      + seasons[seasons.length-1] + ' to ' + seasons[0]
-      + '. Pick a season, then open any swimmer to see what they are actually doing '
-      + 'stroke by stroke.';
+    sub.textContent = 'Every race, every season · '
+      + seasons[seasons.length-1] + ' to ' + seasons[0];
   }
   tabs(); render();
 }
