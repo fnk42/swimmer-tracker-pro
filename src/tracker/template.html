@@ -281,6 +281,49 @@ details[open] .chev{transform:rotate(45deg)}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
   overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
+/* Progress window: the span every rate on this page is measured over. */
+.pwin{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px;
+  padding:13px 15px;background:var(--sunken);border:1px solid var(--line);border-radius:13px}
+.pwin .lab{font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted)}
+.pwin select{font:inherit;font-size:13.5px;padding:7px 10px;border-radius:9px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);min-height:38px}
+.pwin .arr{color:var(--muted)}
+.pwin .cov{font-size:11.5px;color:var(--muted);margin-left:auto}
+.pwin button{appearance:none;font:inherit;font-size:12.5px;cursor:pointer;min-height:38px;
+  border:1px solid var(--line);background:var(--surface);color:var(--muted);
+  padding:7px 12px;border-radius:9px}
+.pwin button[aria-pressed="true"]{background:var(--electric);border-color:var(--electric);color:#fff}
+.pwin button:hover{border-color:var(--electric)}
+
+/* Age context under a rate. */
+.norm{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:2px}
+
+/* Season-vs-season comparison, and the improvement leaderboards. */
+.cmpwrap{margin-top:16px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.cmp{width:100%;border-collapse:collapse;font-size:13px}
+.cmp th{text-align:left;font-size:10px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
+  color:var(--muted);padding:10px 12px;background:var(--sunken);white-space:nowrap}
+.cmp td{padding:9px 12px;border-top:1px solid var(--line)}
+.cmp td.n{font-family:'IBM Plex Mono',ui-monospace,monospace;text-align:right;white-space:nowrap}
+.cmp .dir{font-weight:700;white-space:nowrap}
+.cmpnote{margin:0;padding:9px 12px;font-size:11.5px;color:var(--muted);
+  border-top:1px solid var(--line);background:var(--sunken)}
+.cmp .up{color:var(--ok-t)}.cmp .down{color:var(--alert-t)}.cmp .flat{color:var(--muted)}
+.lbgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:16px}
+.lb{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.lb h4{margin:0;padding:11px 14px;font-size:12px;font-weight:700;background:var(--sunken)}
+.lb h4 span{display:block;font-size:10.5px;font-weight:500;color:var(--muted);margin-top:2px;
+  text-transform:none;letter-spacing:0}
+.lb ol{margin:0;padding:6px 14px 12px 30px;font-size:13px}
+.lb li{padding:4px 0}
+.lb li b{font-weight:600}
+.lb li span{float:right;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;
+  color:var(--muted)}
+.coachonly{margin-top:18px;padding-top:4px}
+.coachonly > .cap{display:block;font-size:10px;font-weight:700;letter-spacing:1.1px;
+  text-transform:uppercase;color:var(--muted)}
+
 /* Trend charts.
    The plot stretches to the card width, so strokes are non-scaling and every
    label lives in the HTML around the SVG rather than inside it. */
@@ -342,6 +385,9 @@ details[open] .chev{transform:rotate(45deg)}
 .k-line{width:15px;height:2px;border-radius:2px;background:var(--muted)}
 .k-trend{width:15px;height:0;border-top:2px dashed var(--muted);opacity:.7}
 .k-pb{width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.k-join{width:0;height:13px;border-left:2px dashed var(--muted);opacity:.8}
+.tw-join{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 3;opacity:.65;
+  vector-effect:non-scaling-stroke}
 .tw-note{margin:10px 0 0;font-size:11.5px;color:var(--muted);max-width:62ch}
 
 /* competition cards */
@@ -803,6 +849,109 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':
 // "-22.7%" made every good result look like a loss, which is exactly backwards
 // for the people this page is for.
 // ---------------------------------------------------------------------------
+// Windowed progress.
+//
+// Boit needs to ask "how are they going THIS season" and "are they still
+// improving as fast as last year". Both are the same question over a different
+// span, so the span is a control rather than a fixed set of precomputed views.
+//
+// Every figure here is recomputed in the browser from the race points already
+// in the payload. Precomputing the 15 possible season windows server-side came
+// to 264 KB gzipped against 114 KB for the whole archive, which is not a
+// trade worth making on a Nairobi mobile connection.
+//
+// rateJS MIRRORS rate_per_year() in tools/analytics.py. If one changes the
+// other must too, or a season view and the career view stop agreeing.
+const MIN_SPAN_DAYS = 120;
+const MIN_RACES = 3;      // two races are an endpoint difference, not a trend
+const MAX_EXTRAP = 1.5;   // never stretch a short span by more than half again
+const BAND_ORDER = ['8 & under','9-10','11-12','13-14','15-17','18 & over'];
+const MIN_BAND_N = 6;
+
+const med = xs => {
+  if (!xs.length) return null;
+  const v = [...xs].sort((a,b)=>a-b), h = v.length >> 1;
+  return v.length % 2 ? v[h] : (v[h-1]+v[h])/2;
+};
+const pctileOf = (v,p) => v.length
+  ? v[Math.max(0, Math.min(v.length-1, Math.round(p/100*(v.length-1))))] : 0;
+
+function rateJS(pts){
+  if (pts.length < MIN_RACES) return null;
+  const t0 = new Date(pts[0].d+'T00:00:00').getTime();
+  const xs = pts.map(p => (new Date(p.d+'T00:00:00').getTime()-t0)/86400000);
+  const ys = pts.map(p => p.t);
+  if (Math.max(...xs) - Math.min(...xs) < MIN_SPAN_DAYS) return null;
+  const n = xs.length;
+  const mx = xs.reduce((a,b)=>a+b,0)/n, my = ys.reduce((a,b)=>a+b,0)/n;
+  let num = 0, den = 0;
+  for (let i=0;i<n;i++){ num += (xs[i]-mx)*(ys[i]-my); den += (xs[i]-mx)**2; }
+  if (!den || !my) return null;
+  const span = Math.max(...xs) - Math.min(...xs);
+  const mult = Math.min(365.25/span, MAX_EXTRAP);
+  return Math.round(num/den/my*100*span*mult*100)/100;
+}
+
+/** Career points live only on the 'all' block; index them by swimmer once. */
+let CAREER = null;
+function careerIndex(){
+  if (CAREER) return CAREER;
+  CAREER = new Map();
+  for (const s of (DATA.years.all?.swimmers || [])) {
+    CAREER.set(s.name, (s.events||[]).filter(e => (e.points||[]).length >= MIN_RACES));
+  }
+  return CAREER;
+}
+
+/** Every swimmer re-rated inside [lo,hi], with age-band norms and bands. */
+function windowRating(lo, hi){
+  const idx = careerIndex();
+  const base = DATA.years.all?.swimmers || [];
+  const out = base.map(s => {
+    const rates = (idx.get(s.name) || []).map(e =>
+      rateJS((e.points||[]).filter(p => p.d >= lo && p.d <= hi))).filter(r => r !== null);
+    return { name: s.name, band: s.band, age: s.age, joined: s.joined,
+             trend: rates.length ? Math.round(med(rates)*100)/100 : null,
+             series: rates.length };
+  });
+  // Norms per band, from the same window — this is what makes a 15-year-old at
+  // 8%/yr read as on par rather than as a poor result.
+  const norms = {};
+  for (const b of BAND_ORDER) {
+    const v = out.filter(x => x.band === b && x.trend !== null).map(x => x.trend);
+    if (v.length >= MIN_BAND_N) norms[b] = Math.round(med(v)*100)/100;
+  }
+  const allt = out.filter(x => x.trend !== null).map(x => x.trend);
+  const fallback = allt.length ? med(allt) : null;
+  for (const x of out) {
+    const n = norms[x.band] ?? fallback;
+    x.ageNorm = n;
+    x.ageAdj = (x.trend !== null && n !== null) ? Math.round((x.trend-n)*100)/100 : null;
+  }
+  const adj = out.filter(x => x.ageAdj !== null).map(x => x.ageAdj).sort((a,b)=>a-b);
+  const TH = { fast: pctileOf(adj,10), improving: pctileOf(adj,40), stable_hi: pctileOf(adj,70) };
+  for (const x of out) {
+    x.cls = x.ageAdj === null ? 'unrated'
+      : x.ageAdj <= TH.fast ? 'fast'
+      : x.ageAdj <= TH.improving ? 'improving'
+      : x.ageAdj <= TH.stable_hi ? 'stable' : 'review';
+  }
+  return { rows: out, norms, TH, rated: adj.length };
+}
+
+/** A rate for a dense table: minus means faster, which needs saying once. */
+const signed = v => v === null || v === undefined ? '\u2014'
+  : (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(1);
+
+/** How a rate sits against its age band, in words. */
+function vsNorm(adj, band){
+  if (adj === null || adj === undefined) return '';
+  const a = Math.abs(adj);
+  if (a < 1.5) return `on par for ${band}`;
+  return adj < 0 ? `${a.toFixed(1)} ahead of ${band}` : `${a.toFixed(1)} behind ${band}`;
+}
+
+// ---------------------------------------------------------------------------
 // Trend charts: one event, one course, one child.
 //
 // THE AXIS. Time runs up the y-axis with the FASTEST swim at the BOTTOM, so a
@@ -821,6 +970,8 @@ const SERIES = [];   // [swimmerIndex] -> that swimmer's chartable event records
 // furniture above the chart, so the rest hide behind a "+N more".
 const CHIP_CAP = 8;
 let chipsBound = false;
+// The progress window. null means "use the season chip as-is".
+let pwFrom = null, pwTo = null, pwCompare = false;
 
 // The plot scales UNIFORMLY (no preserveAspectRatio="none"), because stretching
 // x more than y turned every race dot into a wide ellipse. The width is capped
@@ -837,7 +988,7 @@ const monthLabel = d => {
   return isNaN(x) ? d : MONS[x.getMonth()] + ' ' + x.getFullYear();
 };
 
-function chartPlot(pts, improving){
+function chartPlot(pts, improving, joined){
   const W = AXIS_W, H = AXIS_H, P = AXIS_P;
   const xs = pts.map(p => new Date(p.d + 'T00:00:00').getTime());
   const ys = pts.map(p => p.t);
@@ -864,6 +1015,17 @@ function chartPlot(pts, improving){
     `${i ? 'L' : 'M'}${X(xs[i]).toFixed(1)} ${Y(p.t).toFixed(1)}`).join(' ');
   const trend = `M${X(x0).toFixed(1)} ${Y(fit(x0)).toFixed(1)} ` +
                 `L${X(x1).toFixed(1)} ${Y(fit(x1)).toFixed(1)}`;
+  // "Joined NextGen": 32% of the archive was swum for another club before the
+  // child ever arrived, so a career line without this mark credits NextGen
+  // with someone else's work.
+  let joinMark = '';
+  if (joined) {
+    const jt = new Date(joined + 'T00:00:00').getTime();
+    if (jt > x0 && jt < x1) {
+      const jx = X(jt).toFixed(1);
+      joinMark = `<line x1="${jx}" y1="${P}" x2="${jx}" y2="${H-P}" class="tw-join"/>`;
+    }
+  }
   const grid = [0.25, 0.5, 0.75].map(f => {
     const y = (P + f * (H - 2 * P)).toFixed(1);
     return `<line x1="${P}" y1="${y}" x2="${W - P}" y2="${y}" class="tw-grid"/>`;
@@ -876,6 +1038,7 @@ function chartPlot(pts, improving){
   return `<svg class="tw-svg ${improving ? 'up' : 'down'}" viewBox="0 0 ${W} ${H}"
     aria-hidden="true">
     ${grid}
+    ${joinMark}
     <path d="${trend}" class="tw-trend"/>
     <path d="${line}" class="tw-line"/>
     ${dots}
@@ -901,13 +1064,15 @@ function chartCard(e){
         <span>${clockAxis(hi)}<i>slower</i></span>
         <span>${clockAxis(lo)}<i>faster</i></span>
       </div>
-      <div class="tw-plot">${chartPlot(pts, improving)}</div>
+      <div class="tw-plot">${chartPlot(pts, improving, e.joined)}</div>
     </div>
     <div class="tw-xaxis"><span>${monthLabel(pts[0].d)}</span>
       <span>${monthLabel(pts[pts.length - 1].d)}</span></div>
     <p class="tw-legend"><span class="k-line"></span>every race
       <span class="k-trend"></span>overall direction
-      ${best ? `<span class="k-pb"></span>fastest ever, ${monthLabel(best.d)}` : ''}</p>
+      ${best ? `<span class="k-pb"></span>fastest ever, ${monthLabel(best.d)}` : ''}
+      ${e.joined && pts.some(p => p.d < e.joined) && pts.some(p => p.d >= e.joined)
+        ? `<span class="k-join"></span>joined NextGen, ${monthLabel(e.joined)}` : ''}</p>
     <span class="sr-only">${esc(e.event)} ${esc(e.course)}: ${e.swims} races from
       ${monthLabel(pts[0].d)} to ${monthLabel(pts[pts.length - 1].d)},
       ${clockAxis(pts[0].t)} to ${clockAxis(pts[pts.length - 1].t)}, ${pct(e.pct)}.
@@ -1010,7 +1175,10 @@ function swimmerCard(s){
   // only version that works at 390px — a child can have 22 chartable series.
   // Most-raced event first, since that is the one with the most to say.
   const chartable = (s.events || []).filter(e => (e.points || []).length >= 3)
-    .slice().sort((a, b) => b.swims - a.swims || a.event.localeCompare(b.event));
+    .slice().sort((a, b) => b.swims - a.swims || a.event.localeCompare(b.event))
+    // The chart keeps the full career baseline including races swum for other
+    // clubs, so it has to show where NextGen actually starts.
+    .map(e => ({ ...e, joined: s.joined }));
   const swIdx = SERIES.push(chartable) - 1;
   const chart = chartable.length ? `
     <div class="twblock">
@@ -1048,7 +1216,9 @@ function swimmerCard(s){
       </span>
       <!-- No class pill here: the swimmer already sits inside that group's
            drawer, so repeating "Fast progression" on every row said nothing. -->
-      <span class="trend ${trendCls(s.trend)}">${s.trend===null?'—':pctShort(s.trend)}</span>
+      <span class="trend ${trendCls(s.trend)}">${s.trend===null?'—':pctShort(s.trend)+'/yr'}${
+        s.ageAdj===null||s.ageAdj===undefined?''
+          :`<span class="norm">${esc(vsNorm(s.ageAdj, s.band))}</span>`}</span>
     </summary>
     <div class="sw-body">
       ${none}
@@ -1067,7 +1237,20 @@ function swimmerCard(s){
 
 function render(){
   SERIES.length = 0;   // rebuilt below; otherwise it grows on every render
-  const Y = DATA.years[year], s = Y.summary;
+  let Y = DATA.years[year];
+  // A chosen window re-rates every swimmer in the browser: their rate, their
+  // age-band norm and their band. Everything else in the block — meets,
+  // podiums, stroke profiles — still comes from the season chip.
+  let WR = null;
+  if (pwFrom && pwTo) {
+    WR = windowRating(pwFrom + '-01-01', pwTo + '-12-31');
+    const m = new Map(WR.rows.map(r => [r.name, r]));
+    Y = { ...Y, swimmers: (Y.swimmers || []).map(x => {
+      const w = m.get(x.name);
+      return w ? { ...x, trend: w.trend, ageNorm: w.ageNorm, ageAdj: w.ageAdj, cls: w.cls } : x;
+    }) };
+  }
+  const s = Y.summary;
   const bands = ['8 & under','9-10','11-12','13-14','15-17','18 & over'];
 
   // How the Swimmers page is grouped.
@@ -1078,6 +1261,73 @@ function render(){
   // swimmer. Fall back to age band, which is tier 1 and is how the club talks
   // about squads anyway. The slug exists because a band like "8 & under" is
   // not a usable CSS class.
+  // ---- progress window, comparison and leaderboards ----------------------
+  const SEASONS = YEARS.filter(y => y !== 'all').sort();
+  const wFrom = pwFrom || SEASONS[0], wTo = pwTo || SEASONS[SEASONS.length-1];
+  const opts = (sel) => SEASONS.map(y =>
+    `<option value="${y}"${y===sel?' selected':''}>${y}</option>`).join('');
+  const rateOfWindow = (lo, hi) => {
+    const r = windowRating(lo + '-01-01', hi + '-12-31');
+    return new Map(r.rows.map(x => [x.name, x]));
+  };
+  const coachHere = Object.keys(Y.watch || {}).length > 0;
+  const covered = WR ? WR.rated : (Y.swimmers || []).filter(x => x.trend !== null).length;
+
+  const pwin = `<div class="pwin">
+      <span class="lab">Progress measured</span>
+      <select id="pwFrom" aria-label="From season">${opts(wFrom)}</select>
+      <span class="arr" aria-hidden>&rarr;</span>
+      <select id="pwTo" aria-label="To season">${opts(wTo)}</select>
+      ${SEASONS.length > 1 ? `<button id="pwCmp" type="button"
+        aria-pressed="${pwCompare}">Compare ${wFrom} vs ${wTo}</button>` : ''}
+      <span class="cov"><b>${covered}</b> of ${(Y.swimmers||[]).length} swimmers have
+        enough races in this window</span>
+    </div>`;
+
+  // Season vs season. Coach-only: this ranks children against each other,
+  // which is a different act from showing each child their own line.
+  let cmp = '';
+  if (pwCompare && coachHere && wFrom !== wTo) {
+    const A = rateOfWindow(wFrom, wFrom), B = rateOfWindow(wTo, wTo);
+    const rows = [...A.keys()]
+      .filter(n => A.get(n).trend !== null && B.get(n)?.trend !== null)
+      .map(n => ({ n, a: A.get(n).trend, b: B.get(n).trend,
+                   band: A.get(n).band, d: B.get(n).trend - A.get(n).trend }))
+      .sort((x, y) => x.d - y.d);
+    cmp = rows.length ? `<div class="cmpwrap"><table class="cmp">
+      <thead><tr><th>Swimmer</th><th>Age</th><th style="text-align:right">${wFrom} %/yr</th>
+        <th style="text-align:right">${wTo} %/yr</th><th>Change</th></tr></thead>
+      <tbody>${rows.map(r => `<tr>
+        <td>${esc(r.n)}</td><td>${esc(r.band)}</td>
+        <td class="n">${signed(r.a)}</td><td class="n">${signed(r.b)}</td>
+        <td class="dir ${r.d < -1 ? 'up' : r.d > 1 ? 'down' : 'flat'}">${
+          r.d < -1 ? '&uarr; picking up' : r.d > 1 ? '&darr; slowing' : '&rarr; steady'}</td>
+      </tr>`).join('')}</tbody></table>
+      <p class="cmpnote">&minus; is faster. Only swimmers with three or more races
+        in the same event and course, in both seasons, can be compared.</p></div>`
+      : `<p class="nodata">No swimmer has enough races in both ${wFrom} and ${wTo}.</p>`;
+  }
+
+  // Two leaderboards: raw rate, and rate against the swimmer's own age band.
+  // The second is the one that is fair to a 16-year-old.
+  let boards = '';
+  if (coachHere) {
+    const rank = (list, key) => list.filter(x => x[key] !== null && x[key] !== undefined)
+      .sort((a, b) => a[key] - b[key]).slice(0, 8);
+    const pool = WR ? WR.rows : (Y.swimmers || []);
+    const raw = rank(pool, 'trend'), adj = rank(pool, 'ageAdj');
+    const li = (xs, fmt) => xs.map(x => `<li><b>${esc(x.name || x.n)}</b>
+      <span>${fmt(x)}</span></li>`).join('');
+    boards = `<div class="lbgrid">
+      <div class="lb"><h4>Most improved${wFrom===wTo?` in ${wTo}`:`, ${wFrom}&ndash;${wTo}`}
+        <span>fastest rate of improvement, any age</span></h4>
+        <ol>${li(raw, x => pctShort(x.trend) + '/yr')}</ol></div>
+      <div class="lb"><h4>Most improved for their age
+        <span>measured against the norm for their own age band</span></h4>
+        <ol>${li(adj, x => (x.ageAdj <= 0 ? '' : '+') + x.ageAdj.toFixed(1) + ' vs ' + x.band)}</ol></div>
+    </div>`;
+  }
+
   const SW_GROUPS = Y.swimmers.some(s => s.cls)
     ? GROUPS
     : bands.map(b => ({ k: b, slug: b.replace(/[^a-z0-9]+/gi, '-'), t: b,
@@ -1362,6 +1612,9 @@ function render(){
       <input id="fq" type="search" placeholder="Search name…" value="${esc(fQ)}">
       <span class="count" id="cnt"></span>
     </div>
+    ${pwin}
+    ${cmp}
+    ${boards ? `<div class="coachonly"><span class="cap">Coordinator view</span>${boards}</div>` : ''}
     <div id="list" style="margin-top:18px">${SW_GROUPS.map(g=>{
       const members = Y.swimmers.filter(s => g.band ? s.band === g.k : s.cls === g.k);
       if(!members.length) return '';
@@ -1423,6 +1676,20 @@ function render(){
     ageHi = hi === '' || hi === null ? null : Number(hi);
     render();
   };
+  const pwF = document.getElementById('pwFrom'), pwT = document.getElementById('pwTo');
+  if (pwF) pwF.onchange = e => {
+    pwFrom = e.target.value;
+    if (!pwTo || pwTo < pwFrom) pwTo = pwFrom;   // never an inverted window
+    render();
+  };
+  if (pwT) pwT.onchange = e => {
+    pwTo = e.target.value;
+    if (!pwFrom || pwFrom > pwTo) pwFrom = pwTo;
+    render();
+  };
+  const pwC = document.getElementById('pwCmp');
+  if (pwC) pwC.onclick = () => { pwCompare = !pwCompare; render(); };
+
   document.getElementById('presets').onclick = e => {
     const b = e.target.closest('button'); if (!b) return;
     setRange(b.dataset.lo, b.dataset.hi);

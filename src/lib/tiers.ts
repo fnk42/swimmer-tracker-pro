@@ -36,7 +36,13 @@ export const SWIMMER_FIELDS = {
     "podiums",
     "wins",
     "meets",
-    "trend", // % change over the period: arithmetic on published times
+    "trend", // improvement rate, %/year: arithmetic on published times
+    "trendTotal", // total % change over the window, same arithmetic
+    "ageNorm", // the median rate for that age band — a club aggregate, names nobody
+    "ageAdj", // their rate minus that norm. Still arithmetic on tier-1 numbers;
+    //           what stays tier 2 is `cls`, the verdict NextGen draws from it.
+    "joined", // the date they joined NextGen. Marks which part of a chart is
+    //           ours — a career baseline is misleading without it.
     "pbRate",
     "events", // per event: course, first/last time and date, swim count
   ],
@@ -68,6 +74,7 @@ export const EVENT_FIELDS = [
   "firstDate",
   "lastDate",
   "swims",
+  "rate", // this event's improvement in %/year
   // The race series behind the trend chart: one {d, t} per swim, plus pb on
   // the fastest. Tier 1 for the same reason first/last are — these are times
   // the organisers published and the entry form consented to. The judgement
@@ -91,6 +98,10 @@ export const YEAR_BLOCKS = {
   ],
   coach: [
     "watch", // lists of named swimmers to look at — assessment, and cross-child
+    "bands", // where the band cut-lines sit, and the age-band norms behind them.
+    //          Coach-only on purpose: a parent gets the measurements (trend,
+    //          ageNorm, ageAdj) but not the machinery that turns them into a
+    //          verdict, which is what keeps `cls` genuinely tier 2.
   ],
 } as const;
 
