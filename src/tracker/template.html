@@ -889,12 +889,22 @@ const CLS = {fast:'Fast progression', improving:'Improving', stable:'Stable',
 // written when the bands were raw rates and was left behind when they became
 // age-adjusted. It said the opposite of the truth for anyone improving but
 // improving slowly, and Dr Boit rightly called it out.
+// Every label starts with the word "Improving", because the misreading these
+// bands invite is that the bottom one means the swimmer got slower. It does
+// not: 28 of the 32 in it are still getting faster, just by less than their
+// age group manages. Four genuinely have slipped, which is why the bottom
+// description says "most" rather than claiming everyone is still improving.
 const GROUPS = [
-  {k:'fast',      slug:'fast',      t:'🚀 Progressing fast',  d:'improving much faster than others their age'},
-  {k:'improving', slug:'improving', t:'🟢 Ahead of their age', d:'improving faster than the typical swimmer in their age group'},
-  {k:'stable',    slug:'stable',    t:'🟡 About the pace',    d:'improving at about the rate their age group does'},
-  {k:'review',    slug:'review',    t:'🔴 Behind their age',  d:'still getting faster, but more slowly than their age group — worth a look'},
-  {k:'unrated',   slug:'unrated',   t:'Not enough data',      d:'no repeat swim in the same event and course yet'},
+  {k:'fast',      slug:'fast',      t:'🚀 Improving fastest for their age',
+   d:'the biggest gains in the club once age is taken into account'},
+  {k:'improving', slug:'improving', t:'🟢 Improving faster than their age',
+   d:'making more progress than the typical swimmer their age'},
+  {k:'stable',    slug:'stable',    t:'🟡 Improving in line with their age',
+   d:'progressing at about the rate their age group does'},
+  {k:'review',    slug:'review',    t:'🔴 Improving slower than their age',
+   d:'most are still getting faster, just by less than their age group — a few have slipped back'},
+  {k:'unrated',   slug:'unrated',   t:'Not enough data',
+   d:'no repeat swim in the same event and course yet'},
 ];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 // A swimmer who took 22.7% off their time is 22.7% FASTER. Showing that as
@@ -1042,10 +1052,10 @@ const signed = v => v === null || v === undefined ? '\u2014'
 function vsNorm(adj, band){
   if (adj === null || adj === undefined) return '';
   const a = Math.abs(adj);
-  if (a < 1.5) return `about the pace for ${band}`;
+  if (a < 1.5) return `about what ${band} typically gain`;
   return adj < 0
-    ? `${a.toFixed(1)} pts faster than ${band} typically improve`
-    : `${a.toFixed(1)} pts slower than ${band} typically improve`;
+    ? `${a.toFixed(1)}%/yr more than ${band} typically gain`
+    : `${a.toFixed(1)}%/yr less than ${band} typically gain`;
 }
 
 // ---------------------------------------------------------------------------
@@ -1313,7 +1323,7 @@ function swimmerCard(s){
       </span>
       <!-- No class pill here: the swimmer already sits inside that group's
            drawer, so repeating "Fast progression" on every row said nothing. -->
-      <span class="trend ${trendCls(s.trend)}">${s.trend===null?'—':pct(s.trend)+' /yr'}${
+      <span class="trend ${trendCls(s.trend)}">${s.trend===null?'—':pct(s.trend).replace('% ','%/yr ')}${
         s.ageAdj===null||s.ageAdj===undefined?''
           :`<span class="norm">${esc(vsNorm(s.ageAdj, s.band))}</span>`}</span>
     </summary>
@@ -1512,7 +1522,7 @@ function render(){
     ['risers','g','Rising from behind','fewer podiums, improving quickly'],
     ['plateau','a','Beginning to plateau','was improving, now flat'],
     ['stalled','a','Strong but stalled','high podium rate, progress has stopped'],
-    ['regressing','r','Behind their age','still improving, but slower than their age group'],
+    ['regressing','r','Improving slower than their age','most still getting faster, by less than their age group'],
   ];
   const watchCards = wdef.filter(([k])=>(W[k]||[]).length).map(([k,c,title,why])=>`
     <div class="wcard ${c}"><h4>${title}</h4><div class="n">${W[k].length}</div>
@@ -1729,12 +1739,13 @@ function render(){
     <div class="sec-head"><span class="sec-num">03</span><h2>Which swimmers?</h2></div>
         <p class="sec-sub">Tap a group, then a swimmer, for their strokes, distances and every event
       they have raced twice. Or just search a name.</p>
-    <p class="sec-sub" style="margin-top:8px"><strong>How the groups work.</strong> Everyone here
-      is compared with the median improvement rate for their own age band, not with zero. Younger
-      swimmers improve far faster than older ones &mdash; 8&nbsp;&amp;&nbsp;under average 24%/yr,
-      15&ndash;17 average 8%/yr &mdash; so a swimmer can be getting faster and still sit in
-      <em>Behind their age</em>. The rate beside each name is their own, and the line under it
-      says how it compares with their age group.</p>
+    <p class="sec-sub" style="margin-top:8px"><strong>How the groups work.</strong> These groups
+      compare how fast a swimmer is <em>improving</em> with how fast others of the same age
+      improve. They do not say who is quickest in the pool. Young swimmers gain far more each year
+      than older ones &mdash; 8&nbsp;&amp;&nbsp;under average 24%/yr against 8%/yr for
+      15&ndash;17 &mdash; so a swimmer can be getting faster every season and still sit in the
+      bottom group. The figure beside each name is their own rate; the line under it says how that
+      compares with their age group.</p>
     <div class="filters">
       <!-- Chips only. The "any to any" pair of dropdowns was three taps to do
            what one chip does, and nobody filters 11 to 13. -->
