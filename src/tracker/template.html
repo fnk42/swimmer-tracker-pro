@@ -355,6 +355,19 @@ details[open] .chev{transform:rotate(45deg)}
 .twblock{margin-top:16px;padding-top:15px;border-top:1px solid var(--line)}
 .twblock > h4{font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;
   color:var(--muted);margin:0 0 10px}
+/* Heading row carries the by-distance / by-event switch. */
+.twhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.twhead > h4{margin:0}
+.modeseg{display:inline-flex;background:var(--ice);border-radius:9px;padding:3px;gap:3px;
+  margin-left:auto}
+.modeseg button{appearance:none;border:0;background:transparent;font:inherit;font-size:11.5px;
+  font-weight:600;color:var(--muted);padding:5px 10px;border-radius:7px;cursor:pointer;
+  white-space:nowrap}
+.modeseg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);
+  box-shadow:var(--shadow-sm)}
+/* One swatch per stroke in the legend of a distance chart. */
+.k-stroke{width:11px;height:11px;border-radius:3px;flex:none}
+.tw-legend small{font-weight:700;margin-left:-3px}
 .evchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 .evchips button{appearance:none;font:inherit;font-size:12px;cursor:pointer;
   border:1px solid var(--line);background:var(--surface);color:var(--muted);
@@ -1102,12 +1115,16 @@ function vsNorm(adj, band){
 // Text lives in the HTML around the SVG, not inside it: the plot stretches to
 // whatever width the card has, and stretched glyphs look broken.
 const SERIES = [];   // [swimmerIndex] -> that swimmer's chartable event records
+const DGROUPS = [];  // [swimmerIndex] -> the same series grouped by distance+course
 // A busy swimmer has 22 chartable series. All of them as pills is three rows of
 // furniture above the chart, so the rest hide behind a "+N more".
 const CHIP_CAP = 8;
 let chipsBound = false;
 // The progress window. null means "use the season chip as-is".
 let pwFrom = null, pwTo = null, pwCompare = false;
+// Charts group by distance by default — all of a swimmer's 50s on one set of
+// axes — with the original single-event view a tap away.
+let chartMode = 'distance';
 
 // The plot scales UNIFORMLY (no preserveAspectRatio="none"), because stretching
 // x more than y turned every race dot into a wide ellipse. The width is capped
@@ -1179,6 +1196,101 @@ function chartPlot(pts, improving, joined){
     <path d="${line}" class="tw-line"/>
     ${dots}
   </svg>`;
+}
+
+/* One chart per distance: every stroke a swimmer races at that distance and
+   pool length, on one set of axes.
+   Real times, not normalised — so you see both the hierarchy between strokes
+   and whether the gaps are closing. Courses are still never mixed. */
+const STROKE_COLOUR = {
+  Free:   'var(--electric)',
+  Back:   'var(--ok)',
+  Breast: '#7C4DFF',
+  Fly:    'var(--gold)',
+  IM:     '#0F6E56',
+  Medley: '#0F6E56',
+};
+const strokeOf = ev => (ev || '').split(' ').slice(1).join(' ') || ev;
+
+function chartPlotMulti(series, joined){
+  const W = AXIS_W, H = AXIS_H, P = AXIS_P;
+  const all = series.flatMap(s => s.pts);
+  const xs = all.map(p => new Date(p.d + 'T00:00:00').getTime());
+  const ys = all.map(p => p.t);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const lo = Math.min(...ys), hi = Math.max(...ys);
+  const pad = (hi - lo) * 0.14 || 1;
+  const top = hi + pad, bot = lo - pad;        // slowest at the top, as always
+  const X = v => P + ((v - x0) / (x1 - x0 || 1)) * (W - 2 * P);
+  const Y = v => P + ((top - v) / (top - bot || 1)) * (H - 2 * P);
+
+  const grid = [0.25, 0.5, 0.75].map(f => {
+    const y = (P + f * (H - 2 * P)).toFixed(1);
+    return `<line x1="${P}" y1="${y}" x2="${W - P}" y2="${y}" class="tw-grid"/>`;
+  }).join('');
+
+  let joinMark = '';
+  if (joined) {
+    const jt = new Date(joined + 'T00:00:00').getTime();
+    if (jt > x0 && jt < x1) {
+      const jx = X(jt).toFixed(1);
+      joinMark = `<line x1="${jx}" y1="${P}" x2="${jx}" y2="${H-P}" class="tw-join"/>`;
+    }
+  }
+
+  const body = series.map(s => {
+    const pts = s.pts;
+    const line = pts.map((p, i) =>
+      `${i ? 'L' : 'M'}${X(new Date(p.d + 'T00:00:00').getTime()).toFixed(1)} ${Y(p.t).toFixed(1)}`
+    ).join(' ');
+    const dots = pts.map(p => {
+      const cx = X(new Date(p.d + 'T00:00:00').getTime()).toFixed(1), cy = Y(p.t).toFixed(1);
+      return p.pb
+        ? `<circle cx="${cx}" cy="${cy}" r="3.8" class="tw-pb"/>`
+        : `<circle cx="${cx}" cy="${cy}" r="2" fill="${s.colour}" stroke="var(--surface)"
+             stroke-width="1.2" vector-effect="non-scaling-stroke"/>`;
+    }).join('');
+    return `<path d="${line}" fill="none" stroke="${s.colour}" stroke-width="2"
+      stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>${dots}`;
+  }).join('');
+
+  return `<svg class="tw-svg" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+    ${grid}${joinMark}${body}</svg>`;
+}
+
+/** A distance group: one chart, one line per stroke. */
+function chartCardDistance(g){
+  const series = g.events.map(e => ({
+    stroke: strokeOf(e.event),
+    colour: STROKE_COLOUR[strokeOf(e.event)] || 'var(--dim)',
+    pts: e.points || [],
+    pct: e.pct,
+  })).filter(x => x.pts.length >= MIN_RACES);
+  if (!series.length) return '';
+  const all = series.flatMap(x => x.pts).map(p => p.t);
+  const lo = Math.min(...all), hi = Math.max(...all);
+  const dates = series.flatMap(x => x.pts).map(p => p.d).sort();
+  return `<div class="tw-head">
+      <span class="tw-ev">${g.dist}m</span>
+      <span class="ccourse ${g.course === 'LCM' ? 'lc' : ''}">${esc(g.course)}</span>
+      <span class="tw-n">${series.length} stroke${series.length === 1 ? '' : 's'}</span>
+    </div>
+    <div class="tw-grid-wrap">
+      <div class="tw-yaxis">
+        <span>${clockAxis(hi)}<i>slower</i></span>
+        <span>${clockAxis(lo)}<i>faster</i></span>
+      </div>
+      <div class="tw-plot">${chartPlotMulti(series, g.events[0] && g.events[0].joined)}</div>
+    </div>
+    <div class="tw-xaxis"><span>${monthLabel(dates[0])}</span>
+      <span>${monthLabel(dates[dates.length - 1])}</span></div>
+    <p class="tw-legend">${series.map(x =>
+      `<span class="k-stroke" style="background:${x.colour}"></span>${esc(x.stroke)}
+       <small class="${trendCls(x.pct)}">${pct(x.pct)}</small>`).join('')}
+      <span class="k-pb"></span>fastest ever
+      ${g.events[0] && g.events[0].joined ? `<span class="k-join"></span>joined NextGen` : ''}</p>
+    <span class="sr-only">${g.dist}m ${esc(g.course)}: ${series.map(x =>
+      `${x.stroke} ${pct(x.pct)}`).join('; ')}. A falling line means faster.</span>`;
 }
 
 /** One chart, as the HTML that goes inside a .chartbox. */
@@ -1315,18 +1427,51 @@ function swimmerCard(s){
     // The chart keeps the full career baseline including races swum for other
     // clubs, so it has to show where NextGen actually starts.
     .map(e => ({ ...e, joined: s.joined }));
+  // Distance groups: every stroke a swimmer races at one distance and pool
+  // length, so "their 50s" is a single chart rather than four to flick between.
+  const dgroups = (() => {
+    const by = new Map();
+    for (const e of chartable) {
+      const m = /^(\d+)/.exec(e.event);
+      if (!m) continue;
+      const k = m[1] + '|' + e.course;
+      if (!by.has(k)) by.set(k, { dist: +m[1], course: e.course, events: [] });
+      by.get(k).events.push(e);
+    }
+    // Most strokes first, then longest-running: the fullest chart leads.
+    return [...by.values()].sort((a, b) =>
+      b.events.length - a.events.length || a.dist - b.dist);
+  })();
   const swIdx = SERIES.push(chartable) - 1;
+  DGROUPS[swIdx] = dgroups;
+  const byDist = chartMode === 'distance' && dgroups.length > 0;
+  const chips = byDist
+    ? dgroups.map((g, i) => `<button type="button" data-i="${i}"
+        aria-pressed="${i === 0}">${g.dist}m <small>${esc(g.course)}</small></button>`).join('')
+    : chartable.map((e, i) => `<button type="button" data-i="${i}"
+        class="${i >= CHIP_CAP ? 'xtra' : ''}" aria-pressed="${i === 0}"
+        >${esc(e.event)} <small>${esc(e.course)}</small></button>`).join('')
+      + (chartable.length > CHIP_CAP ? `<button type="button" class="chipmore"
+        >+${chartable.length - CHIP_CAP} more</button>` : '');
+  // Guarded: this runs for every swimmer, including the 78 with nothing
+  // chartable, and chartable[0] is undefined for them.
+  const first = !chartable.length ? ''
+    : byDist ? chartCardDistance(dgroups[0]) : chartCard(chartable[0]);
+
   const chart = chartable.length ? `
     <div class="twblock">
-      <h4>How their times have moved</h4>
-      ${chartable.length > 1 ? `<div class="evchips" data-sw="${swIdx}">
-        ${chartable.map((e, i) => `<button type="button" data-i="${i}"
-          class="${i >= CHIP_CAP ? 'xtra' : ''}" aria-pressed="${i === 0}"
-          >${esc(e.event)} <small>${esc(e.course)}</small></button>`).join('')}
-        ${chartable.length > CHIP_CAP ? `<button type="button" class="chipmore"
-          >+${chartable.length - CHIP_CAP} more</button>` : ''}
-      </div>` : ''}
-      <div class="chartbox" data-sw="${swIdx}">${chartCard(chartable[0])}</div>
+      <div class="twhead">
+        <h4>How their times have moved</h4>
+        ${dgroups.length ? `<div class="modeseg" role="group" aria-label="Group charts by">
+          <button type="button" data-mode="distance"
+            aria-pressed="${chartMode === 'distance'}">By distance</button>
+          <button type="button" data-mode="event"
+            aria-pressed="${chartMode === 'event'}">By event</button>
+        </div>` : ''}
+      </div>
+      ${(byDist ? dgroups.length : chartable.length) > 1
+        ? `<div class="evchips" data-sw="${swIdx}">${chips}</div>` : ''}
+      <div class="chartbox" data-sw="${swIdx}">${first}</div>
       <p class="tw-note">A falling line means the time is coming down. Children get
         faster as they grow as well as through training, so some of every fall is age.
         25m and 50m races are kept apart — they are not comparable.</p>
@@ -2018,16 +2163,36 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
   // survives a render, so re-binding here would stack a handler per render.
   if (!chipsBound) { chipsBound = true;
   document.getElementById('app').addEventListener('click', e => {
+    const mb = e.target.closest?.('.modeseg button');
+    if (mb) {
+      // Re-render rather than patch: the chips themselves change with the mode.
+      chartMode = mb.dataset.mode === 'event' ? 'event' : 'distance';
+      const open = [...document.querySelectorAll('details.sw[open]')]
+        .map(d => d.dataset.name);
+      render();
+      // Put the reader back where they were.
+      document.querySelectorAll('details.sw').forEach(d => {
+        if (open.includes(d.dataset.name)) {
+          d.open = true;
+          let p = d.parentElement;
+          while (p) { if (p.tagName === 'DETAILS') p.open = true; p = p.parentElement; }
+        }
+      });
+      return;
+    }
     const b = e.target.closest?.('.evchips button');
     if (!b) return;
     const wrap = b.closest('.evchips');
     if (b.classList.contains('chipmore')) { wrap.classList.add('open'); return; }
     const box = wrap.parentElement.querySelector('.chartbox');
-    const rec = (SERIES[+wrap.dataset.sw] || [])[+b.dataset.i];
+    const sw = +wrap.dataset.sw, i = +b.dataset.i;
+    const rec = chartMode === 'distance'
+      ? (DGROUPS[sw] || [])[i]
+      : (SERIES[sw] || [])[i];
     if (!rec || !box) return;
     wrap.querySelectorAll('button').forEach(x =>
       x.setAttribute('aria-pressed', String(x === b)));
-    box.innerHTML = chartCard(rec);
+    box.innerHTML = chartMode === 'distance' ? chartCardDistance(rec) : chartCard(rec);
   }); }
 
   document.getElementById('agemode').onclick = e => {
