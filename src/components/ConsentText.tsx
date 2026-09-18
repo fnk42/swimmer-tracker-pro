@@ -40,15 +40,39 @@ export function ConsentText() {
         <strong className="text-white">No other family sees an assessment of your child.</strong>
       </p>
 
+      <h3 className="mt-4 font-semibold text-white">The coaching assistant</h3>
+      <p className="mt-1">
+        Our coaches can ask questions about training in plain English — &ldquo;who in the 13&ndash;14
+        group has stopped improving?&rdquo; To answer, the club sends the relevant race data to{" "}
+        <strong className="text-white">OpenAI</strong>, the company behind ChatGPT, which processes
+        it on computers <strong className="text-white">outside Kenya</strong> and sends an answer
+        back. This is the one place your child's data leaves NextGen.
+      </p>
+      <p className="mt-2">
+        OpenAI acts only on our instructions, is not permitted to use this data to train its
+        systems, and keeps nothing afterwards. Only coaches can use the assistant. It is never
+        shown to other families.
+      </p>
+      <p className="mt-2">
+        <strong className="text-white">You can say no to this and still use everything else.</strong>{" "}
+        If you do, your child is left out of anything the assistant is asked, and nothing about
+        them is ever sent.
+      </p>
+
       <h3 className="mt-4 font-semibold text-white">What we will not do</h3>
       <p className="mt-1">
-        We will not sell this data, share it with anyone outside NextGen, or use it for anything
-        other than your child's development and the running of the club.
+        We will not sell this data, or use it for anything other than your child's development and
+        the running of the club. Apart from the coaching assistant described above, and the
+        organisers who already publish meet results, we do not share it outside NextGen.
       </p>
 
       <h3 className="mt-4 font-semibold text-white">Your choices</h3>
       <ul className="mt-1 list-disc space-y-1 pl-5">
         <li>You can ask us to keep your child out of the club-wide view at any time.</li>
+        <li>
+          You can keep your child out of the coaching assistant while agreeing to everything
+          else, and you can change your mind either way at any time.
+        </li>
         <li>
           You can withdraw this consent at any time, and your child's name will be removed from
           what other families can see.

@@ -11,6 +11,7 @@ import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
+import { NoteButton } from "@/components/NoteButton";
 
 function NotFoundComponent() {
   return (
@@ -128,6 +129,8 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
+      {/* On every page, for everyone signed in. See NoteButton. */}
+      <NoteButton />
       <Toaster richColors position="top-center" />
     </QueryClientProvider>
   );
