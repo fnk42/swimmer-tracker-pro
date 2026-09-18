@@ -181,37 +181,31 @@ details[open] .chev{transform:rotate(45deg)}
   background:var(--sunken);border-radius:10px;border-left:3px solid var(--cyan)}
 .nodata{margin-top:14px;font-size:12.8px;color:var(--muted);font-style:italic}
 
-/* section navigation — the page is long for a coordinator, so give them a
-   way to jump rather than scroll. On a phone it becomes a scrollable strip. */
-.shell{display:grid;grid-template-columns:186px minmax(0,1fr);gap:28px;
-  max-width:1180px;margin:0 auto;padding-inline:20px;align-items:start}
-.sidenav{position:sticky;top:18px;padding-block:28px;display:grid;gap:2px;align-content:start}
-.sidenav .navtitle{font-size:10.5px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;
-  color:var(--muted);padding:0 12px 10px}
-.sidenav a{display:grid;grid-template-columns:22px 1fr;gap:6px;align-items:baseline;
-  font-size:13.2px;color:var(--muted);text-decoration:none;padding:9px 12px;border-radius:9px;
-  line-height:1.35;transition:.14s}
-.sidenav a span.n{font-family:'Anton',sans-serif;font-size:10.5px;letter-spacing:1px;opacity:.75}
-.sidenav a:hover{background:var(--ice);color:var(--ink)}
-.sidenav a[aria-current="true"]{background:var(--ice);color:var(--ink);font-weight:600}
-.sidenav a:focus-visible{outline:2px solid var(--electric);outline-offset:1px}
-.shell section{padding-block:34px}
-.shell section:first-of-type{padding-top:28px}
+/* ---------------------------------------------------------------------------
+   View tabs, underlined, inside the navy.
+
+   Replaces a 186px left rail. The rail cost a sixth of the width on every
+   screen — which the Swimmers and Meets tables wanted — and it needed a whole
+   second layout below 900px. This is one layout at every width, which is one
+   thing to keep right rather than two. */
+.tabnav{position:relative;z-index:2;border-top:1px solid rgba(255,255,255,.10);
+  background:rgba(4,12,24,.30)}
+.tabwrap{max-width:1180px;margin:0 auto;padding-inline:20px;display:flex;gap:2px;
+  overflow-x:auto;scrollbar-width:none}
+.tabwrap::-webkit-scrollbar{display:none}
+.tabnav a{flex:0 0 auto;padding:0 14px;font-size:13.5px;line-height:1.2;
+  color:rgba(255,255,255,.62);text-decoration:none;white-space:nowrap;
+  border-bottom:2px solid transparent;transition:color .14s,border-color .14s;
+  min-height:44px;display:flex;align-items:center}   /* 44px tap target */
+.tabnav a:hover{color:#fff}
+.tabnav a[aria-current="true"]{color:#fff;font-weight:600;border-bottom-color:var(--cyan)}
+.tabnav a:focus-visible{outline:2px solid var(--cyan);outline-offset:-3px;border-radius:4px}
+
+/* One column now the rail has gone, so a table gets the whole width. */
+.shell{max-width:1180px;margin:0 auto;padding-inline:20px}
+.shell section{padding-block:30px}
+.shell section:first-of-type{padding-top:24px}
 .shell .wrap{max-width:none;margin:0;padding-inline:0}
-/* anchors sit under nothing, but leave room so a jump does not clip the heading */
-.shell section{scroll-margin-top:18px}
-@media(max-width:900px){
-  .shell{grid-template-columns:minmax(0,1fr);gap:0}
-  .sidenav{position:sticky;top:0;z-index:20;background:var(--bg);padding-block:12px;
-    display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--line);
-    margin-inline:-20px;padding-inline:20px;scrollbar-width:none}
-  .sidenav::-webkit-scrollbar{display:none}
-  .sidenav .navtitle{display:none}
-  .sidenav a{grid-template-columns:auto;white-space:nowrap;padding:7px 13px;
-    border:1px solid var(--line);border-radius:999px;font-size:12.5px}
-  .sidenav a span.n{display:none}
-  .shell section{scroll-margin-top:58px}
-}
 
 /* coach view inside the swimmer card */
 .coachview{margin-top:16px;background:var(--sunken);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
@@ -425,17 +419,24 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
        swimmer to see what they are actually doing stroke by stroke.</p>
     <div class="years" role="tablist" id="years"></div>
   </div>
+
+  <!-- The five views, joined to the hero rather than in a rail beside the
+       content. Labels are short so all five fit at 390px without a sideways
+       swipe; the section headings still carry 01-05, so the diagnostic order
+       is not lost. Keeps the #sidenav id the routing and scope code already
+       looks for. -->
+  <nav class="tabnav" id="sidenav" aria-label="Views">
+    <div class="tabwrap">
+      <a href="#/programme"  data-page="programme">Programme</a>
+      <a href="#/age-groups" data-page="age-groups">Ages</a>
+      <a href="#/swimmers"   data-page="swimmers">Swimmers</a>
+      <a href="#/meets"      data-page="meets">Meets</a>
+      <a href="#/decisions"  data-page="decisions">Actions</a>
+    </div>
+  </nav>
 </header>
 
 <div class="shell" id="shell">
-  <nav class="sidenav" id="sidenav" aria-label="Views">
-    <div class="navtitle">Views</div>
-    <a href="#/programme"  data-page="programme"><span class="n">01</span><span>Programme</span></a>
-    <a href="#/age-groups" data-page="age-groups"><span class="n">02</span><span>Age groups</span></a>
-    <a href="#/swimmers"   data-page="swimmers"><span class="n">03</span><span>Swimmers</span></a>
-    <a href="#/meets"      data-page="meets"><span class="n">04</span><span>Meets</span></a>
-    <a href="#/decisions"  data-page="decisions"><span class="n">05</span><span>Decisions</span></a>
-  </nav>
   <main id="app"></main>
 </div>
 
