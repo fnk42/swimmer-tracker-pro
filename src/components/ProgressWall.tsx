@@ -4,8 +4,13 @@ import { useEffect, useState } from "react";
 //
 // Small multiples rather than one combined chart: each swimmer gets their own
 // y-scale, which is the only honest way to put a 50 Free next to a 100 Breast.
-// The y-axis is inverted so a falling time draws as a rising line — a parent
-// reads "up is better" before they read the axis.
+//
+// THE AXIS. Time runs up the y-axis with the FASTEST swim at the BOTTOM, so a
+// line that FALLS means the swimmer is getting faster. This used to be
+// inverted, on the theory that a parent reads "up is better" before they read
+// the axis. It now matches the per-child charts in the tracker, which read the
+// literal way round: their time is coming down. One convention in one product
+// beats two clever ones.
 //
 // Names are pseudonyms assigned in tools/progress.py — the times and the shape
 // of every curve are real, the name attached to them is invented. This page is
@@ -32,11 +37,11 @@ function Spark({ a, colour }: { a: Athlete; colour: string }) {
   const x0 = Math.min(...xs), x1 = Math.max(...xs);
   const lo = Math.min(...ys), hi = Math.max(...ys);
   const pad = (hi - lo) * 0.16 || 1;
-  const top = lo - pad, bot = hi + pad;
+  // top of the box is the SLOWEST time, bottom is the fastest
+  const top = hi + pad, bot = lo - pad;
 
   const X = (v: number) => P + ((v - x0) / (x1 - x0 || 1)) * (W - 2 * P);
-  // inverted: the fastest time sits at the top of the box
-  const Y = (v: number) => P + ((v - top) / (bot - top)) * (H - 2 * P);
+  const Y = (v: number) => P + ((top - v) / (top - bot || 1)) * (H - 2 * P);
 
   const d = a.points
     .map((p, i) => `${i ? "L" : "M"}${X(new Date(p.d + "T00:00:00").getTime()).toFixed(1)} ${Y(p.t).toFixed(1)}`)
@@ -51,9 +56,12 @@ function Spark({ a, colour }: { a: Athlete; colour: string }) {
         {a.event} · {a.course} · {a.swims} swims
       </div>
 
+      {/* "40.8% faster", not "-40.8%". A swimmer who took 40.8% off their time
+          got faster; a minus sign in front of it reads as a loss. */}
       <div className="mt-2 font-mono text-[19px] font-semibold leading-none tabular-nums"
            style={{ color: colour }}>
-        {a.pct}%
+        {a.pct < 0 ? `${Math.abs(a.pct)}% faster`
+          : a.pct > 0 ? `${a.pct}% slower` : "level"}
       </div>
       <div className="mt-1 font-mono text-[10px] tracking-wide text-white/45">
         {clock(a.first)} → {clock(a.last)}
@@ -108,8 +116,9 @@ export function ProgressWall() {
         </span>
       </div>
       <p className="mb-6 max-w-[62ch] text-[14px] leading-relaxed text-white/60">
-        Each line is one swimmer in one event, every time they have raced it. Times fall as they
-        improve, so the line climbs. Real results — names changed, because these are children.
+        Each line is one swimmer in one event, every time they have raced it. The line falls as
+        their time comes down, so a falling line means they are getting faster. Real results —
+        names changed, because these are children.
       </p>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

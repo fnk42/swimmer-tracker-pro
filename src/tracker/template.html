@@ -84,7 +84,7 @@ h1,h2,h3{text-wrap:balance;margin:0}
 /* hero */
 .hero{background:var(--hero);color:#fff;padding-block:32px 30px;position:relative;overflow:hidden}
 .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,rgba(70,211,240,.08),transparent 55%);pointer-events:none}
-.hero .wrap{position:relative;z-index:1}
+.hero .wrap{position:relative;z-index:1;padding-bottom:26px}
 .logo{width:112px;height:auto;display:block;margin-bottom:18px}
 .eyebrow{font-size:11px;font-weight:600;letter-spacing:2.2px;text-transform:uppercase;color:var(--cyan);margin-bottom:10px}
 .hero h1{font-size:clamp(30px,5.4vw,48px);color:#fff}
@@ -236,8 +236,10 @@ details[open] .chev{transform:rotate(45deg)}
    screen — which the Swimmers and Meets tables wanted — and it needed a whole
    second layout below 900px. This is one layout at every width, which is one
    thing to keep right rather than two. */
-.tabnav{position:relative;z-index:2;border-top:1px solid rgba(255,255,255,.10);
-  background:rgba(4,12,24,.30)}
+/* No background tint. The translucent navy panel read as a dark blue rectangle
+   sitting on the hero rather than as part of it; the hairline above and the
+   cyan underline below are enough to mark the strip. */
+.tabnav{position:relative;z-index:2;border-top:1px solid rgba(255,255,255,.10)}
 .tabwrap{max-width:1180px;margin:0 auto;padding-inline:20px;display:flex;gap:2px;
   overflow-x:auto;scrollbar-width:none}
 .tabwrap::-webkit-scrollbar{display:none}
@@ -263,13 +265,99 @@ details[open] .chev{transform:rotate(45deg)}
 .cvitem .v{font-size:14px;font-weight:700;margin-top:2px}
 .focusline{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:13.5px}
 .focusline b{color:var(--electric-deep)}
+/* The four numbers alone read as a spreadsheet cell. A bar under each trend
+   and a marked-up focus line give the block some shape. */
+.coachview{border-left:3px solid var(--electric)}
+.cvitem .v{display:flex;align-items:baseline;gap:6px}
+.cvbar{height:4px;border-radius:999px;background:var(--line);margin-top:7px;overflow:hidden}
+.cvbar i{display:block;height:100%;border-radius:999px;background:var(--electric)}
+.cvbar i.ok{background:var(--ok)}
+.cvbar i.warn{background:var(--alert)}
+.focusline{display:flex;gap:9px;align-items:flex-start}
+.focusline .fi{flex:0 0 auto;font-size:14px;line-height:1.35}
+
+/* Screen-reader-only text. This template is standalone raw HTML with no
+   Tailwind, so the utility has to exist here. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* Trend charts.
+   The plot stretches to the card width, so strokes are non-scaling and every
+   label lives in the HTML around the SVG rather than inside it. */
+/* NOT .trend — that class already exists for the % figures and carries
+   text-align:right, which silently right-aligned this whole block. */
+.twblock{margin-top:16px;padding-top:15px;border-top:1px solid var(--line)}
+.twblock > h4{font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;
+  color:var(--muted);margin:0 0 10px}
+.evchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.evchips button{appearance:none;font:inherit;font-size:12px;cursor:pointer;
+  border:1px solid var(--line);background:var(--surface);color:var(--muted);
+  padding:6px 10px;border-radius:999px;white-space:nowrap}
+.evchips button small{font-size:9.5px;font-weight:700;letter-spacing:.6px;opacity:.75}
+.evchips button:hover{color:var(--ink);border-color:var(--electric)}
+.evchips button[aria-pressed="true"]{background:var(--electric);border-color:var(--electric);
+  color:#fff}
+.evchips button[aria-pressed="true"] small{opacity:.9}
+.evchips button.xtra{display:none}
+.evchips.open button.xtra{display:block}
+.evchips .chipmore{font-style:italic}
+.evchips.open .chipmore{display:none}
+
+.tw-head{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:10px}
+.tw-ev{font-size:14px;font-weight:700}
+.tw-n{font-size:11.5px;color:var(--muted)}
+.tw-pct{font-size:13px;font-weight:700;margin-left:auto}
+
+.tw-grid-wrap{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;
+  max-width:580px}   /* capped so the plot keeps a readable aspect ratio */
+/* Slowest time at the top, fastest at the bottom — the labels say so out loud,
+   because the whole chart hangs on the reader getting this the right way up. */
+.tw-yaxis{display:flex;flex-direction:column;justify-content:space-between;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;
+  color:var(--muted);text-align:right;padding:2px 0}
+.tw-yaxis i{display:block;font-family:inherit;font-style:normal;font-size:8.5px;
+  font-weight:700;letter-spacing:.8px;text-transform:uppercase;opacity:.7}
+.tw-plot{min-width:0}
+.tw-svg{display:block;width:100%;height:auto;overflow:visible}
+.tw-grid{stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke}
+.tw-line{fill:none;stroke:var(--electric);stroke-width:2;stroke-linejoin:round;
+  stroke-linecap:round;vector-effect:non-scaling-stroke}
+.tw-trend{fill:none;stroke:var(--electric);stroke-width:1.5;opacity:.7;
+  stroke-dasharray:5 4;vector-effect:non-scaling-stroke}
+.tw-dot{fill:var(--electric);stroke:var(--surface);stroke-width:1.5;
+  vector-effect:non-scaling-stroke}
+.tw-pb{fill:var(--gold);stroke:var(--ink);stroke-width:1;vector-effect:non-scaling-stroke}
+/* Falling is good, so a series that came down is drawn in the positive colour
+   and one that went up in the alert colour. */
+.tw-svg.up .tw-line,.tw-svg.up .tw-trend{stroke:var(--ok)}
+.tw-svg.up .tw-dot{fill:var(--ok)}
+.tw-svg.down .tw-line,.tw-svg.down .tw-trend{stroke:var(--alert)}
+.tw-svg.down .tw-dot{fill:var(--alert)}
+
+.tw-xaxis{display:flex;justify-content:space-between;margin-top:6px;max-width:580px;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;color:var(--muted)}
+.tw-legend{display:flex;align-items:center;flex-wrap:wrap;gap:5px 7px;margin:10px 0 0;
+  font-size:11px;color:var(--muted)}
+.tw-legend span{flex:0 0 auto}
+.k-line{width:15px;height:2px;border-radius:2px;background:var(--muted)}
+.k-trend{width:15px;height:0;border-top:2px dashed var(--muted);opacity:.7}
+.k-pb{width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.tw-note{margin:10px 0 0;font-size:11.5px;color:var(--muted);max-width:62ch}
 
 /* competition cards */
 .comps{display:grid;gap:12px;margin-top:20px}
 .comp{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow-sm)}
-.comphead{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:start}
+.comphead{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:start}
 .comp h3{font-size:15px;font-weight:700}
-.comp .when{font-size:12px;color:var(--muted);margin-top:2px}
+.comp .when{font-size:12px;color:var(--muted);margin-top:4px;
+  display:flex;flex-wrap:wrap;align-items:center;gap:2px 9px}
+/* Each fact is one unbreakable unit. As a single run of text this wrapped
+   wherever it ran out of room, so "17 podiums" broke after the number and left
+   a bare "podiums" on its own line. */
+.comp .when span{white-space:nowrap}
+/* Separator trails its own item rather than leading the next one, so a line
+   that wraps never opens with a stray dot. */
+.comp .when span:not(:last-child)::after{content:" ·";opacity:.5}
 .formbar{display:flex;height:26px;border-radius:7px;overflow:hidden;margin-top:14px;background:var(--ice)}
 .formbar span{display:grid;place-items:center;font-size:11.5px;font-weight:700;color:#fff;min-width:0}
 .fb-above{background:linear-gradient(135deg,var(--ok),#5FD9A8)}
@@ -278,6 +366,71 @@ details[open] .chev{transform:rotate(45deg)}
 .cs .k{font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}
 .cs .v{font-size:15px;font-weight:700;margin-top:2px}
 .cs .v small{font-size:11.5px;font-weight:500;color:var(--muted)}
+
+/* Meets, grouped by season.
+   61 identical cards in one flat column was the "bland" complaint: nothing told
+   you where you were in four years of racing. The season rail and the date
+   badge give the column a spine. */
+.mseason+.mseason{margin-top:28px}
+.mseason-head{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;
+  padding-bottom:9px;border-bottom:1px solid var(--line);margin-top:22px}
+.mseason-head h3{font-family:'Anton',sans-serif;font-size:20px;letter-spacing:1px;
+  color:var(--electric-deep)}
+.mseason-head .msum{font-size:12px;color:var(--muted)}
+.mseason-head .msum b{color:var(--ink);font-weight:700}
+
+.cbadge{display:grid;place-items:center;width:48px;padding:7px 0;border-radius:11px;
+  background:var(--ice);line-height:1;flex:0 0 auto}
+.cbadge b{font-family:'Anton',sans-serif;font-size:20px;color:var(--electric-deep)}
+.cbadge i{font-style:normal;font-size:9.5px;font-weight:700;letter-spacing:.9px;
+  text-transform:uppercase;margin-top:4px;color:var(--muted)}
+
+/* Course matters more than it looks: a 25m time and a 50m time are never
+   comparable, so which pool it was needs to be on the card, not inferred. */
+.ccourse{display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:.9px;
+  padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);
+  margin-left:8px;white-space:nowrap;vertical-align:2px}
+.ccourse.lc{border-color:var(--electric);color:var(--electric-deep);background:var(--ice)}
+
+/* PB rate as a bar as well as a number, so a strong meet reads at a glance. */
+.pbbar{height:5px;border-radius:999px;background:var(--ice);margin-top:13px;overflow:hidden}
+.pbbar i{display:block;height:100%;border-radius:999px;
+  background:linear-gradient(90deg,var(--electric),var(--ok))}
+.recorded{font-size:11px;color:var(--muted);margin-top:11px}
+.subhead{font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;
+  color:var(--muted);margin:28px 0 0}
+
+/* Actions. Each call carries the swimmers currently in it. */
+.calls{display:grid;gap:14px;margin-top:20px}
+.call{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--ok);
+  border-radius:14px;padding:17px 19px;box-shadow:var(--shadow-sm)}
+.call.i{border-left-color:var(--gold)}
+.call.c{border-left-color:var(--alert)}
+.call-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.call-head h3{font-size:14px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase}
+/* The emoji has no side bearing of its own, so it needs the gap adding. */
+.call-head h3 .cdot{margin-right:7px;letter-spacing:0}
+.call-head .cnt{font-family:'Anton',sans-serif;font-size:27px;line-height:1;color:var(--ok)}
+.call.i .call-head .cnt{color:var(--gold-deep,#B8860B)}
+.call.c .call-head .cnt{color:var(--alert)}
+.call-head .of{font-size:11.5px;color:var(--muted)}
+.call p.what{margin:9px 0 0;font-size:13.2px;color:var(--muted);max-width:68ch}
+.call .who{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);
+  font-size:12.6px;line-height:1.75}
+.call .who .cap{display:block;font-size:10px;font-weight:700;letter-spacing:1.1px;
+  text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.call .who .more{color:var(--muted)}
+.call .withheld{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);
+  font-size:12.4px;color:var(--muted)}
+
+/* Where to look first: age groups ranked by the share needing review. */
+.looks{display:grid;gap:9px;margin-top:16px}
+.look{display:grid;grid-template-columns:104px 1fr auto;gap:12px;align-items:center;
+  font-size:13px}
+.look .lg{font-weight:700}
+.look .lbar{height:7px;border-radius:999px;background:var(--ice);overflow:hidden}
+.look .lbar i{display:block;height:100%;border-radius:999px;background:var(--alert)}
+.look .lv{font-size:12px;color:var(--muted);white-space:nowrap}
 
 /* watch lists */
 .watch{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:13px;margin-top:20px}
@@ -324,17 +477,15 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
 .grpbody .swimmers{margin-top:12px}
 .grpempty{padding:14px 4px;font-size:12.8px;color:var(--muted);font-style:italic}
 @media(max-width:560px){
-  details.grp > summary{grid-template-columns:auto 1fr;row-gap:6px}
-  details.grp .gcount{grid-column:1/-1}
+  /* Chevron, the big number and the title belong on one line. With two
+     columns the four children wrapped onto three rows, so the chevron sat
+     alone and "63 swimmers" landed underneath as what looked like a second,
+     different figure. The big number already says it, so it goes. */
+  details.grp > summary{grid-template-columns:auto auto minmax(0,1fr);row-gap:6px}
+  details.grp .gcount{display:none}
 }
 
 /* decision framework */
-.decisions{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:20px}
-.dec{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--ok);
-  border-radius:0 0 16px 16px;padding:18px;box-shadow:var(--shadow-sm)}
-.dec.i{border-top-color:var(--gold)}.dec.c{border-top-color:var(--alert)}
-.dec h3{font-size:14px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase}
-.dec p{margin:8px 0 0;font-size:13.2px;color:var(--muted)}
 
 /* sign-in gate — this page is the landing page for the performance domain,
    so a signed-out visitor has to be able to get in from here */
@@ -362,7 +513,7 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
   position:sticky;top:env(safe-area-inset-top,0px);z-index:40}
 .pbar .in{max-width:1180px;margin:0 auto;padding:0 20px;height:56px;
   display:flex;align-items:center;gap:14px}
-.pbar img{height:34px;width:auto;flex:0 0 auto}
+.pbar .club.abbr{display:none;font-weight:600;color:#C9DAEC}
 .pbar .club{font-size:11px;color:#8FA9C4;white-space:nowrap}
 .pbar nav{margin-left:auto;display:flex;align-items:center;gap:4px;position:relative}
 .pbar a.t,.pbar button.t{font:inherit;font-size:13.5px;padding:7px 13px;border-radius:8px;
@@ -381,7 +532,10 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
 .pbar .out{font-size:12px;color:#8FA9C4;background:none;border:0;cursor:pointer;
   padding:7px 4px;margin-left:6px;font-family:inherit}
 .pbar .out:hover{color:#fff}
-@media (max-width:640px){ .pbar .club{display:none} }
+@media (max-width:640px){
+  .pbar .club{display:none}
+  .pbar .club.abbr{display:inline}
+}
 .scopenote{margin:14px 0 0;padding:11px 14px;border-left:3px solid var(--electric);
   background:var(--sunken);border-radius:0 8px 8px 0;font-size:13px;color:var(--muted)}
 .scopenote strong{color:var(--ink)}
@@ -446,7 +600,9 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
   .hero .logo{height:30px}
   .hero .display{font-size:clamp(24px,7.6vw,var(--ds-sm))}
   .hero p{font-size:var(--fs-sm);line-height:var(--lh-sm);margin-top:var(--sp-md)}
-  .hero .wrap{padding-bottom:var(--sp-md)}
+  /* Same breathing room as desktop, just less of it: the chips must not sit on
+     the hairline above the tabs. */
+  .hero .wrap{padding-bottom:var(--sp-lg)}
 
   /* Seasons scroll sideways rather than wrapping to three rows. */
   /* overflow-x:auto does nothing while flex-wrap is still wrap, which is why
@@ -464,8 +620,16 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 
   /* Filters stack; the search box gets the full width. */
   .filters{display:grid;gap:10px}
+  /* Full-bleed scroll strip, but inset a few px MORE than the text gutter: a
+     chip's filled background sitting on the exact gutter reads as overhanging
+     the edge, where a letterform on the same line does not. The mask gives the
+     strip a visible end so it stops looking like it runs off the screen. */
   .filters .presets{display:flex;flex-wrap:nowrap;gap:var(--sp-sm);overflow-x:auto;
-    scrollbar-width:none;margin-inline:-20px;padding-inline:20px}
+    scrollbar-width:none;margin-inline:-20px;padding-inline:24px 28px;
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 16px,
+      #000 calc(100% - 16px),transparent 100%);
+            mask-image:linear-gradient(90deg,transparent 0,#000 16px,
+      #000 calc(100% - 16px),transparent 100%)}
   .filters .presets::-webkit-scrollbar{display:none}
   .filters .presets button{flex:0 0 auto;min-height:44px}
   .filters input#fq{width:100%;box-sizing:border-box;min-height:44px}
@@ -488,9 +652,40 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
      the pill floating beside it, and the meta line broke mid-phrase into
      "6 / swimmers - 21 swims - 15 / podiums". Stack the head so the title owns
      a full line, and let the opener sit under it rather than inline. */
-  .comphead{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-md)}
+  /* Date badge beside the title rather than stacked above it — a whole row for
+     a two-line date is a row a phone cannot spare. The pill drops below both. */
+  .comphead{display:grid;grid-template-columns:auto minmax(0,1fr);
+    gap:var(--sp-sm) var(--sp-md)}
   .comphead h3{font-size:var(--fs-md);line-height:var(--lh-md)}
-  .comphead .pill{justify-self:start}
+  .comphead .pill{grid-column:1/-1;justify-self:start}
+  .cbadge{width:42px}
+  /* Age groups: the label column has to give way before the bar does. */
+  .look{grid-template-columns:78px 1fr auto;gap:var(--sp-sm)}
+
+  /* Event chips as a one-row scroll strip, like the season and age chips. Eight
+     pills wrapped onto five rows on a phone, which pushed the chart itself off
+     the screen. Scrolling sideways shows every event, so the "+N more" button
+     has nothing left to do here. */
+  .evchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+  .evchips::-webkit-scrollbar{display:none}
+  .evchips button{flex:0 0 auto;min-height:38px}
+  /* No margin-left:auto here: it pinned the % to the right edge of a row that
+     is already too narrow for the event, course and race count. */
+  .tw-pct{margin-left:0}
+  .evchips button.xtra{display:block}
+  .evchips .chipmore{display:none}
+
+  /* Trend chart: the side axis cost the plot a third of a 390px screen, so the
+     two anchor times stack above and below it instead and the plot gets the
+     full width. display:contents promotes the two labels to grid items so they
+     can straddle the plot in DOM order. */
+  .tw-grid-wrap{grid-template-columns:minmax(0,1fr);gap:var(--sp-xxs);max-width:none}
+  .tw-yaxis{display:contents}
+  .tw-yaxis > span{display:flex;align-items:baseline;gap:6px;text-align:left}
+  .tw-yaxis > span:first-child{grid-row:1}
+  .tw-plot{grid-row:2}
+  .tw-yaxis > span:last-child{grid-row:3}
+  .tw-xaxis{max-width:none}
   .comp .when{font-size:var(--fs-xs);line-height:var(--lh-xs)}
   .comp .opener{display:block;margin-top:var(--sp-xxs)}
 
@@ -530,8 +725,11 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 
 <div class="pbar" id="pbar" hidden>
   <div class="in">
-    <img src="/nextgen-logo.png" alt="NextGen Swim Club">
+    <!-- No logo in this bar. The hero immediately below carries it at full
+         size, and squeezed to the 34px bar height a wide wordmark just looked
+         squashed. The club name alone does the same job. -->
     <span class="club">NextGen Multi Sport Academy</span>
+    <span class="club abbr" aria-hidden="true">NextGen</span>
     <nav aria-label="Portal sections">
       <a class="t" href="/tracker" aria-current="true">Performance</a>
       <button class="t" id="pb-events" type="button" aria-haspopup="menu" aria-expanded="false"
@@ -594,16 +792,128 @@ let DATA = { generated: "", thresholds: { n: 0, fast: 0, improving: 0, stable_hi
 const CLS = {fast:'Fast progression', improving:'Improving', stable:'Stable',
              review:'Review', unrated:'Not enough data'};
 const GROUPS = [
-  {k:'fast',      t:'🚀 Progressing fast',  d:'biggest gains in the club — keep doing what is working'},
-  {k:'improving', t:'🟢 Improving',         d:'moving in the right direction'},
-  {k:'stable',    t:'🟡 Stable',            d:'holding their level — watch for a plateau'},
-  {k:'review',    t:'🔴 Review',            d:'slower than they were — investigate before changing anything'},
-  {k:'unrated',   t:'Not enough data',      d:'no repeat swim in the same event and course yet'},
+  {k:'fast',      slug:'fast',      t:'🚀 Progressing fast',  d:'biggest gains in the club — keep doing what is working'},
+  {k:'improving', slug:'improving', t:'🟢 Improving',         d:'moving in the right direction'},
+  {k:'stable',    slug:'stable',    t:'🟡 Stable',            d:'holding their level — watch for a plateau'},
+  {k:'review',    slug:'review',    t:'🔴 Review',            d:'slower than they were — investigate before changing anything'},
+  {k:'unrated',   slug:'unrated',   t:'Not enough data',      d:'no repeat swim in the same event and course yet'},
 ];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 // A swimmer who took 22.7% off their time is 22.7% FASTER. Showing that as
 // "-22.7%" made every good result look like a loss, which is exactly backwards
 // for the people this page is for.
+// ---------------------------------------------------------------------------
+// Trend charts: one event, one course, one child.
+//
+// THE AXIS. Time runs up the y-axis with the FASTEST swim at the BOTTOM, so a
+// line that FALLS means the swimmer is getting faster. That is the literal
+// reading of the number — their time is coming down — and it is the same
+// convention as the public progress wall, which was flipped to match.
+//
+// Never two courses on one chart. A 25m and a 50m time are different events
+// wearing the same name, so putting them on one axis would draw a cliff every
+// time the pool changed and call it progress.
+//
+// Text lives in the HTML around the SVG, not inside it: the plot stretches to
+// whatever width the card has, and stretched glyphs look broken.
+const SERIES = [];   // [swimmerIndex] -> that swimmer's chartable event records
+// A busy swimmer has 22 chartable series. All of them as pills is three rows of
+// furniture above the chart, so the rest hide behind a "+N more".
+const CHIP_CAP = 8;
+let chipsBound = false;
+
+// The plot scales UNIFORMLY (no preserveAspectRatio="none"), because stretching
+// x more than y turned every race dot into a wide ellipse. The width is capped
+// in CSS instead, which keeps the aspect close to this box at any screen size.
+const AXIS_W = 300, AXIS_H = 116, AXIS_P = 7;
+
+/** A time for an axis label: mm:ss.hh over a minute, ss.hh under. */
+const clockAxis = v => v < 60 ? v.toFixed(2)
+  : Math.floor(v / 60) + ':' + (v % 60 < 10 ? '0' : '') + (v % 60).toFixed(2);
+
+const MONS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const monthLabel = d => {
+  const x = new Date(d + 'T00:00:00');
+  return isNaN(x) ? d : MONS[x.getMonth()] + ' ' + x.getFullYear();
+};
+
+function chartPlot(pts, improving){
+  const W = AXIS_W, H = AXIS_H, P = AXIS_P;
+  const xs = pts.map(p => new Date(p.d + 'T00:00:00').getTime());
+  const ys = pts.map(p => p.t);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const lo = Math.min(...ys), hi = Math.max(...ys);
+  const pad = (hi - lo) * 0.18 || 1;
+  // The TOP of the box is the slowest time and the bottom is the fastest.
+  const top = hi + pad, bot = lo - pad;
+  const X = v => P + ((v - x0) / (x1 - x0 || 1)) * (W - 2 * P);
+  const Y = v => P + ((top - v) / (top - bot || 1)) * (H - 2 * P);
+
+  // Least squares through the races, so the direction still reads when one
+  // meet goes badly and spikes the line.
+  const n = pts.length;
+  const mx = xs.reduce((a, b) => a + b, 0) / n;
+  const my = ys.reduce((a, b) => a + b, 0) / n;
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) { num += (xs[i] - mx) * (ys[i] - my); den += (xs[i] - mx) ** 2; }
+  const slope = den ? num / den : 0;
+  const clamp = v => Math.min(top, Math.max(bot, v));
+  const fit = x => clamp(my + slope * (x - mx));
+
+  const line = pts.map((p, i) =>
+    `${i ? 'L' : 'M'}${X(xs[i]).toFixed(1)} ${Y(p.t).toFixed(1)}`).join(' ');
+  const trend = `M${X(x0).toFixed(1)} ${Y(fit(x0)).toFixed(1)} ` +
+                `L${X(x1).toFixed(1)} ${Y(fit(x1)).toFixed(1)}`;
+  const grid = [0.25, 0.5, 0.75].map(f => {
+    const y = (P + f * (H - 2 * P)).toFixed(1);
+    return `<line x1="${P}" y1="${y}" x2="${W - P}" y2="${y}" class="tw-grid"/>`;
+  }).join('');
+  const dots = pts.map((p, i) => p.pb
+    ? `<circle cx="${X(xs[i]).toFixed(1)}" cy="${Y(p.t).toFixed(1)}" r="4.2" class="tw-pb"/>`
+    : `<circle cx="${X(xs[i]).toFixed(1)}" cy="${Y(p.t).toFixed(1)}" r="2.1" class="tw-dot"/>`
+  ).join('');
+
+  return `<svg class="tw-svg ${improving ? 'up' : 'down'}" viewBox="0 0 ${W} ${H}"
+    aria-hidden="true">
+    ${grid}
+    <path d="${trend}" class="tw-trend"/>
+    <path d="${line}" class="tw-line"/>
+    ${dots}
+  </svg>`;
+}
+
+/** One chart, as the HTML that goes inside a .chartbox. */
+function chartCard(e){
+  const pts = e.points || [];
+  if (pts.length < 3) return '';
+  const ys = pts.map(p => p.t);
+  const lo = Math.min(...ys), hi = Math.max(...ys);
+  const improving = e.pct < 0;
+  const best = pts.find(p => p.pb);
+  return `<div class="tw-head">
+      <span class="tw-ev">${esc(e.event)}</span>
+      <span class="ccourse ${e.course === 'LCM' ? 'lc' : ''}">${esc(e.course)}</span>
+      <span class="tw-n">${e.swims} race${e.swims === 1 ? '' : 's'}</span>
+      <span class="tw-pct ${trendCls(e.pct)}">${pct(e.pct)}</span>
+    </div>
+    <div class="tw-grid-wrap">
+      <div class="tw-yaxis">
+        <span>${clockAxis(hi)}<i>slower</i></span>
+        <span>${clockAxis(lo)}<i>faster</i></span>
+      </div>
+      <div class="tw-plot">${chartPlot(pts, improving)}</div>
+    </div>
+    <div class="tw-xaxis"><span>${monthLabel(pts[0].d)}</span>
+      <span>${monthLabel(pts[pts.length - 1].d)}</span></div>
+    <p class="tw-legend"><span class="k-line"></span>every race
+      <span class="k-trend"></span>overall direction
+      ${best ? `<span class="k-pb"></span>fastest ever, ${monthLabel(best.d)}` : ''}</p>
+    <span class="sr-only">${esc(e.event)} ${esc(e.course)}: ${e.swims} races from
+      ${monthLabel(pts[0].d)} to ${monthLabel(pts[pts.length - 1].d)},
+      ${clockAxis(pts[0].t)} to ${clockAxis(pts[pts.length - 1].t)}, ${pct(e.pct)}.
+      On this chart a falling line means faster.</span>`;
+}
+
 const pct = v => v === null ? '—'
   : v < 0 ? Math.abs(v).toFixed(1) + '% faster'
   : v > 0 ? v.toFixed(1) + '% slower'
@@ -642,13 +952,18 @@ function tabs(){
 }
 
 function swimmerCard(s){
+  // Every tier-2 and coach field has to be treated as possibly absent. That is
+  // the whole mechanism in src/lib/tiers.ts: the payload is shaped by OMITTING
+  // fields, so a card that assumes s.strokes exists throws for a parent — and
+  // one for a coach, where it does exist, would never show it.
+  const strokeMap = s.strokes || {}, distMap = s.dists || {}, offclub = s.offclub || [];
   const strokes = ['Free','Back','Breast','Fly','IM']
-    .filter(k => s.strokes[k])
-    .map(k => `<span class="chip"><span class="dot d-${s.strokes[k]}"></span>${k}</span>`).join('');
+    .filter(k => strokeMap[k])
+    .map(k => `<span class="chip"><span class="dot d-${strokeMap[k]}"></span>${k}</span>`).join('');
   const dists = ['Sprint','Middle','Distance']
-    .filter(k => s.dists[k])
-    .map(k => `<span class="chip"><span class="dot d-${s.dists[k]}"></span>${k}</span>`).join('');
-  const evs = s.events.map(e => `
+    .filter(k => distMap[k])
+    .map(k => `<span class="chip"><span class="dot d-${distMap[k]}"></span>${k}</span>`).join('');
+  const evs = (s.events || []).map(e => `
     <div class="evrow">
       <span class="e">${esc(e.event)}</span>
       <span class="c">${e.course}</span>
@@ -657,36 +972,78 @@ function swimmerCard(s){
       <span class="trend ${trendCls(e.pct)}">${pct(e.pct)}</span>
     </div>`).join('');
   const num = (v, suf) => v === null || v === undefined ? '—' : (v + (suf||''));
-  const coach = (s.focus || s.consistency !== null || s.pbRate !== null) ? `
+  // A bar next to each trend, scaled against 25% — roughly the largest honest
+  // swing across a season, so anything beyond that pins at full width. The
+  // colour uses trendCls's own deadband, so the bar and the number can never
+  // disagree: a 0.3% move reads flat in both. Spelled out as "faster"/"slower"
+  // rather than pctShort's bare number, because there is room here and a
+  // signless "0.3%" does not say which way it went.
+  const cvTrend = (label, v) => `<div class="cvitem"><div class="k">${label}</div>
+    <div class="v ${trendCls(v)}">${pct(v)}</div>
+    ${v===null?'':`<div class="cvbar"><i class="${
+      v<-0.5?'ok':v>0.5?'warn':''}"
+      style="width:${Math.max(4,Math.min(100,Math.abs(v)/25*100))}%"></i></div>`}</div>`;
+  // Gate on the ASSESSMENT fields, never on pbRate. pbRate is tier 1, so it
+  // survives for a parent — and gating on it rendered a box headed "Coach view"
+  // to parents with every tier-2 row showing an em-dash.
+  const hasAssessment = s.consistency !== undefined || s.focus !== undefined
+    || s.t3 !== undefined || s.t6 !== undefined || s.consBand !== undefined;
+  const coach = hasAssessment ? `
     <div class="coachview">
       <h4>Coach view</h4>
       <div class="cvgrid">
-        <div class="cvitem"><div class="k">Last 3 months</div>
-          <div class="v ${trendCls(s.t3)}">${s.t3===null?'—':pctShort(s.t3)}</div></div>
-        <div class="cvitem"><div class="k">Last 6 months</div>
-          <div class="v ${trendCls(s.t6)}">${s.t6===null?'—':pctShort(s.t6)}</div></div>
+        ${cvTrend('Last 3 months', s.t3)}
+        ${cvTrend('Last 6 months', s.t6)}
         <div class="cvitem"><div class="k">PB rate</div>
-          <div class="v">${num(s.pbRate,'%')}</div></div>
+          <div class="v">${num(s.pbRate,'%')}</div>
+          ${s.pbRate===null?'':`<div class="cvbar"><i class="${s.pbRate>=50?'ok':''}"
+            style="width:${Math.min(100,s.pbRate)}%"></i></div>`}</div>
         <div class="cvitem"><div class="k">Race consistency</div>
-          <div class="v">${esc(s.consBand)}${s.consistency!==null?` <span style="font-size:11.5px;font-weight:500;color:var(--muted)">±${s.consistency}%</span>`:''}</div></div>
+          <div class="v">${esc(s.consBand)}${s.consistency!==null?` <span style="font-size:11.5px;font-weight:500;color:var(--muted)">±${s.consistency}%</span>`:''}</div>
+          ${s.consistency===null?'':`<div class="cvbar"><i class="${s.consistency<=4?'ok':s.consistency>=9?'warn':''}"
+            style="width:${Math.max(4,100-Math.min(100,s.consistency*7))}%"></i></div>`}</div>
       </div>
-      ${s.focus?`<div class="focusline"><b>Coaching focus:</b> ${esc(s.focus)}</div>`:''}
+      ${s.focus?`<div class="focusline"><span class="fi" aria-hidden>&#9678;</span>
+        <span><b>Coaching focus:</b> ${esc(s.focus)}</span></div>`:''}
     </div>` : '';
-  const off = s.offclub.length
-    ? `<div class="offclub"><strong>Also raced for:</strong> ${s.offclub.map(esc).join(', ')}.
+  // Trend charts. Chips pick the event; one chart shows at a time, which is the
+  // only version that works at 390px — a child can have 22 chartable series.
+  // Most-raced event first, since that is the one with the most to say.
+  const chartable = (s.events || []).filter(e => (e.points || []).length >= 3)
+    .slice().sort((a, b) => b.swims - a.swims || a.event.localeCompare(b.event));
+  const swIdx = SERIES.push(chartable) - 1;
+  const chart = chartable.length ? `
+    <div class="twblock">
+      <h4>How their times have moved</h4>
+      ${chartable.length > 1 ? `<div class="evchips" data-sw="${swIdx}">
+        ${chartable.map((e, i) => `<button type="button" data-i="${i}"
+          class="${i >= CHIP_CAP ? 'xtra' : ''}" aria-pressed="${i === 0}"
+          >${esc(e.event)} <small>${esc(e.course)}</small></button>`).join('')}
+        ${chartable.length > CHIP_CAP ? `<button type="button" class="chipmore"
+          >+${chartable.length - CHIP_CAP} more</button>` : ''}
+      </div>` : ''}
+      <div class="chartbox" data-sw="${swIdx}">${chartCard(chartable[0])}</div>
+      <p class="tw-note">A falling line means the time is coming down. Children get
+        faster as they grow as well as through training, so some of every fall is age.
+        25m and 50m races are kept apart — they are not comparable.</p>
+    </div>` : '';
+  const off = offclub.length
+    ? `<div class="offclub"><strong>Also raced for:</strong> ${offclub.map(esc).join(', ')}.
        Those swims count toward this athlete's development, never toward NextGen team totals.</div>` : '';
   const none = s.nocompare
     ? `<p class="nodata">No repeat swims in the same event and course, so no trend can be
        calculated. ${s.swims} swim${s.swims===1?'':'s'} recorded.</p>` : '';
   return `
   <details class="sw" data-band="${esc(s.band)}" data-age="${s.age===null?'':s.age}"
-    data-cls="${s.cls}" data-name="${esc(s.name.toLowerCase())}">
+    data-cls="${esc(s.cls || '')}" data-name="${esc(s.name.toLowerCase())}">
     <summary>
       <span class="chev"></span>
       <span>
         <span class="sw-name">${esc(s.name)}</span>
         <span class="sw-meta">${esc(s.band)} · ${s.swims} swims · ${s.meets} meet${s.meets===1?'':'s'}${
           s.podiums?' · '+s.podiums+' podium'+(s.podiums===1?'':'s'):''}${
+          !hasAssessment && s.pbRate!==null && s.pbRate!==undefined
+            ? ' · '+s.pbRate+'% personal bests' : ''}${
           s.status==='former'?' · former member':''}</span>
       </span>
       <!-- No class pill here: the swimmer already sits inside that group's
@@ -699,6 +1056,7 @@ function swimmerCard(s){
         ${strokes?`<div class="prof"><h4>Stroke profile</h4><div class="chips">${strokes}</div></div>`:''}
         ${dists?`<div class="prof"><h4>Distance profile</h4><div class="chips">${dists}</div></div>`:''}
       </div>`:''}
+      ${chart}
       ${coach}
       ${evs?`<div class="evlist"><h4 style="font-size:11px;font-weight:700;letter-spacing:1.1px;
         text-transform:uppercase;color:var(--muted);margin:0 0 4px">Event by event — first to last swim</h4>${evs}</div>`:''}
@@ -708,8 +1066,22 @@ function swimmerCard(s){
 }
 
 function render(){
+  SERIES.length = 0;   // rebuilt below; otherwise it grows on every render
   const Y = DATA.years[year], s = Y.summary;
   const bands = ['8 & under','9-10','11-12','13-14','15-17','18 & over'];
+
+  // How the Swimmers page is grouped.
+  //
+  // By assessment class for a coach. But `cls` is tier 2, so shapeAnalytics()
+  // strips it for everyone else — and grouping on a field the viewer does not
+  // have meant a confirmed parent saw five empty group headers and not one
+  // swimmer. Fall back to age band, which is tier 1 and is how the club talks
+  // about squads anyway. The slug exists because a band like "8 & under" is
+  // not a usable CSS class.
+  const SW_GROUPS = Y.swimmers.some(s => s.cls)
+    ? GROUPS
+    : bands.map(b => ({ k: b, slug: b.replace(/[^a-z0-9]+/gi, '-'), t: b,
+                        d: 'every race and every event, newest first', band: true }));
   const AGES = Object.keys(Y.ageYears||{}).map(Number).sort((a,b)=>a-b);
   const PRESETS = [
     {t:'8 & under', lo:0,  hi:8},  {t:'9–10', lo:9,  hi:10},
@@ -775,6 +1147,7 @@ function render(){
   // competition level
   const kv = (o,lbl) => o ? `<div class="cs"><div class="k">${lbl}</div>
     <div class="v">${esc(o.k)} <small>${pctShort(o.v)}</small></div></div>` : '';
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const compCards = (Y.comps||[]).map(c=>{
     const showWorstSt = c.worstStroke && c.bestStroke && c.worstStroke.k !== c.bestStroke.k;
     const showWorstAg = c.worstAge && c.bestAge && c.worstAge.k !== c.bestAge.k;
@@ -782,14 +1155,21 @@ function render(){
       ${c.above>0?`<span class="fb-above" style="width:${c.above}%">${c.above>11?c.above+'% at or above form':''}</span>`:''}
       ${c.below>0?`<span class="fb-below" style="width:${c.below}%">${c.below>11?c.below+'% below':''}</span>`:''}
     </div>`;
+    const d = new Date(c.date + 'T00:00:00');
+    const badge = isNaN(d) ? '' : `<span class="cbadge" aria-hidden="true">
+      <b>${d.getDate()}</b><i>${MON[d.getMonth()]}</i></span>`;
     return `<div class="comp" data-meet="${esc(c.id)}" role="button" tabindex="0"
                  aria-label="Open results for ${esc(c.name)}">
       <div class="comphead">
-        <div><h3>${esc(c.name)} <span class="opener" aria-hidden>results &rsaquo;</span></h3>
-          <div class="when">${c.date} · ${c.course||'—'} · ${c.swimmers} swimmers · ${c.swims} swims · ${c.podiums} podiums</div></div>
+        ${badge}
+        <div><h3>${esc(c.name)}${c.course?`<span class="ccourse ${c.course==='LCM'?'lc':''}">${esc(c.course)}</span>`:''} <span class="opener" aria-hidden>results &rsaquo;</span></h3>
+          <div class="when"><span>${c.date}</span><span>${c.swimmers} swimmers</span>${
+            ''}<span>${c.swims} swims</span><span>${c.podiums} podium${c.podiums===1?'':'s'}</span></div></div>
         ${c.median!==null?`<span class="pill ${c.median<=-2?'p-improving':c.median<=0.6?'p-stable':'p-review'}">${pctShort(c.median)} vs form</span>`:''}
       </div>
       ${bar}
+      ${c.pbRate===null?'':`<div class="pbbar" role="img"
+        aria-label="${c.pbRate}% of swims were personal bests"><i style="width:${c.pbRate}%"></i></div>`}
       <div class="compstats">
         <div class="cs"><div class="k">PB rate</div><div class="v">${c.pbRate===null?'—':c.pbRate+'%'} <small>${c.pbs} PBs</small></div></div>
         ${kv(c.bestStroke,'Best stroke')}
@@ -800,7 +1180,88 @@ function render(){
         ${c.vsPrev!==null?`<div class="cs"><div class="k">vs previous meet</div>
           <div class="v ${c.vsPrev<0?'t-up':c.vsPrev>0?'t-down':'t-flat'}">${c.vsPrev>0?'+':''}${c.vsPrev} pts</div></div>`:''}
       </div>
-    </div>`;}).join('');
+      ${c.cut?`<p class="recorded">Recorded by the timing system as
+        &ldquo;${esc(c.cut)}&rdquo; &mdash; its meet-name field stops at 30 characters.</p>`:''}
+    </div>`;});
+
+  // Meets grouped by season. A flat column of 61 identical cards gave no sense
+  // of where you were in four years of racing.
+  const compSeasons = (() => {
+    const comps = Y.comps || [];
+    if (!comps.length) return '<p class="nodata">No meets recorded in this period.</p>';
+    const groups = [];
+    comps.forEach((c, i) => {
+      const yr = (c.date || '').slice(0, 4) || '—';
+      let g = groups[groups.length - 1];
+      if (!g || g.yr !== yr) { g = { yr, items: [], swims: 0, podiums: 0 }; groups.push(g); }
+      g.items.push(compCards[i]);
+      g.swims += c.swims || 0;
+      g.podiums += c.podiums || 0;
+    });
+    // With a single season selected the heading would just repeat the chip.
+    const many = groups.length > 1;
+    return groups.map(g => `<div class="mseason">
+      ${many ? `<div class="mseason-head"><h3>${esc(g.yr)}</h3>
+        <span class="msum"><b>${g.items.length}</b> meet${g.items.length===1?'':'s'} &middot;
+        <b>${g.swims.toLocaleString()}</b> swims &middot;
+        <b>${g.podiums.toLocaleString()}</b> podium${g.podiums===1?'':'s'}</span></div>` : ''}
+      <div class="comps">${g.items.join('')}</div>
+    </div>`).join('');
+  })();
+
+  // Actions. Three calls, and who is actually in each one.
+  //
+  // The named lists are coach-only. `watch` is a cross-child assessment, so
+  // shapeAnalytics() empties it for every other scope (src/lib/tiers.ts) and
+  // this block simply finds nothing to list. The counts come from `summary`,
+  // which is tier 1: a parent sees how many swimmers sit in each call, and no
+  // names but their own child's, fetched from its own endpoint.
+  const haveNames = Object.keys(W).length > 0;   // W is built above, with the watch cards
+  const rated = s.rated || 0;
+  const share = n => rated ? Math.round(n / rated * 100) + '% of those we can judge' : '';
+  // Buckets overlap — a swimmer can be both improving fast and a riser — so
+  // dedupe, and cap the list. A hundred names in one paragraph is a wall, not
+  // a list, and the Swimmers page is where you go to read all of them.
+  const NAME_CAP = 14;
+  const nameList = (buckets, cap) => {
+    const xs = [...new Set(buckets.flatMap(b => W[b] || []))];
+    if (!xs.length) return '';
+    const shown = xs.slice(0, NAME_CAP);
+    const rest = xs.length - shown.length;
+    return `<div class="who"><span class="cap">${cap} &mdash; ${xs.length}</span>${
+      shown.map(esc).join(' &middot; ')}${rest ? ` &middot; <span class="more">+${rest} more on the
+      Swimmers page</span>` : ''}</div>`;
+  };
+  const calls = [
+    ['', '<span class="cdot" aria-hidden>&#128994;</span>Continue', s.n_improving, ['fast', 'risers'], 'Improving fastest',
+     `Progress is appropriate for the training these swimmers are getting. Keep the
+      approach and check again after the next meet.`],
+    ['i', '<span class="cdot" aria-hidden>&#128993;</span>Investigate', s.n_stable, ['stalled', 'plateau'], 'Stalled or plateaued',
+     `Progress has flattened. Look at the swimmer, the age group and the programme
+      before changing anything.`],
+    ['c', '<span class="cdot" aria-hidden>&#128308;</span>Change', s.n_review, ['regressing'], 'Going backwards',
+     `A sustained pattern says the current approach is not producing development.
+      Agree an intervention, apply it, and measure the response.`],
+  ].map(([cls, title, n, buckets, cap, what]) => `
+    <div class="call ${cls}">
+      <div class="call-head"><span class="cnt">${n === undefined ? '—' : n}</span>
+        <h3>${title}</h3>
+        <span class="of">${n === undefined ? '' : share(n)}</span></div>
+      <p class="what">${what}</p>
+      ${haveNames ? nameList(buckets, cap) : `<p class="withheld">Which swimmers these
+        are is part of each child's own assessment, so it is not shown club-wide. Open
+        your own swimmer to see theirs.</p>`}
+    </div>`).join('');
+
+  // Age groups ranked by the share of their swimmers needing a look. Counts
+  // and age bands only, so this is the same for a coach and a parent.
+  const looks = Object.entries(Y.ages || {})
+    .map(([g, v]) => ({ g, v, pct: v.rated ? Math.round(v.review / v.rated * 100) : null }))
+    .filter(x => x.pct !== null && x.v.rated >= 3)
+    .sort((a, b) => b.pct - a.pct || b.v.rated - a.v.rated)
+    .map(x => `<div class="look"><span class="lg">${esc(x.g)}</span>
+      <span class="lbar"><i style="width:${x.pct}%"></i></span>
+      <span class="lv">${x.pct}% of ${x.v.rated}</span></div>`).join('');
 
   document.getElementById('app').innerHTML = `
   <section class="wrap" id="s1" data-page="programme">
@@ -901,10 +1362,10 @@ function render(){
       <input id="fq" type="search" placeholder="Search name…" value="${esc(fQ)}">
       <span class="count" id="cnt"></span>
     </div>
-    <div id="list" style="margin-top:18px">${GROUPS.map(g=>{
-      const members = Y.swimmers.filter(s=>s.cls===g.k);
+    <div id="list" style="margin-top:18px">${SW_GROUPS.map(g=>{
+      const members = Y.swimmers.filter(s => g.band ? s.band === g.k : s.cls === g.k);
       if(!members.length) return '';
-      return `<details class="grp g-${g.k}" data-grp="${g.k}">
+      return `<details class="grp g-${esc(g.slug)}" data-grp="${esc(g.k)}">
         <summary>
           <span class="chev"></span>
           <span class="gn">${members.length}</span>
@@ -920,21 +1381,38 @@ function render(){
   <section class="wrap" id="s4" data-page="meets">
     <div class="sec-head"><span class="sec-num">04</span><h2>Did it show on the day?</h2></div>
     <p class="sec-sub">Did the training show up on the day. Tap a meet for every race in it.</p>
-    <div class="comps">${compCards}</div>
+    ${compSeasons}
   </section>
 
   <section class="wrap" id="s5" data-page="decisions">
     <div class="sec-head"><span class="sec-num">05</span><h2>So what now?</h2></div>
-    <p class="sec-sub">Everything here comes down to one of three calls.</p>
-    <div class="decisions">
-      <div class="dec"><h3>🟢 Continue</h3><p>Progress is appropriate. Keep the current approach
-        and check again after the next meet.</p></div>
-      <div class="dec i"><h3>🟡 Investigate</h3><p>Progress is slowing or inconsistent. Review the
-        swimmer, age group or programme before changing anything.</p></div>
-      <div class="dec c"><h3>🔴 Change</h3><p>A sustained pattern says the current approach is not
-        producing development. Agree an intervention, apply it, and measure the response.</p></div>
-    </div>
+    <p class="sec-sub">Meets tell you what happened. This tells you what to do about it.
+      Every swimmer with enough races to judge sits in one of three calls &mdash;
+      ${rated} of ${s.swimmers} right now, the rest having not yet raced the same event
+      and course twice.</p>
+    <div class="calls">${calls}</div>
+    ${looks?`<p class="subhead">Where to look first</p>
+    <p class="sec-sub" style="margin-top:6px">Age groups by the share of their swimmers
+      in the Change call.</p>
+    <div class="looks">${looks}</div>`:''}
   </section>`;
+
+  // Chips swap the chart in place. Delegated on #app because the swimmer cards
+  // are rebuilt wholesale on every render — and bound ONCE, because #app itself
+  // survives a render, so re-binding here would stack a handler per render.
+  if (!chipsBound) { chipsBound = true;
+  document.getElementById('app').addEventListener('click', e => {
+    const b = e.target.closest?.('.evchips button');
+    if (!b) return;
+    const wrap = b.closest('.evchips');
+    if (b.classList.contains('chipmore')) { wrap.classList.add('open'); return; }
+    const box = wrap.parentElement.querySelector('.chartbox');
+    const rec = (SERIES[+wrap.dataset.sw] || [])[+b.dataset.i];
+    if (!rec || !box) return;
+    wrap.querySelectorAll('button').forEach(x =>
+      x.setAttribute('aria-pressed', String(x === b)));
+    box.innerHTML = chartCard(rec);
+  }); }
 
   document.getElementById('agemode').onclick = e => {
     const b = e.target.closest('button'); if (!b) return;
@@ -986,6 +1464,26 @@ function showPage(p){
   document.querySelectorAll('#sidenav a').forEach(a => {
     a.setAttribute('aria-current', String(a.dataset.page === page));
   });
+
+  // The tab strip scrolls sideways on a phone, and at 390px "Actions" sits off
+  // the right edge — so opening it left the tab you were on invisible. Nudge
+  // the strip rather than calling scrollIntoView, which would also move the
+  // page vertically.
+  const cur = document.querySelector('#sidenav a[aria-current="true"]');
+  const strip = cur && cur.closest('.tabwrap');
+  if (strip && strip.scrollWidth > strip.clientWidth) {
+    // offsetLeft is measured from the scroller's own padding box, the same
+    // origin as scrollLeft, so this converges however many times it runs.
+    // Rect arithmetic did not: it under-scrolled when it ran before layout
+    // had settled.
+    const pad = 20;
+    const l = cur.offsetLeft, r = l + cur.offsetWidth;
+    if (l < strip.scrollLeft + pad) {
+      strip.scrollLeft = Math.max(0, l - pad);
+    } else if (r > strip.scrollLeft + strip.clientWidth - pad) {
+      strip.scrollLeft = r - strip.clientWidth + pad;
+    }
+  }
 }
 
 window.addEventListener('hashchange', () => {
@@ -1139,6 +1637,9 @@ function renderMeet(m){
 
     <div class="sec-head"><h2>${esc(m.name)}</h2></div>
     <p class="sec-sub">${span} · ${m.course === 'SCM' ? '25m short course' : m.course === 'LCM' ? '50m long course' : m.course || '—'}</p>
+    ${m.cut ? `<p class="recorded">The timing system recorded this meet as
+      &ldquo;${esc(m.cut)}&rdquo;; its meet-name field stops at 30 characters, so the
+      title above is reconstructed. Tell us if it is wrong.</p>` : ''}
 
     <div class="meetbar">
       <div><b>${m.swimmers}</b><span>Swimmers</span></div>

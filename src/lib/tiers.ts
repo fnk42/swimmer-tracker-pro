@@ -68,6 +68,11 @@ export const EVENT_FIELDS = [
   "firstDate",
   "lastDate",
   "swims",
+  // The race series behind the trend chart: one {d, t} per swim, plus pb on
+  // the fastest. Tier 1 for the same reason first/last are — these are times
+  // the organisers published and the entry form consented to. The judgement
+  // OF the series (cls, focus, the trend bands) stays tier 2.
+  "points",
 ] as const;
 
 // Year-level blocks. These are club aggregates — medians, counts per age band,
