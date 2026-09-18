@@ -312,6 +312,13 @@ function Welcome() {
       </main>
 
       <footer className="relative px-5 pb-8 text-center text-[11.5px] text-white/35">
+        <img
+          src="/golden-pipit-bird-light.png"
+          alt=""
+          width={306}
+          height={256}
+          className="mr-2 inline-block h-[17px] w-auto align-[-3px] opacity-70"
+        />
         A product of <span className="font-semibold text-white/55">Golden Pipit Solutions</span>
       </footer>
     </div>

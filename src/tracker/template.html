@@ -1,3 +1,11 @@
+<meta charset="utf-8">
+<!-- WITHOUT THIS the page is a phone disaster, and every portrait rule below is
+     dead. /tracker is served as its own HTML document by the route, so it never
+     picks up the React app's <head>. With no viewport meta, Android Chrome
+     renders at a 980px virtual viewport, applies text autosizing that inflates
+     each block's font size independently, and evaluates every media query
+     against 980px rather than the real width. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>NextGen Performance Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,6 +38,11 @@
    so el.hidden = true silently does nothing. That has now caught the sidenav,
    the shell, a nav item and a menu entry — one global rule ends it. */
 [hidden]{display:none !important}
+
+/* Belt and braces against Android text inflation: with the viewport meta above
+   this should never trigger, but a single block wider than the screen brings it
+   back and every font size on the page changes independently. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 
 body{margin:0;background:var(--bg);color:var(--ink);
   font-family:'Sora',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.6;
@@ -102,7 +115,9 @@ h2{font-size:clamp(20px,3vw,27px);font-weight:700;letter-spacing:-.3px}
 .panel p.note{margin:12px 0 0;font-size:12.5px;color:var(--muted)}
 
 .bars{display:grid;gap:9px;margin-top:14px}
-.bar{display:grid;grid-template-columns:104px 1fr 70px;align-items:center;gap:16px}
+.bar{display:grid;grid-template-columns:minmax(0,104px) 1fr minmax(0,70px);
+  align-items:center;gap:16px}
+.bar .lab{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar .lab{font-size:13px;font-weight:600}
 .bar .track{display:block;height:20px;background:var(--ice);border-radius:6px;overflow:hidden;position:relative}
 .bar .fill{display:block;height:100%;border-radius:6px;min-width:3px}
@@ -111,7 +126,7 @@ h2{font-size:clamp(20px,3vw,27px);font-weight:700;letter-spacing:-.3px}
 .f-stable{background:linear-gradient(90deg,var(--gold),#FFD98A)}
 .f-review{background:linear-gradient(90deg,var(--alert),#F08A84)}
 .bar .val{font-size:12px;color:var(--muted);text-align:right}
-@media(max-width:520px){.bar{grid-template-columns:84px 1fr 60px;gap:11px}}
+@media(max-width:520px){.bar{grid-template-columns:minmax(0,76px) 1fr minmax(0,58px);gap:10px}}
 
 /* alerts */
 .alerts{display:grid;gap:10px;margin-top:14px}
@@ -119,9 +134,10 @@ h2{font-size:clamp(20px,3vw,27px);font-weight:700;letter-spacing:-.3px}
   padding:13px 15px;border-radius:12px;background:var(--sunken);border:1px solid var(--line);border-left:3px solid var(--muted)}
 .alert.warn{border-left-color:var(--gold)}
 .alert.ok{border-left-color:var(--ok)}
-.alert .k{font-size:11.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}
-.alert .v{font-size:15px;font-weight:700;margin-top:6px;line-height:1.3}
-.alert .d{font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.5}
+.alert .k{display:block;font-size:11.5px;font-weight:700;letter-spacing:.7px;
+  text-transform:uppercase;color:var(--muted)}
+.alert .v{display:block;font-size:15px;font-weight:700;margin-top:6px;line-height:1.3}
+.alert .d{display:block;font-size:12.5px;color:var(--muted);margin-top:5px;line-height:1.5}
 
 /* table */
 .tblwrap{overflow-x:auto;margin-top:16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
@@ -442,6 +458,9 @@ footer{border-top:1px solid var(--line);margin-top:22px;padding-block:24px 36px;
 .gpline{margin-top:16px;padding-top:15px;border-top:1px solid var(--line);
   justify-content:center;font-size:11.5px;letter-spacing:.3px;color:var(--muted)}
 .gpline b{font-weight:600;color:var(--ink);opacity:.72}
+.gpline span{display:inline-flex;align-items:center;gap:8px}
+/* Dark variant on a dark ground; the mark's linework is black otherwise. */
+.gpline img{height:18px;width:auto;opacity:.8}
 footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 </style>
 
@@ -498,7 +517,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
     <span id="foot"></span>
   </div>
   <div class="wrap gpline">
-    <span>A product of <b>Golden Pipit Solutions</b></span>
+    <span><img src="/golden-pipit-bird.png" alt="" width="306" height="256">
+      A product of <b>Golden Pipit Solutions</b></span>
   </div>
 </footer>
 
@@ -759,7 +779,7 @@ function render(){
       <div class="panel"><div class="kick">Stroke development</div>
         <h3>Where the club is gaining time</h3>
         <div class="bars">${strokeBars||'<p class="note">No comparable repeat swims this season.</p>'}</div>
-        <p class="note">Median change across every swimmer who raced the stroke twice. Negative is faster.</p>
+        <p class="note">The typical gain, across every swimmer who has raced that stroke twice.</p>
       </div>
       <div class="panel"><div class="kick">Distance development</div>
         <h3>Sprint, middle and distance</h3>
