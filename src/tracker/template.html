@@ -823,6 +823,26 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 .mtab td.n{font-family:'IBM Plex Mono',ui-monospace,monospace;text-align:right;white-space:nowrap}
 .mtab tr:last-child td{border-bottom:0}
 .mtab .em{font-weight:600;color:var(--ink)}
+/* The filter bar follows you down the list.
+   Reading a gala means scrolling past a lot of names, and by the tenth one you
+   have forgotten which age group you filtered to — or you want your own child
+   back without scrolling to the top. It sticks under the tab bar. */
+.filters{position:sticky;top:var(--stick,0px);z-index:30;background:var(--bg);
+  padding-block:12px;margin-top:12px;
+  /* full-bleed background so rows do not show through at the edges */
+  box-shadow:0 0 0 20px var(--bg), 0 10px 14px -12px rgba(15,28,46,.30)}
+
+/* Same idea inside a meet: the event you are reading stays on screen while you
+   scroll its results, so a time always has a heading above it. */
+.ev > summary{position:sticky;top:var(--stick,0px);z-index:20;background:var(--surface)}
+
+@media (max-width:560px){
+  /* A sticky bar that eats a third of a phone screen is worse than scrolling,
+     so on portrait only the chips stay. */
+  .filters{padding-block:9px}
+  .filters input#fq{display:none}
+}
+
 footer{border-top:1px solid var(--line);margin-top:22px;padding-block:24px 36px;color:var(--muted);font-size:12px}
 .gpline{margin-top:16px;padding-top:15px;border-top:1px solid var(--line);
   justify-content:center;font-size:11.5px;letter-spacing:.3px;color:var(--muted)}
@@ -831,6 +851,14 @@ footer{border-top:1px solid var(--line);margin-top:22px;padding-block:24px 36px;
 /* Dark variant on a dark ground; the mark's linework is black otherwise. */
 .gpline img{height:18px;width:auto;opacity:.8}
 footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.gpcontact{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-left:auto;
+  font-size:12px}
+.gpcontact b{color:var(--ink);font-weight:600}
+.gpcontact a{color:var(--muted);text-decoration:none}
+.gpcontact a:hover{color:var(--electric-deep);text-decoration:underline}
+.gpcontact i{font-style:normal;font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--electric-deep)}
+@media (max-width:560px){ .gpcontact{margin-left:0;gap:8px} }
 </style>
 
 <!-- Leave a note about whatever is on screen. The tracker is raw HTML served
@@ -913,6 +941,12 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
   <div class="wrap gpline">
     <span><img src="/golden-pipit-bird.png" alt="" width="306" height="256">
       A product of <b>Golden Pipit Solutions</b></span>
+    <span class="gpcontact">
+      <b>Njenga</b>
+      <a href="tel:+254726178216">0726&nbsp;178&nbsp;216</a>
+      <a href="mailto:info@goldenpipitrecruiting.com">info@goldenpipitrecruiting.com</a>
+      <i>Fractional CTO services</i>
+    </span>
   </div>
 </footer>
 
@@ -2353,6 +2387,16 @@ function portalBar(me){
   };
   document.addEventListener('mousedown', e => { if (!menu.contains(e.target) && e.target !== evBtn) close(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+
+  // Everything sticky hangs below the portal bar, which is itself sticky and
+  // 56px tall — measured rather than hard-coded, because it is hidden when
+  // signed out and shorter on a phone.
+  const setStick = () => {
+    const h = bar && !bar.hidden ? bar.getBoundingClientRect().height : 0;
+    document.documentElement.style.setProperty('--stick', h + 'px');
+  };
+  setStick();
+  window.addEventListener('resize', setStick);
 
   document.getElementById('pb-out').onclick = async () => {
     try { await fetch('/api/auth/me', {method:'DELETE'}); } catch (e) {}
