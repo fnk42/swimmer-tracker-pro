@@ -881,11 +881,19 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 let DATA = { generated: "", thresholds: { n: 0, fast: 0, improving: 0, stable_hi: 0 }, years: {} };
 const CLS = {fast:'Fast progression', improving:'Improving', stable:'Stable',
              review:'Review', unrated:'Not enough data'};
+// These bands are AGE-RELATIVE. A swimmer is compared with the median rate for
+// their own age band, not with zero — so a 13-year-old getting 8%/yr faster can
+// still land in "Review", because 13-year-olds here average 11%/yr.
+//
+// The descriptions below used to read "slower than they were", which was
+// written when the bands were raw rates and was left behind when they became
+// age-adjusted. It said the opposite of the truth for anyone improving but
+// improving slowly, and Dr Boit rightly called it out.
 const GROUPS = [
-  {k:'fast',      slug:'fast',      t:'🚀 Progressing fast',  d:'biggest gains in the club — keep doing what is working'},
-  {k:'improving', slug:'improving', t:'🟢 Improving',         d:'moving in the right direction'},
-  {k:'stable',    slug:'stable',    t:'🟡 Stable',            d:'holding their level — watch for a plateau'},
-  {k:'review',    slug:'review',    t:'🔴 Review',            d:'slower than they were — investigate before changing anything'},
+  {k:'fast',      slug:'fast',      t:'🚀 Progressing fast',  d:'improving much faster than others their age'},
+  {k:'improving', slug:'improving', t:'🟢 Ahead of their age', d:'improving faster than the typical swimmer in their age group'},
+  {k:'stable',    slug:'stable',    t:'🟡 About the pace',    d:'improving at about the rate their age group does'},
+  {k:'review',    slug:'review',    t:'🔴 Behind their age',  d:'still getting faster, but more slowly than their age group — worth a look'},
   {k:'unrated',   slug:'unrated',   t:'Not enough data',      d:'no repeat swim in the same event and course yet'},
 ];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -984,8 +992,19 @@ function windowRating(lo, hi){
   const idx = careerIndex();
   const base = DATA.years.all?.swimmers || [];
   const out = base.map(s => {
-    const rates = (idx.get(s.name) || []).map(e =>
-      rateJS((e.points||[]).filter(p => p.d >= lo && p.d <= hi))).filter(r => r !== null);
+    // A swimmer counts in a window only if they were a NextGen member during
+    // it — matching analytics.py, which builds each season's swimmer list from
+    // membership-period rows. Without this the browser rated anyone who raced
+    // in 2023 for any club, and reported 24 where the server reported 9.
+    const inWindow = (e) => (e.points || []).filter(p => p.d >= lo && p.d <= hi);
+    // Member by the end of the window. Not "has a timed race after joining":
+    // a swimmer whose only post-join swim was a DQ has a membership row on the
+    // server but no chart point here, and that difference put two swimmers on
+    // one page and not the other.
+    const member = !s.joined || s.joined <= hi;
+    const rates = member
+      ? (idx.get(s.name) || []).map(e => rateJS(inWindow(e))).filter(r => r !== null)
+      : [];
     return { name: s.name, band: s.band, age: s.age, joined: s.joined,
              trend: rates.length ? Math.round(med(rates)*100)/100 : null,
              series: rates.length };
@@ -1023,8 +1042,10 @@ const signed = v => v === null || v === undefined ? '\u2014'
 function vsNorm(adj, band){
   if (adj === null || adj === undefined) return '';
   const a = Math.abs(adj);
-  if (a < 1.5) return `on par for ${band}`;
-  return adj < 0 ? `${a.toFixed(1)} ahead of ${band}` : `${a.toFixed(1)} behind ${band}`;
+  if (a < 1.5) return `about the pace for ${band}`;
+  return adj < 0
+    ? `${a.toFixed(1)} pts faster than ${band} typically improve`
+    : `${a.toFixed(1)} pts slower than ${band} typically improve`;
 }
 
 // ---------------------------------------------------------------------------
@@ -1292,7 +1313,7 @@ function swimmerCard(s){
       </span>
       <!-- No class pill here: the swimmer already sits inside that group's
            drawer, so repeating "Fast progression" on every row said nothing. -->
-      <span class="trend ${trendCls(s.trend)}">${s.trend===null?'—':pctShort(s.trend)+'/yr'}${
+      <span class="trend ${trendCls(s.trend)}">${s.trend===null?'—':pct(s.trend)+' /yr'}${
         s.ageAdj===null||s.ageAdj===undefined?''
           :`<span class="norm">${esc(vsNorm(s.ageAdj, s.band))}</span>`}</span>
     </summary>
@@ -1317,16 +1338,40 @@ function render(){
   // A chosen window re-rates every swimmer in the browser: their rate, their
   // age-band norm and their band. Everything else in the block — meets,
   // podiums, stroke profiles — still comes from the season chip.
+  //
+  // The window DERIVES from the season chip unless it has been set by hand.
+  // Before this, the chip drove the Programme page and the window drove the
+  // Swimmers page, so selecting 2026 showed "13 rated" on one and 93 on the
+  // other with nothing on screen to say they covered different periods. One
+  // scope, stated everywhere.
   let WR = null;
-  if (pwFrom && pwTo) {
-    WR = windowRating(pwFrom + '-01-01', pwTo + '-12-31');
+  {
+    const ys = YEARS.filter(y => y !== 'all').sort();
+    const lo = pwFrom || (year === 'all' ? ys[0] : year);
+    const hi = pwTo   || (year === 'all' ? ys[ys.length - 1] : year);
+    WR = windowRating(lo + '-01-01', hi + '-12-31');
     const m = new Map(WR.rows.map(r => [r.name, r]));
     Y = { ...Y, swimmers: (Y.swimmers || []).map(x => {
       const w = m.get(x.name);
       return w ? { ...x, trend: w.trend, ageNorm: w.ageNorm, ageAdj: w.ageAdj, cls: w.cls } : x;
     }) };
+    // Every count that describes the bands now comes from the same place the
+    // bands do, so no two figures on the page can be drawn from different
+    // periods.
+    const c = { fast: 0, improving: 0, stable: 0, review: 0 };
+    for (const r of WR.rows) if (r.cls in c) c[r.cls] += 1;
+    Y = { ...Y, summary: { ...Y.summary,
+      rated: WR.rated,
+      unrated: (Y.swimmers || []).length - WR.rated,
+      n_fast: c.fast,
+      n_improving: c.fast + c.improving,   // as the spread bar expects
+      n_stable: c.stable,
+      n_review: c.review,
+      window: (pwFrom || pwTo) ? `${lo}\u2013${hi}` : null } };
   }
   const s = Y.summary;
+  // What period every rated figure on this page covers.
+  const RATED_IN = s.window || (year === 'all' ? 'all seasons' : year);
   const bands = ['8 & under','9-10','11-12','13-14','15-17','18 & over'];
 
   // How the Swimmers page is grouped.
@@ -1339,7 +1384,9 @@ function render(){
   // not a usable CSS class.
   // ---- progress window, comparison and leaderboards ----------------------
   const SEASONS = YEARS.filter(y => y !== 'all').sort();
-  const wFrom = pwFrom || SEASONS[0], wTo = pwTo || SEASONS[SEASONS.length-1];
+  // Show the period actually in force, which is the chip's unless overridden.
+  const wFrom = pwFrom || (year === 'all' ? SEASONS[0] : year);
+  const wTo   = pwTo   || (year === 'all' ? SEASONS[SEASONS.length - 1] : year);
   const opts = (sel) => SEASONS.map(y =>
     `<option value="${y}"${y===sel?' selected':''}>${y}</option>`).join('');
   const rateOfWindow = (lo, hi) => {
@@ -1396,7 +1443,7 @@ function render(){
       <span>${fmt(x)}</span></li>`).join('');
     boards = `<div class="lbgrid">
       <div class="lb"><h4>Most improved${wFrom===wTo?` in ${wTo}`:`, ${wFrom}&ndash;${wTo}`}
-        <span>fastest rate of improvement, any age</span></h4>
+        <span>fastest rate of improvement, any age &mdash; ${covered} swimmers qualify</span></h4>
         <ol>${li(raw, x => pctShort(x.trend) + '/yr')}</ol></div>
       <div class="lb"><h4>Most improved for their age
         <span>measured against the norm for their own age band</span></h4>
@@ -1458,11 +1505,14 @@ function render(){
   // swimmer watch lists
   const W = Y.watch || {};
   const wdef = [
-    ['fast','p','Progressing fast','biggest gains in the club'],
+    // Same correction as GROUPS: these buckets key off the age-adjusted band,
+    // so "regressing" never meant the swimmer got slower — it meant they
+    // improved more slowly than their age group does.
+    ['fast','p','Progressing fast','improving much faster than others their age'],
     ['risers','g','Rising from behind','fewer podiums, improving quickly'],
     ['plateau','a','Beginning to plateau','was improving, now flat'],
     ['stalled','a','Strong but stalled','high podium rate, progress has stopped'],
-    ['regressing','r','Regressing','slower than they were'],
+    ['regressing','r','Behind their age','still improving, but slower than their age group'],
   ];
   const watchCards = wdef.filter(([k])=>(W[k]||[]).length).map(([k,c,title,why])=>`
     <div class="wcard ${c}"><h4>${title}</h4><div class="n">${W[k].length}</div>
@@ -1566,8 +1616,10 @@ function render(){
      `Progress has flattened. Look at the swimmer, the age group and the programme
       before changing anything.`],
     ['c', '<span class="cdot" aria-hidden>&#128308;</span>Change', s.n_review, ['regressing'], 'Going backwards',
-     `A sustained pattern says the current approach is not producing development.
-      Agree an intervention, apply it, and measure the response.`],
+     `These swimmers are still getting faster, but more slowly than others of
+      their age. Look at the swimmer, then the programme, before concluding
+      anything &mdash; a young beginner and a 16-year-old are not held to the
+      same rate here.`],
   ].map(([cls, title, n, buckets, cap, what]) => `
     <div class="call ${cls}">
       <div class="call-head"><span class="cnt">${n === undefined ? '—' : n}</span>
@@ -1609,11 +1661,11 @@ function render(){
       <div class="tile"><div class="n">${s.swims}</div><div class="l">Swims</div><div class="d">${s.offclub_swims} at other clubs</div></div>
       <div class="tile"><div class="n g">${s.podiums}</div><div class="l">Podiums</div><div class="d">${s.wins} wins</div></div>
       <div class="tile"><div class="n g">${s.pbs}</div><div class="l">Personal bests</div><div class="d">${year==='all'?'career':'within '+year}</div></div>
-      <div class="tile"><div class="n">${s.rated}</div><div class="l">Rated</div><div class="d">${s.unrated} lack repeat swims</div></div>
+      <div class="tile"><div class="n">${s.rated}</div><div class="l">Rated</div><div class="d">in ${esc(RATED_IN)} · ${s.unrated} lack repeat swims</div></div>
     </div>
 
     <div class="classbar">
-      <h3>Development spread — ${s.rated} rated swimmers</h3>
+      <h3>Development spread — ${s.rated} rated swimmers in ${esc(RATED_IN)}</h3>
       <div class="cbar">${cbar}</div>
       <div class="legend">
         <span><span class="dot d-fast"></span><b>${s.n_fast}</b> fast progression</span>
@@ -1675,8 +1727,14 @@ function render(){
 
   <section class="wrap" id="s3" data-page="swimmers">
     <div class="sec-head"><span class="sec-num">03</span><h2>Which swimmers?</h2></div>
-    <p class="sec-sub">Tap a group, then a swimmer, for their strokes, distances and every
-      event they have raced twice. Or just search a name.</p>
+        <p class="sec-sub">Tap a group, then a swimmer, for their strokes, distances and every event
+      they have raced twice. Or just search a name.</p>
+    <p class="sec-sub" style="margin-top:8px"><strong>How the groups work.</strong> Everyone here
+      is compared with the median improvement rate for their own age band, not with zero. Younger
+      swimmers improve far faster than older ones &mdash; 8&nbsp;&amp;&nbsp;under average 24%/yr,
+      15&ndash;17 average 8%/yr &mdash; so a swimmer can be getting faster and still sit in
+      <em>Behind their age</em>. The rate beside each name is their own, and the line under it
+      says how it compares with their age group.</p>
     <div class="filters">
       <!-- Chips only. The "any to any" pair of dropdowns was three taps to do
            what one chip does, and nobody filters 11 to 13. -->
