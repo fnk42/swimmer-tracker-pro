@@ -782,6 +782,34 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
   .tblwrap::after{content:"";position:absolute;inset-block:0;right:0;width:26px;
     pointer-events:none;background:linear-gradient(to right,transparent,var(--surface))}
 }
+/* Method. Reference material rather than a dashboard, so it reads as prose
+   with the occasional table, not as tiles. */
+.mlink{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--electric-deep);text-decoration:none;white-space:nowrap}
+.mlink:hover{text-decoration:underline}
+.spreadnote{margin-top:8px;font-size:12.8px;color:var(--muted);max-width:68ch}
+.mblock{border-top:1px solid var(--line);padding-top:22px;margin-top:22px}
+.mblock:first-of-type{border-top:0;margin-top:16px;padding-top:0}
+.mblock h3{font-size:17px;margin-bottom:10px}
+.mblock p{font-size:15px;max-width:72ch}
+.mblock p + p{margin-top:11px}
+.mblock ul{margin:11px 0 0;padding-left:20px;font-size:14.8px;line-height:1.6;max-width:72ch}
+.mblock li{margin-bottom:7px}
+.mblock li::marker{color:var(--electric)}
+.mnote{margin-top:15px;padding:13px 15px;border-left:3px solid var(--electric);
+  background:var(--sunken);border-radius:0 10px 10px 0;font-size:14px;max-width:72ch}
+.mnote.warn{border-left-color:var(--gold)}
+.mnote b{color:var(--ink)}
+.formula{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;
+  background:var(--sunken);border:1px solid var(--line);border-radius:10px;padding:13px 15px;
+  margin-top:11px;overflow-x:auto;white-space:pre;color:var(--ink);line-height:1.7}
+.mtab{width:100%;border-collapse:collapse;margin-top:11px;font-size:14px;max-width:560px}
+.mtab th{text-align:left;font-size:10.5px;letter-spacing:.9px;text-transform:uppercase;
+  color:var(--muted);font-weight:700;padding:7px 10px;border-bottom:1px solid var(--line)}
+.mtab td{padding:7px 10px;border-bottom:1px solid var(--line)}
+.mtab td.n{font-family:'IBM Plex Mono',ui-monospace,monospace;text-align:right;white-space:nowrap}
+.mtab tr:last-child td{border-bottom:0}
+.mtab .em{font-weight:600;color:var(--ink)}
 footer{border-top:1px solid var(--line);margin-top:22px;padding-block:24px 36px;color:var(--muted);font-size:12px}
 .gpline{margin-top:16px;padding-top:15px;border-top:1px solid var(--line);
   justify-content:center;font-size:11.5px;letter-spacing:.3px;color:var(--muted)}
@@ -855,6 +883,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
       <a href="#/swimmers"   data-page="swimmers">Swimmers</a>
       <a href="#/meets"      data-page="meets">Meets</a>
       <a href="#/decisions"  data-page="decisions">Actions</a>
+      <a href="#/method"     data-page="method">Method</a>
     </div>
   </nav>
 </header>
@@ -1651,6 +1680,14 @@ function render(){
       <span class="lbar"><i style="width:${x.pct}%"></i></span>
       <span class="lv">${x.pct}% of ${x.v.rated}</span></div>`).join('');
 
+  // The age-band norms, straight from the same computation the bands use, so
+  // the Method page cannot drift from what the app actually did.
+  const normRows = WR ? BAND_ORDER.filter(b => WR.norms[b] !== undefined).map(b => {
+    const n = WR.rows.filter(r => r.band === b && r.trend !== null).length;
+    return `<tr><td class="em">${esc(b)}</td>
+      <td class="n">${pct(WR.norms[b])}</td><td class="n">${n}</td></tr>`;
+  }).join('') : '';
+
   document.getElementById('app').innerHTML = `
   <section class="wrap" id="s1" data-page="programme">
     <div class="sec-head"><span class="sec-num">01</span><h2>Is it working?</h2></div>
@@ -1676,6 +1713,8 @@ function render(){
 
     <div class="classbar">
       <h3>Development spread — ${s.rated} rated swimmers in ${esc(RATED_IN)}</h3>
+      <p class="spreadnote">These groups are relative: the bottom one always holds about three in
+        ten, however well the club is doing. <a href="#/method" class="mlink">How this is worked out &rsaquo;</a></p>
       <div class="cbar">${cbar}</div>
       <div class="legend">
         <span><span class="dot d-fast"></span><b>${s.n_fast}</b> fast progression</span>
@@ -1745,7 +1784,7 @@ function render(){
       than older ones &mdash; 8&nbsp;&amp;&nbsp;under average 24%/yr against 8%/yr for
       15&ndash;17 &mdash; so a swimmer can be getting faster every season and still sit in the
       bottom group. The figure beside each name is their own rate; the line under it says how that
-      compares with their age group.</p>
+      compares with their age group. <a href="#/method" class="mlink">How this is worked out &rsaquo;</a></p>
     <div class="filters">
       <!-- Chips only. The "any to any" pair of dropdowns was three taps to do
            what one chip does, and nobody filters 11 to 13. -->
@@ -1780,6 +1819,185 @@ function render(){
     <div class="sec-head"><span class="sec-num">04</span><h2>Did it show on the day?</h2></div>
     <p class="sec-sub">Did the training show up on the day. Tap a meet for every race in it.</p>
     ${compSeasons}
+  </section>
+
+  <section class="wrap" id="s6" data-page="method">
+    <div class="sec-head"><span class="sec-num">06</span><h2>How these numbers are made</h2></div>
+    <p class="sec-sub">Every figure on the other five pages comes from the rules below. They are
+      written down so you can disagree with them. Where one of these numbers contradicts your own
+      record, your record is right and we want to hear about it.</p>
+
+    <div class="mblock">
+      <h3>Where the results come from</h3>
+      <p>Nothing here is typed in by hand. Results are read straight from the timing system&rsquo;s
+        own export files &mdash; the same files the meet organisers publish from &mdash; and parsed
+        field by field. The archive currently holds
+        <strong>${s.meets} meets</strong> and <strong>${(s.swims||0).toLocaleString()} swims</strong>
+        for <strong>${s.swimmers} swimmers</strong>.</p>
+      <p>Every meet is then reconciled against the official results PDF: if the number of rows we
+        parsed does not match the number the organiser published, the meet is flagged rather than
+        loaded. That is the check that catches a half-downloaded file or a mis-parsed relay.</p>
+    </div>
+
+    <div class="mblock">
+      <h3>Who is counted, and from when</h3>
+      <ul>
+        <li><strong>Club figures start the day a swimmer joins.</strong> Many swimmers raced for
+          another club before arriving. Those races stay on their own chart &mdash; they are part
+          of that child&rsquo;s history &mdash; but they are not counted toward NextGen&rsquo;s
+          totals or medians. Crediting the club with another club&rsquo;s work would flatter us.</li>
+        <li><strong>A swimmer who has left keeps their records and leaves the analytics.</strong>
+          Nothing is deleted. Their past results remain in the archive, and they stop appearing in
+          club figures, group lists and meet drill-downs from the day the club confirms the
+          departure.</li>
+        <li><strong>Races swum for another club while a member still count for the swimmer.</strong>
+          They count toward that child&rsquo;s development and never toward NextGen team totals.</li>
+      </ul>
+    </div>
+
+    <div class="mblock">
+      <h3>How improvement is measured</h3>
+      <p>A swimmer&rsquo;s rate is a straight line fitted through <em>every</em> race they swam in
+        the period, in one event at one pool length, expressed as a percentage of their own average
+        time per year. Negative is faster.</p>
+      <div class="formula">rate  =  least-squares slope through (date, time)
+      &divide; that swimmer&rsquo;s mean time
+      &times; 365.25         &rarr;  % per year, negative = faster
+
+swimmer&rsquo;s figure  =  the median across all their events</div>
+      <p>A line through every race rather than first-versus-last, because one bad morning at either
+        end should not decide the verdict. A median across events rather than a mean, for the same
+        reason.</p>
+      <p>Three guards decide whether a rate is reported at all:</p>
+      <ul>
+        <li><strong>At least ${MIN_RACES} races</strong> in the same event and pool length. Two
+          points make a line through two dots; that is a difference, not a trend.</li>
+        <li><strong>At least ${MIN_SPAN_DAYS} days</strong> between first and last. Below that,
+          annualising is extrapolation rather than measurement.</li>
+        <li><strong>Annualising is capped at ${MAX_EXTRAP}&times;.</strong> Without it a beginner
+          who took 46% off over 168 days was reported as &ldquo;100.2% per year&rdquo;, which is not
+          a number anyone should be shown. Real improvement slows down; a straight stretch to twelve
+          months over-predicts it. The cap errs low, which is the safer direction.</li>
+      </ul>
+      <p>A swimmer who clears none of these appears under <strong>Not enough data</strong>. That is
+        a statement about the number of races, not about the swimmer.</p>
+    </div>
+
+    <div class="mblock">
+      <h3>Why it is a rate per year, and not a total</h3>
+      <p>Because a season and a career have to be comparable. Measured as a total change, four years
+        of growth will always beat one season, so the same swimmer looks transformed on one view and
+        ordinary on another. Per year, the two can sit side by side and a season-to-season
+        comparison means something.</p>
+      <div class="mnote warn"><b>This was a real error, not a hypothetical.</b> Until recently the
+        band thresholds were built from single-season changes and then applied to whole careers.
+        The band meant to hold the top 10% held 46% of the club. Everything on these pages has been
+        rebuilt on annualised rates since.</div>
+    </div>
+
+    <div class="mblock">
+      <h3>How age is taken into account</h3>
+      <p>Young swimmers improve far faster than older ones, for reasons that have nothing to do with
+        coaching. Ranking a 16-year-old against an 8-year-old on raw improvement would tell you only
+        who is younger. So each swimmer is compared with the median rate for their <em>own</em> age
+        band, measured over the same period you are looking at.</p>
+      ${normRows ? `<table class="mtab"><thead><tr><th>Age band</th>
+        <th style="text-align:right">Typical improvement</th>
+        <th style="text-align:right">Swimmers</th></tr></thead><tbody>${normRows}</tbody></table>
+      <p style="margin-top:11px;font-size:13.5px;color:var(--muted)">Measured over
+        ${esc(RATED_IN)}. A band with fewer than ${MIN_BAND_N} rated swimmers borrows the
+        club-wide median instead of making one up from three people.</p>` : ''}
+      <p>So the figure beside a name is that swimmer&rsquo;s own rate, and the line beneath it is
+        the gap to their age band. A 15-year-old improving 8%/yr is doing what 15-year-olds here do.
+        A 7-year-old improving 8%/yr is well short of what 7-year-olds here do. Same number,
+        opposite readings.</p>
+    </div>
+
+    <div class="mblock">
+      <h3>How the groups are set &mdash; and why one is always the smallest</h3>
+      <p><strong>The groups are relative, by construction.</strong> They are not a standard anyone
+        passes or fails. Once every swimmer has a figure for how they compare with their age band,
+        those figures are sorted and cut at fixed positions:</p>
+      <ul>
+        <li>the top <strong>10%</strong> &rarr; improving fastest for their age</li>
+        <li>the next <strong>30%</strong> &rarr; improving faster than their age</li>
+        <li>the middle <strong>30%</strong> &rarr; improving in line with their age</li>
+        <li>the bottom <strong>30%</strong> &rarr; improving slower than their age</li>
+      </ul>
+      <div class="mnote"><b>The bottom group can never be empty.</b> Roughly three in ten rated
+        swimmers land there in every view, in every season, however well the whole club is doing.
+        If every swimmer in the club improved brilliantly, three in ten would still be in the bottom
+        group &mdash; because it means &ldquo;slowest of this set&rdquo;, not &ldquo;failing&rdquo;.
+        Read it as a list of who to look at first, never as a verdict on a child.</div>
+      ${WR ? `<p style="margin-top:15px">For the period on screen (${esc(RATED_IN)}), the cut-lines
+        fall at <strong>${WR.TH.fast.toFixed(1)}</strong>,
+        <strong>${WR.TH.improving.toFixed(1)}</strong> and
+        <strong>${WR.TH.stable_hi.toFixed(1)}</strong> percentage points relative to age band,
+        across ${WR.rated} rated swimmers.</p>` : ''}
+      <p>The consequence worth stating plainly: a swimmer can move between groups without their
+        swimming changing at all, because the other swimmers around them changed. Always read the
+        rate as well as the group.</p>
+    </div>
+
+    <div class="mblock">
+      <h3>Rules that never bend</h3>
+      <ul>
+        <li><strong>25m and 50m are never compared.</strong> They are different events wearing the
+          same name. Every rate, every trend line and every personal best is calculated inside one
+          pool length.</li>
+        <li><strong>A personal best is the fastest ever swum in that event at that pool length</strong>
+          &mdash; across the swimmer&rsquo;s whole recorded history, not just the season on screen.
+          One gold dot per chart.</li>
+        <li><strong>A falling line means a falling time.</strong> On every chart here the fastest
+          swim sits at the bottom, so improvement runs downhill. It is the literal reading: their
+          time is coming down.</li>
+      </ul>
+    </div>
+
+    <div class="mblock">
+      <h3>Things you may notice, and why</h3>
+      <ul>
+        <li><strong>A recent season rates very few swimmers.</strong> A part-finished season has
+          few meets in it, so most swimmers have not yet raced the same event at the same pool
+          length ${MIN_RACES} times. The count on the Programme page says how many qualified, and
+          that number is the honest one.</li>
+        <li><strong>Some meet titles look cut off.</strong> The timing software stores a meet name
+          in 30 characters and discards the rest, so the full title reaches nobody. Where a title
+          has been reconstructed, the meet page shows what the timing system actually recorded
+          underneath it.</li>
+        <li><strong>The same swimmer can sit in different groups on different views.</strong>
+          Changing the period changes both their rate and everyone else&rsquo;s, and the groups are
+          relative to whoever is in the set.</li>
+      </ul>
+    </div>
+
+    <div class="mblock">
+      <h3>Who can see what</h3>
+      <p>Results are the competition record and the organisers published them, so every confirmed
+        parent or guardian sees every NextGen swimmer&rsquo;s races, times and places.</p>
+      <p>The assessment is different. Coaching focus, race consistency, the three- and six-month
+        readings and the group a swimmer sits in are shown to coaches and to that child&rsquo;s own
+        parents or guardians &mdash; and to nobody else. A guardian who has not yet been confirmed
+        sees the club&rsquo;s shape and no child&rsquo;s name at all. This is enforced on the server
+        by a list of which fields belong to which audience, with a test that fails the build if a
+        new field is added without being classified.</p>
+    </div>
+
+    <div class="mblock">
+      <h3>What this cannot tell you</h3>
+      <ul>
+        <li><strong>It does not know about anything outside the pool.</strong> Illness, growth
+          spurts, exams, injury, a change of school, a coach they click with. A number that says
+          &ldquo;look here&rdquo; is the start of a conversation, not the end of one.</li>
+        <li><strong>It cannot separate coaching from growing up.</strong> Children get faster as
+          they grow. The age adjustment reduces this, it does not remove it.</li>
+        <li><strong>It has nothing to say about a swimmer with few races.</strong> Entering more
+          meets is what makes a swimmer measurable, and that is worth knowing in itself.</li>
+        <li><strong>It cannot see races we were never sent.</strong> If a meet is missing from the
+          archive, every figure that depends on it is wrong, and nothing here will tell you so.
+          If something looks absent, it probably is.</li>
+      </ul>
+    </div>
   </section>
 
   <section class="wrap" id="s5" data-page="decisions">
@@ -1848,7 +2066,7 @@ function render(){
 // Routing. Each nav item is its own page, not a scroll position: only the
 // active section is in the document flow, and the hash makes a view linkable
 // and survives a reload or the back button.
-const ALL_PAGES = ['programme','age-groups','swimmers','meets','decisions'];
+const ALL_PAGES = ['programme','age-groups','swimmers','meets','decisions','method'];
 // 'club' sees every swimmer by name; 'family' gets the club-wide picture only,
 // which is aggregate throughout. The server decides which, and sends only what
 // that scope is allowed — this just keeps the nav honest about it.
