@@ -36,3 +36,4 @@ dist-ssr
 # child health conditions). Never commit these.
 migration/02_data.sql
 migration/*.backup
+.vercel
