@@ -39,6 +39,31 @@
    the shell, a nav item and a menu entry — one global rule ends it. */
 [hidden]{display:none !important}
 
+/* ---------------------------------------------------------------------------
+   Untitled UI scale, pulled from the PRO VARIABLES file (LLqegMuqz8a4bxXZfEJtqs).
+   Read directly out of the Buttons page: --spacing-md 8px, --radius-md 8px,
+   --font-size/text-sm 14px on --line-height/text-sm 20px, button md padding
+   14x10, icon 16, shadow-xs 0 1px 2px rgba(0,0,0,.05). The rest of each ramp
+   follows Untitled UI's published steps from those anchors.
+
+   The point is not these particular numbers — it is that there is ONE ramp.
+   What looked unconsidered before was 11.5 / 12.2 / 12.8 / 13.5 / 14.5px type
+   and 6 / 10 / 11 / 13 / 16px gaps picked one at a time. */
+:root{
+  --sp-xxs:2px; --sp-xs:4px; --sp-sm:6px; --sp-md:8px; --sp-lg:12px;
+  --sp-xl:16px; --sp-2xl:20px; --sp-3xl:24px; --sp-4xl:32px; --sp-5xl:40px;
+
+  --fs-xs:12px;  --lh-xs:18px;
+  --fs-sm:14px;  --lh-sm:20px;
+  --fs-md:16px;  --lh-md:24px;
+  --fs-lg:18px;  --lh-lg:28px;
+  --fs-xl:20px;  --lh-xl:30px;
+  --ds-xs:24px;  --dlh-xs:32px;
+  --ds-sm:30px;  --dlh-sm:38px;
+
+  --r-sm:6px; --r-md:8px; --r-lg:10px; --r-xl:12px; --r-2xl:16px;
+}
+
 /* Belt and braces against Android text inflation: with the viewport meta above
    this should never trigger, but a single block wider than the screen brings it
    back and every font size on the page changes independently. */
@@ -187,12 +212,19 @@ details[open] .chev{transform:rotate(45deg)}
 .chip{font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;background:var(--sunken);border:1px solid var(--line)}
 .chip .dot{margin-right:5px}
 .evlist{margin-top:16px}
-.evrow{display:grid;grid-template-columns:1fr auto auto auto;gap:12px;align-items:center;
-  font-size:12.8px;padding:8px 0;border-bottom:1px solid var(--line)}
+/* Event name, course, times and the trend each held their own grid column but
+   nothing stopped them wrapping, so "200 Fly" became "200" / "Fly" and
+   "22.7% faster" split in two. The name may wrap; the rest may not. */
+.evrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;
+  gap:var(--sp-md) var(--sp-lg);align-items:center;
+  font-size:var(--fs-sm);line-height:var(--lh-sm);
+  padding:var(--sp-md) 0;border-bottom:1px solid var(--line)}
+.evrow .e,.evrow .c,.evrow .t,.evrow .trend{white-space:nowrap}
+.evrow .e{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .evrow:last-child{border-bottom:none}
 .evrow .e{font-weight:600}
 .evrow .c{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:5px;background:var(--ice);color:var(--electric-deep)}
-.evrow .t{color:var(--muted);font-size:12.2px}
+.evrow .t{color:var(--muted);font-size:var(--fs-xs);line-height:var(--lh-xs)}
 .offclub{margin-top:14px;font-size:12.5px;color:var(--muted);padding:10px 13px;
   background:var(--sunken);border-radius:10px;border-left:3px solid var(--cyan)}
 .nodata{margin-top:14px;font-size:12.8px;color:var(--muted);font-style:italic}
@@ -407,15 +439,21 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 @media (max-width:640px){
   /* The hero is an introduction, not the page. Cap it so the numbers people
      came for are on screen without scrolling. */
-  .hero{padding-block:18px 0}
-  .hero .logo{height:34px}
-  .hero .display{font-size:clamp(26px,8.4vw,34px)}
-  .hero p{font-size:14px;margin-top:10px}
-  .hero .wrap{max-height:25vh;overflow:hidden}
+  /* The hero used to be capped at 25vh with overflow hidden, which is what hid
+     the season chips — they are the last thing in the wrap, so they were the
+     thing that got cut. Keep it short by making it short, never by clipping. */
+  .hero{padding-block:var(--sp-xl) 0}
+  .hero .logo{height:30px}
+  .hero .display{font-size:clamp(24px,7.6vw,var(--ds-sm))}
+  .hero p{font-size:var(--fs-sm);line-height:var(--lh-sm);margin-top:var(--sp-md)}
+  .hero .wrap{padding-bottom:var(--sp-md)}
 
   /* Seasons scroll sideways rather than wrapping to three rows. */
-  .years{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
-    margin-inline:-20px;padding-inline:20px;padding-block:4px 2px}
+  /* overflow-x:auto does nothing while flex-wrap is still wrap, which is why
+     the years broke onto a second line and then got clipped. */
+  .years{display:flex;flex-wrap:nowrap;gap:var(--sp-sm);overflow-x:auto;
+    scrollbar-width:none;margin-inline:-20px;padding-inline:20px;
+    padding-block:var(--sp-xs) var(--sp-xxs)}
   .years::-webkit-scrollbar{display:none}
   .years .yr{flex:0 0 auto}
 
@@ -426,8 +464,8 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 
   /* Filters stack; the search box gets the full width. */
   .filters{display:grid;gap:10px}
-  .filters .presets{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
-    margin-inline:-20px;padding-inline:20px}
+  .filters .presets{display:flex;flex-wrap:nowrap;gap:var(--sp-sm);overflow-x:auto;
+    scrollbar-width:none;margin-inline:-20px;padding-inline:20px}
   .filters .presets::-webkit-scrollbar{display:none}
   .filters .presets button{flex:0 0 auto;min-height:44px}
   .filters input#fq{width:100%;box-sizing:border-box;min-height:44px}
@@ -444,6 +482,32 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 
   .tblwrap{-webkit-overflow-scrolling:touch}
   .meetbar{grid-template-columns:repeat(2,1fr)}
+
+  /* Meet cards, from the phone screenshots.
+     "NCSA 4th Masters Swimming Cham results >" wrapped across three lines with
+     the pill floating beside it, and the meta line broke mid-phrase into
+     "6 / swimmers - 21 swims - 15 / podiums". Stack the head so the title owns
+     a full line, and let the opener sit under it rather than inline. */
+  .comphead{display:grid;grid-template-columns:minmax(0,1fr);gap:var(--sp-md)}
+  .comphead h3{font-size:var(--fs-md);line-height:var(--lh-md)}
+  .comphead .pill{justify-self:start}
+  .comp .when{font-size:var(--fs-xs);line-height:var(--lh-xs)}
+  .comp .opener{display:block;margin-top:var(--sp-xxs)}
+
+  /* Two columns of stats, not four squeezed ones. */
+  .compstats{grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-lg)}
+  .compstats .k{font-size:10.5px;line-height:1.3}
+  .compstats .v{font-size:var(--fs-md);line-height:var(--lh-md)}
+
+  /* Group drawers and swimmer rows on the ramp. */
+  .sw-name{font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  .sw-meta{font-size:var(--fs-xs);line-height:var(--lh-xs)}
+  details.grp .gt{font-size:var(--fs-sm);line-height:var(--lh-sm)}
+  details.grp .gd{font-size:var(--fs-xs);line-height:var(--lh-xs)}
+  details.grp .gn{font-size:var(--ds-xs)}
+  .trend{font-size:var(--fs-sm)}
+  .sec-sub{font-size:var(--fs-sm);line-height:var(--lh-sm);max-height:none}
+  .sec-head h2{font-size:var(--fs-xl);line-height:var(--lh-xl)}
 }
 
 /* The one element wider than a portrait phone is the age-group table, and it
