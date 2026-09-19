@@ -22,6 +22,7 @@ type Note = {
   is_coach: boolean; created_at: string;
 };
 type Status = "idea" | "planned" | "building" | "shipped" | "parked";
+type Comment = { id: string; author: string; body: string; created_at: string };
 type Coverage = { total: number; with_guardian: number; eligible: number; version: string };
 
 const COLUMNS: { k: Status; t: string; d: string }[] = [
@@ -47,6 +48,12 @@ function Roadmap() {
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
   const [busy, setBusy] = useState(false);
+  // One discussion thread per item: raise it against the thing it is about,
+  // argue it out there, and the reasoning stays attached to the work.
+  const [openThread, setOpenThread] = useState<string | null>(null);
+  const [threads, setThreads] = useState<Record<string, Comment[]>>({});
+  const [reply, setReply] = useState("");
+  const [posting, setPosting] = useState(false);
 
   async function load() {
     const r = await fetch("/api/roadmap");
@@ -83,6 +90,36 @@ function Roadmap() {
       body: JSON.stringify({ id: it.id, status: to }),
     });
     await load();
+  }
+
+  async function loadThread(id: string) {
+    const r = await fetch(`/api/roadmap/comment?itemId=${encodeURIComponent(id)}`);
+    const d = await r.json().catch(() => ({}));
+    setThreads((t) => ({ ...t, [id]: d.comments ?? [] }));
+  }
+
+  async function toggleThread(id: string) {
+    if (openThread === id) { setOpenThread(null); return; }
+    setOpenThread(id);
+    setReply("");
+    if (!threads[id]) await loadThread(id);
+  }
+
+  async function postComment(id: string) {
+    const body = reply.trim();
+    if (!body) return;
+    setPosting(true);
+    try {
+      const r = await fetch("/api/roadmap/comment", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ itemId: id, body }),
+      });
+      if (!r.ok) { toast.error("Could not save that."); return; }
+      setReply("");
+      await loadThread(id);
+      await load();
+    } finally { setPosting(false); }
   }
 
   async function resolve(id: string) {
@@ -171,24 +208,76 @@ function Roadmap() {
                 </div>
                 <ul className="mt-3 divide-y divide-border rounded-xl border border-border bg-card">
                   {rows.map((it) => (
-                    <li key={it.id} className="flex items-start gap-3 p-4">
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[14.5px] font-medium">{it.title}</span>
-                        {it.detail && (
-                          <span className="mt-1 block text-[13px] leading-relaxed text-muted-foreground">
-                            {it.detail}
+                    <li key={it.id} className="p-4">
+                      <div className="flex items-start gap-3">
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[14.5px] font-medium">
+                            {it.status === "shipped" && (
+                              <span className="mr-1.5 text-[color:var(--ng-teal,#0F6E56)]">✓</span>
+                            )}
+                            {it.title}
                           </span>
-                        )}
-                        <span className="mt-1.5 block font-mono text-[11px] text-muted-foreground">
-                          {it.raised_by ? `raised by ${it.raised_by}` : ""}
-                          {it.commit_sha ? ` · ${it.commit_sha}` : ""}
-                          {it.shipped_at ? ` · shipped ${when(it.shipped_at)}` : ""}
+                          {it.detail && (
+                            <span className="mt-1 block text-[13px] leading-relaxed text-muted-foreground">
+                              {it.detail}
+                            </span>
+                          )}
+                          <span className="mt-1.5 block font-mono text-[11px] text-muted-foreground">
+                            {it.raised_by ? `raised by ${it.raised_by}` : ""}
+                            {it.commit_sha ? ` · ${it.commit_sha}` : ""}
+                            {it.shipped_at ? ` · shipped ${when(it.shipped_at)}` : ""}
+                          </span>
                         </span>
-                      </span>
-                      {it.status !== "shipped" && (
-                        <Button size="sm" variant="outline" onClick={() => move(it)}>
-                          → {NEXT[it.status]}
-                        </Button>
+                        <span className="flex flex-none items-center gap-2">
+                          <Button size="sm" variant="ghost" onClick={() => void toggleThread(it.id)}>
+                            💬{it.comments > 0 ? ` ${it.comments}` : ""}
+                          </Button>
+                          {it.status !== "shipped" && (
+                            <Button size="sm" variant="outline" onClick={() => move(it)}>
+                              → {NEXT[it.status]}
+                            </Button>
+                          )}
+                        </span>
+                      </div>
+
+                      {openThread === it.id && (
+                        <div className="mt-3 rounded-lg border border-border bg-secondary/40 p-3">
+                          {(threads[it.id] ?? []).length === 0 ? (
+                            <p className="text-[13px] text-muted-foreground">
+                              Nothing here yet. Say what you want changed and it stays attached
+                              to this item.
+                            </p>
+                          ) : (
+                            <ul className="space-y-3">
+                              {(threads[it.id] ?? []).map((cm) => (
+                                <li key={cm.id} className="text-[13.5px]">
+                                  <span className="font-mono text-[11px] text-muted-foreground">
+                                    {cm.author} · {when(cm.created_at)}
+                                  </span>
+                                  <span className="mt-0.5 block whitespace-pre-wrap leading-relaxed">
+                                    {cm.body}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                            <Textarea
+                              value={reply}
+                              onChange={(e) => setReply(e.target.value)}
+                              rows={2}
+                              placeholder="Suggest a change, or answer a question…"
+                              className="text-[13.5px]"
+                            />
+                            <Button
+                              disabled={!reply.trim() || posting}
+                              onClick={() => void postComment(it.id)}
+                              className="sm:self-end"
+                            >
+                              {posting ? "Sending…" : "Reply"}
+                            </Button>
+                          </div>
+                        </div>
                       )}
                     </li>
                   ))}
