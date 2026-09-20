@@ -456,6 +456,9 @@ details[open] .chev{transform:rotate(45deg)}
 .tw-join{stroke:var(--muted);stroke-width:1.5;stroke-dasharray:3 3;opacity:.65;
   vector-effect:non-scaling-stroke}
 .tw-note{margin:10px 0 0;font-size:11.5px;color:var(--muted);max-width:62ch}
+/* On the dashboard the card is twice 62ch wide, so the note broke to a narrow
+   column with white space beside it. Let it use the width it has. */
+.dmain .tw-note{max-width:none;font-size:12px;line-height:1.6}
 
 /* competition cards */
 .comps{display:grid;gap:12px;margin-top:20px}
@@ -875,6 +878,61 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 .dlead{stroke-width:.8;opacity:.5;stroke-dasharray:2.5 2.5;
   vector-effect:non-scaling-stroke}
 .dchart-big .dc-plot svg{max-height:none}
+
+/* a meet, one column per swim */
+.mscols{display:grid;gap:3px;margin-top:4px}
+.mscol{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(120px,2fr) 66px 62px;
+  gap:11px;align-items:center;padding:5px 2px;border-bottom:1px solid var(--line);
+  font-size:12.5px}
+.mscol:last-child{border-bottom:0}
+.ms-nm{font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+.ms-nm i{font-style:normal;color:var(--muted);font-weight:500;font-size:11px;margin-left:6px}
+.ms-bar{position:relative;height:10px;border-radius:999px;background:var(--ice)}
+.ms-mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--dim);opacity:.55}
+.ms-fill{position:absolute;top:0;bottom:0;border-radius:999px}
+.ms-fill.ok{background:var(--ok)}
+/* var(--dim) on var(--ice) was almost invisible; a slower swim still has to
+   be legible, it just should not shout like a faster one. */
+.ms-fill.off{background:var(--gold,#C2761B);opacity:.55}
+.ms-v{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;font-weight:700;
+  text-align:right}
+.ms-v.good{color:var(--ok-deep,var(--ok))}
+.ms-v.bad{color:var(--muted)}
+.ms-pb{font-size:10.5px;color:var(--electric-deep);font-weight:700;white-space:nowrap}
+
+/* how long each swimmer has actually been racing */
+.twspan{margin:0 0 15px;padding:12px 14px;background:var(--sunken);border:1px solid var(--line);
+  border-radius:11px}
+.tws-row{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:11px;align-items:center;
+  font-size:12px;margin-bottom:7px}
+.tws-nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tws-track{position:relative;height:9px;border-radius:999px;background:var(--ice)}
+.tws-track i{position:absolute;top:0;bottom:0;border-radius:999px}
+.tws-t{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;color:var(--muted);
+  white-space:nowrap}
+.tws-note{margin:2px 0 0;font-size:11.5px;color:var(--muted);line-height:1.5}
+@media (max-width:700px){
+  .mscol{grid-template-columns:minmax(0,1fr) 62px;gap:5px 9px}
+  .ms-bar{grid-column:1 / -1;order:3}
+  .ms-pb{grid-column:1 / -1;order:4}
+  .tws-row{grid-template-columns:minmax(0,1fr);gap:4px}
+  .tws-track{grid-column:1}
+}
+
+/* what window the chart is actually showing */
+.dspan{margin:0 0 11px;font-size:12px;color:var(--muted);
+  font-family:'IBM Plex Mono',ui-monospace,monospace}
+.dspan b{color:var(--ink);font-family:inherit}
+
+/* things the reader needs to know about the slice they just chose */
+.dnote{list-style:none;margin:0 0 13px;padding:0;display:grid;gap:6px}
+.dnote li{position:relative;padding:8px 12px 8px 30px;border-radius:9px;font-size:12px;
+  line-height:1.5;background:var(--sunken);color:var(--body);border:1px solid var(--line)}
+.dnote li::before{position:absolute;left:11px;top:8px;font-size:11px}
+.dn-thin,.dn-span{background:rgba(224,168,0,.10);border-color:rgba(224,168,0,.42)}
+.dn-thin::before,.dn-span::before{content:"\26A0"}
+.dn-unrated::before,.dn-stroke::before,.dn-sex::before{content:"\2139"}
 
 /* said once, above every chart that has a time axis */
 .dc-hint{display:flex;align-items:flex-start;gap:9px;margin:0 0 13px;padding:9px 12px;
@@ -1414,15 +1472,18 @@ let chartMode = 'distance';
 //   progress every line from that swimmer's own first swim, so a 7-year-old
 //            and a 16-year-old can sit on the same axes
 const DASH_MAX = 8;
-// Opens on the band-by-season chart: it is the only one of the five whose
-// lines all span the whole axis, so it is the one that cannot mislead on
-// first look. See the note above dashBandSeasons.
-let dashMode = 'bands';
+// Opens on "since they started", filtered to 11-12: the chart that answers
+// most first questions, on the band with the most swimmers in it.
+//
+// dashBandSeasons and the "same race" view are still built and still correct;
+// they are simply not among the pills on the main chart at the moment. Adding
+// their entries back to DASH_MODES restores them as they were.
+let dashMode = 'since';
 let dashY = 'rate';         // 'rate' | 'time' — y-axis of the band chart
 let dashList = false;       // is the rated-swimmer breakdown open
 let dashStroke = '';        // '' = every stroke
 let dashBench = '50 Free|SCM';
-let dashBand = '';          // '' = every age band
+let dashBand = '11-12';     // '' = every age band
 let dashSex = '';           // '' = both
 let dashEvent = '50 Free|SCM';
 const dashPinned = new Set();
@@ -1741,6 +1802,298 @@ function dashRatedList(rows){
   </div>`;
 }
 
+
+/* ---- how a meet went ---------------------------------------------------
+   A meet is one moment, and a moment has no slope. So this is a column per
+   swim rather than a line: every race at the chosen meet, measured against
+   whichever baseline answers the question being asked. */
+
+let msMeet = '';            // '' = the most recent meet
+let msBase = 'vsPB';        // vsPB | vsAvg | vsBand
+let msBand = '';
+const MS_BASE = {
+  vsPB:   ['their own previous best', 'Against the best that swimmer had ever done in this event before this meet. Blank where it was their first go at it, because there was nothing to beat.'],
+  vsAvg:  ['their own average',       'Against that swimmer’s mean time in this event across every race of it. This is the one that says whether the day was good FOR THEM: a swimmer can miss a best and still swim well above their own average.'],
+  vsBand: ['the median for their age','Against the median time for their age band in that event, taken at the age they were on the day. Blank where too few swimmers of that age have raced it for a median to mean anything.'],
+};
+
+function meetSection(){
+  const MS = DATA.meetSwims;
+  if (!MS) return '';
+  const meets = MS.meets;
+  const mid = msMeet || (meets[0] && meets[0].id) || '';
+  const meet = meets.find(m => m.id === mid) || meets[0];
+  if (!meet) return '';
+  const col = MS.cols.indexOf(msBase);
+
+  let rows = MS.rows.filter(r => r[0] === meet.id && r[col] !== null);
+  const total = MS.rows.filter(r => r[0] === meet.id).length;
+  if (msBand) {
+    rows = rows.filter(r => {
+      const s = (DATA.years.all.swimmers || []).find(x => x.name === MS.swimmers[r[1]]);
+      return s && s.band === msBand;
+    });
+  }
+  rows.sort((a, b) => a[col] - b[col]);
+
+  const [baseName, baseWhy] = MS_BASE[msBase];
+  const missing = total - MS.rows.filter(r => r[0] === meet.id && r[col] !== null).length;
+  const body = !rows.length
+    ? `<p class="nodata">No swim at this meet can be measured against ${baseName}.</p>`
+    : (() => {
+        const mx = Math.max(...rows.map(r => Math.abs(r[col])), 1);
+        return `<div class="mscols">${rows.map(r => {
+          const v = r[col], w = Math.max(1.5, 50 * Math.abs(v) / mx);
+          return `<div class="mscol">
+            <span class="ms-nm">${esc(shortName(MS.swimmers[r[1]]))}<i>${
+              esc(MS.events[r[2]].replace('|', ' '))}</i></span>
+            <span class="ms-bar"><i class="ms-mid"></i><i class="ms-fill ${v < 0 ? 'ok' : 'off'}"
+              style="${v < 0 ? 'right:50%' : 'left:50%'};width:${w.toFixed(1)}%"></i></span>
+            <span class="ms-v ${v < 0 ? 'good' : 'bad'}">${v < 0 ? '−' : '+'}${
+              Math.abs(v).toFixed(1)}%</span>
+            <span class="ms-pb">${r[7] ? 'best ever' : ''}</span>
+          </div>`;
+        }).join('')}</div>`;
+      })();
+
+  const faster = rows.filter(r => r[col] < 0).length;
+  return `
+  <section class="wrap" id="s0b" data-page="dashboard">
+    <div class="sec-head"><span class="sec-num">00</span><h2>How a meet went</h2></div>
+    <p class="sec-sub">One meet at a time. Every race that day as its own column, measured
+      against whichever baseline you pick — so you can ask whether a swim was a best,
+      whether it was good for that swimmer, or whether it was good for their age.</p>
+
+    <div class="dfilters">
+      <label>Meet<select id="msMeet">${meets.map(m => `<option value="${esc(m.id)}"${
+        m.id === meet.id ? ' selected' : ''}>${esc(m.name)} · ${m.date}</option>`).join('')}</select></label>
+      <label>Measured against<select id="msBase">${Object.entries(MS_BASE).map(([k, v]) =>
+        `<option value="${k}"${msBase === k ? ' selected' : ''}>${esc(v[0])}</option>`).join('')}</select></label>
+      <label>Age<select id="msBand"><option value="">All ages</option>
+        ${BAND_ORDER.map(b => `<option value="${esc(b)}"${msBand === b ? ' selected' : ''}
+          >${esc(b)}</option>`).join('')}</select></label>
+    </div>
+
+    <div class="dbody solo"><div class="dmain">
+      <p class="dspan"><b>${esc(meet.name)}</b> · ${meet.date} · ${meet.course} ·
+        ${meet.swimmers} swimmers · ${meet.n} swims</p>
+      ${missing ? `<ul class="dnote"><li class="dn-unrated">${missing} of ${total} swims that
+        day cannot be measured this way and are not shown. ${esc(baseWhy.split('. ').slice(-1)[0])}</li></ul>` : ''}
+      ${rows.length ? `<p class="dc-hint"><span class="dc-arrow">←</span>
+        <b>Bars to the left are faster.</b> ${faster} of ${rows.length} shown swims came in under
+        ${esc(baseName)}; the centre line is that baseline exactly.</p>` : ''}
+      ${body}
+      <p class="tw-note">${esc(baseWhy)} Columns are sorted quickest-first against the baseline,
+        not by finishing position — a swimmer can win a race and still be down on their own
+        average, and can come last and have swum the best race of their life.</p>
+    </div></div>
+  </section>`;
+}
+
+
+/* ---- one swimmer, or two side by side ----------------------------------
+   Follow a swimmer by season, by meet or by stroke, and put a second one
+   beside them.
+
+   The trap here is that two swimmers almost never start at the same time. A
+   chart that silently lines up "race 1" against "race 1" makes a 2023 joiner
+   and a 2026 joiner look like they are being compared, when one of them has
+   had three extra years to improve. So the spans are drawn as bars above the
+   chart before the lines are drawn at all: you see who has been at it longer
+   before you see who has come further. */
+
+let twA = '';               // swimmer names; '' = pick one
+let twB = '';
+let twBy = 'meet';          // meet | season | stroke
+const TW_COLOURS = ['#2C7BE5', '#C2761B'];
+
+function twoSection(){
+  const MS = DATA.meetSwims;
+  if (!MS) return '';
+  const all = (DATA.years.all.swimmers || []).filter(s => (s.events || []).length)
+    .map(s => s.name).sort();
+  const a = twA || all[0] || '';
+  const picked = [a, twB].filter(Boolean);
+  if (!picked.length) return '';
+
+  const meetById = new Map(MS.meets.map(m => [m.id, m]));
+  const series = picked.map((name, i) => {
+    const si = MS.swimmers.indexOf(name);
+    const rows = si < 0 ? [] : MS.rows.filter(r => r[1] === si && r[5] !== null);
+    // Grouped, then averaged within the group: a swimmer who raced six times
+    // at one meet should weigh the same there as one who raced twice.
+    const g = new Map();
+    for (const r of rows) {
+      const m = meetById.get(r[0]);
+      if (!m) continue;
+      const k = twBy === 'season' ? m.date.slice(0, 4)
+              : twBy === 'stroke' ? strokeOf(MS.events[r[2]].split('|')[0])
+              : m.id;
+      const e = g.get(k) || { k, label: twBy === 'meet' ? m.name : k, date: m.date, v: [] };
+      e.v.push(r[5]);
+      if (m.date < e.date) e.date = m.date;
+      g.set(k, e);
+    }
+    const pts = [...g.values()].sort((x, y) =>
+      twBy === 'stroke' ? x.label.localeCompare(y.label) : x.date.localeCompare(y.date));
+    for (const p of pts) p.mean = p.v.reduce((s2, x) => s2 + x, 0) / p.v.length;
+    const dates = rows.map(r => (meetById.get(r[0]) || {}).date).filter(Boolean).sort();
+    return { name, colour: TW_COLOURS[i], pts, races: rows.length,
+             from: dates[0], to: dates[dates.length - 1] };
+  }).filter(s => s.pts.length);
+
+  if (!series.length) return `<p class="nodata">Nothing to plot for this swimmer.</p>`;
+
+  // ---- the span bars, drawn before anything else -------------------------
+  const lo = series.map(s => s.from).sort()[0];
+  const hi = series.map(s => s.to).sort().slice(-1)[0];
+  const t0 = new Date(lo).getTime(), t1 = new Date(hi).getTime() || t0 + 1;
+  const spanBars = `<div class="twspan">${series.map(s => {
+    const l = (new Date(s.from).getTime() - t0) / (t1 - t0 || 1) * 100;
+    const w = (new Date(s.to).getTime() - new Date(s.from).getTime()) / (t1 - t0 || 1) * 100;
+    const months = Math.round((new Date(s.to) - new Date(s.from)) / 2629800000);
+    return `<div class="tws-row">
+      <span class="tws-nm" style="color:${s.colour}">${esc(shortName(s.name))}</span>
+      <span class="tws-track"><i style="left:${l.toFixed(1)}%;width:${Math.max(1.5, w).toFixed(1)}%;
+        background:${s.colour}"></i></span>
+      <span class="tws-t">${s.from.slice(0, 7)} → ${s.to.slice(0, 7)} · ${months} mo ·
+        ${s.races} races</span>
+    </div>`;
+  }).join('')}<p class="tws-note">${series.length > 1
+    ? `These are the windows each swimmer has actually been racing in. Where the bars do not
+       line up, the two have not had the same amount of time to improve, and the lines below
+       should be read with that in mind.`
+    : `The window this swimmer has been racing in.`}</p></div>`;
+
+  // ---- the lines ---------------------------------------------------------
+  // Keyed by meet id, but a meet id is not a label. Carry the readable form
+  // alongside the key: the axis was printing "20250829-ncsa-inter-cl".
+  const catMap = new Map();
+  for (const sr of series) for (const p of sr.pts) {
+    if (!catMap.has(p.k)) catMap.set(p.k, { k: p.k, label: p.label, date: p.date });
+  }
+  const cats = [...catMap.values()].sort((x, y) => twBy === 'stroke'
+    ? x.label.localeCompare(y.label) : x.date.localeCompare(y.date));
+  const catKeys = cats.map(c => c.k);
+  const axisLabel = c => twBy === 'meet' ? c.date.slice(0, 7)
+    : twBy === 'season' ? c.label : c.label;
+  const vals = series.flatMap(s => s.pts.map(p => p.mean));
+  const vlo = Math.min(...vals, 0), vhi = Math.max(...vals, 0);
+  const pad = (vhi - vlo) * 0.14 || 1;
+  const W = 760, H = 300, P = 12, GUT = 120;
+  const X = i => P + (cats.length === 1 ? 0.5 : i / (cats.length - 1)) * (W - P - GUT);
+  const Y = v => P + ((vhi + pad - v) / ((vhi + pad) - (vlo - pad) || 1)) * (H - 2 * P);
+
+  const body = series.map(s => {
+    const pts = s.pts.map(p => ({ i: catKeys.indexOf(p.k), v: p.mean }))
+      .filter(p => p.i >= 0).sort((x, y) => x.i - y.i);
+    let d = '', prev = -2;
+    for (const p of pts) { d += `${p.i === prev + 1 ? 'L' : 'M'}${X(p.i).toFixed(1)} ${Y(p.v).toFixed(1)} `; prev = p.i; }
+    return `<path d="${d.trim()}" fill="none" stroke="${s.colour}" stroke-width="2.6"
+      stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+      ${pts.map(p => `<circle cx="${X(p.i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="3.2"
+        fill="${s.colour}" stroke="var(--surface)" stroke-width="1.4"
+        vector-effect="non-scaling-stroke"/>`).join('')}`;
+  }).join('');
+
+  const { labs, fs } = stackLabels(series.map(s => {
+    const last = s.pts[s.pts.length - 1];
+    return { name: shortName(s.name), colour: s.colour,
+             y: Y(last.mean), ty: Y(last.mean), x: X(catKeys.indexOf(last.k)) };
+  }), H, 15);
+
+  const others = all.filter(n => n !== a);
+  return `
+  <section class="wrap" id="s0c" data-page="dashboard">
+    <div class="sec-head"><span class="sec-num">00</span><h2>Follow a swimmer</h2></div>
+    <p class="sec-sub">One swimmer through their seasons, their meets or their strokes, with a
+      second alongside if you want the comparison. How long each has been racing is shown first,
+      because that is what makes two lines comparable or not.</p>
+
+    <div class="dfilters">
+      <label>Swimmer<select id="twA">${all.map(n =>
+        `<option value="${esc(n)}"${n === a ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select></label>
+      <label>Compare with<select id="twB"><option value="">— nobody —</option>
+        ${others.map(n => `<option value="${esc(n)}"${n === twB ? ' selected' : ''}
+          >${esc(n)}</option>`).join('')}</select></label>
+      <label>Broken down by<select id="twBy">
+        <option value="meet"${twBy === 'meet' ? ' selected' : ''}>Meet</option>
+        <option value="season"${twBy === 'season' ? ' selected' : ''}>Season</option>
+        <option value="stroke"${twBy === 'stroke' ? ' selected' : ''}>Stroke</option>
+      </select></label>
+    </div>
+
+    <div class="dbody solo"><div class="dmain">
+      ${spanBars}
+      ${DOWN_IS_FASTER}
+      <div class="dchart dchart-big">
+        <div class="dc-y"><span>+${(vhi + pad).toFixed(0)}%<i>slower</i></span>
+          <span>${(vlo - pad).toFixed(0)}%<i>faster</i></span></div>
+        <div class="dc-plot"><svg viewBox="0 0 ${W} ${H}">
+          ${cats.map((_, i) => `<line x1="${X(i).toFixed(1)}" y1="${P}" x2="${X(i).toFixed(1)}"
+            y2="${H - P}" class="tw-grid"/>`).join('')}
+          <line x1="${P}" y1="${Y(0).toFixed(1)}" x2="${(W - GUT).toFixed(1)}"
+            y2="${Y(0).toFixed(1)}" class="dz"/>
+          ${body}
+          ${labs.map(l => `<line x1="${(l.x + 2).toFixed(1)}" y1="${l.y.toFixed(1)}"
+              x2="${(W - GUT + 3).toFixed(1)}" y2="${l.ty.toFixed(1)}" class="dlead"
+              stroke="${l.colour}"/>
+            <text class="dlab" x="${(W - GUT + 6).toFixed(1)}" y="${(l.ty + 3).toFixed(1)}"
+              style="font-size:${fs.toFixed(1)}px" fill="${l.colour}">${esc(l.name)}</text>`).join('')}
+        </svg>
+        <div class="dc-x" style="padding-right:${(GUT / W * 100).toFixed(1)}%">
+          <span>${esc(axisLabel(cats[0]))}</span>
+          <span>${esc(axisLabel(cats[cats.length - 1]))}</span></div></div>
+      </div>
+      <p class="tw-note">Each point is that swimmer’s average across the
+        ${twBy === 'meet' ? 'races they swam at that meet' : twBy === 'season' ? 'season'
+          : 'stroke'}, measured against their own average in each event — so a sprinter and a
+        distance swimmer can share the axis. Zero is that swimmer’s own normal;
+        below the dashed line is a better-than-usual ${twBy === 'meet' ? 'day' : twBy}.
+        ${series.length > 1 ? 'The two lines are each measured against their own normal, never against each other, so neither is scored on being the quicker swimmer.' : ''}</p>
+    </div></div>
+  </section>`;
+}
+
+/** What a reader needs to know about the selection they have just made, so a
+    thin or lopsided slice is never read as if it were the whole club.
+
+    Each of these fired on a real combination of the filters during testing;
+    none of them is hypothetical. */
+function dashNotices(rows, all, opts){
+  const out = [];
+  const n = rows.length;
+  if (n && n < 5) out.push(['thin', `Only ${n} swimmer${n === 1 ? '' : 's'} in this selection.
+    A median of ${n} is one or two children — read the lines, not the middle one.`]);
+  else if (n && n < 10) out.push(['thin', `${n} swimmers in this selection. The median moves a
+    long way when any one of them has a good or bad meet.`]);
+
+  const unrated = all.length - n;
+  if (unrated > 0 && n) out.push(['unrated', `${unrated} more swimmer${unrated === 1 ? '' : 's'}
+    ${unrated === 1 ? 'is' : 'are'} in this selection but ${unrated === 1 ? 'is' : 'are'} not
+    rated: ${MIN_RACES} races at least ${MIN_SPAN_DAYS} days apart are needed before a rate
+    means anything. ${unrated === 1 ? 'It is' : 'They are'} in the club counts and not in the
+    chart.`]);
+
+  if (opts.stroke) out.push(['stroke', `Filtered to ${opts.stroke}. Each swimmer is drawn on
+    their most-raced ${opts.stroke} event, so different swimmers may be on different
+    distances — the lines compare how far each has come, not who is quickest.`]);
+
+  if (opts.sex) out.push(['sex', `${opts.sex === 'F' ? 'Girls' : 'Boys'} only. The band median
+    drawn here is the median of this filtered group, not of the whole age band.`]);
+
+  // A rate covering months, stretched to a year, is the single most misleading
+  // number this app can produce. Say so when the slice is full of them.
+  const short = rows.filter(r => r.spanDays !== undefined && r.spanDays < 180).length;
+  if (n && short / n > 0.4) out.push(['span', `${short} of ${n} of these swimmers have been
+    racing this event for under six months. Their per-year figure is a short span stretched
+    out, and the stretch is capped at ${MAX_EXTRAP}x for exactly that reason.`]);
+
+  if (!out.length) return '';
+  return `<ul class="dnote">${out.map(([k, t]) =>
+    `<li class="dn-${k}">${t.replace(/\s+/g, ' ')}</li>`).join('')}</ul>`;
+}
+
 /** A swimmer's curve, rebased so it starts at their own first race. */
 function sinceCurve(idx, name){
   let evs = idx.get(name) || [];
@@ -1750,6 +2103,9 @@ function sinceCurve(idx, name){
   const p0 = new Date(pick.points[0].d + 'T00:00:00').getTime(), base = pick.points[0].t;
   return {
     name, event: pick.event + ' ' + pick.course,
+    dates: [pick.points[0].d, pick.points[pick.points.length - 1].d],
+    spanDays: (new Date(pick.points[pick.points.length - 1].d) -
+               new Date(pick.points[0].d)) / 86400000,
     pts: pick.points.map(p => ({
       m: (new Date(p.d + 'T00:00:00').getTime() - p0) / 2629800000,
       v: (p.t - base) / base * 100,
@@ -1850,11 +2206,17 @@ function dashSinceStart(WR){
       && (!dashSex || ((DATA.years.all.swimmers || [])
           .find(x => x.name === r.name) || {}).sex === dashSex));
     const lines = names.map(r => sinceCurve(idx, r.name)).filter(Boolean);
-    return { b, lines, n: lines.length };
+    return { b, lines, n: lines.length, all: names.length };
   }).filter(p => p.n > 0);
 
-  if (!panels.length) return '<p class="nodata">No rated swimmers match these filters.</p>';
-  return panels.length === 1 ? dashSinceSolo(panels[0]) : dashSinceGrid(panels);
+  if (!panels.length) return `<p class="nodata">No rated swimmers match these filters.${
+    dashStroke ? ` No one in this selection has raced ${esc(dashStroke)} often enough to rate.`
+               : ''}</p>`;
+  const notice = dashNotices(
+    panels.flatMap(p => p.lines),
+    { length: panels.reduce((a, p) => a + p.all, 0) },
+    { stroke: dashStroke, sex: dashSex });
+  return notice + (panels.length === 1 ? dashSinceSolo(panels[0]) : dashSinceGrid(panels));
 }
 
 /** One band, full width, every line carrying its swimmer's name. */
@@ -1895,7 +2257,11 @@ function dashSinceSolo(P1){
     `<line x1="${P}" y1="${(P + f * (H - 2 * P)).toFixed(1)}" x2="${(W - GUT).toFixed(1)}"
       y2="${(P + f * (H - 2 * P)).toFixed(1)}" class="tw-grid"/>`).join('');
 
+  const dates = lines.flatMap(L => L.dates || []).sort();
   return `${DOWN_IS_FASTER}
+    ${dates.length ? `<p class="dspan"><b>${esc(P1.b)}</b> · ${dates[0].slice(0, 4)} to
+      ${dates[dates.length - 1].slice(0, 4)} · ${lines.length} swimmers ·
+      first race to latest, ${Math.round(mx)} months at the widest</p>` : ''}
     <div class="dchart dchart-big">
       <div class="dc-y"><span>${pctShort(hi)}<i>slower</i></span>
         <span>${pctShort(lo)}<i>faster</i></span></div>
@@ -2042,7 +2408,12 @@ function dashLineChart(WR, normalised){
   }), H, 15);
 
   const fmt = v => normalised ? (v > 0 ? '+' : '') + v.toFixed(0) + '%' : clockAxis(v);
+  const ds = all.map(p => p.d).sort();
   return `${DOWN_IS_FASTER}
+    <p class="dspan">${ds[0].slice(0, 4)} to ${ds[ds.length - 1].slice(0, 4)} ·
+      ${series.length} swimmer${series.length === 1 ? '' : 's'} ·
+      ${normalised ? 'each from their own first race in the window'
+                   : esc(dashEvent.replace('|', ' · '))}</p>
     <div class="dchart dchart-big">
       <div class="dc-y"><span>${fmt(hiY)}<i>slower</i></span>
         <span>${fmt(loY)}<i>faster</i></span></div>
@@ -2740,19 +3111,17 @@ function render(){
     </div>`;
 
   const DASH_MODES = [
-    ['bands',    'Age bands by season', 'Each band across the seasons — every line spans the whole axis'],
-    ['since',    'Since they started',  'Everyone aligned on their own first race, one panel per band'],
-    ['ages',     'Bands right now',     'This period only, as bars'],
-    ['event',    'Same race',           'Real times, one event, swimmers side by side'],
-    ['progress', 'Picked swimmers',     'Chosen swimmers from their own first swim'],
+    ['since',    'Since they started', 'Everyone aligned on their own first race, named'],
+    ['ages',     'Bands right now',    'This period only, as bars'],
+    ['progress', 'Picked swimmers',    'Chosen swimmers from their own first swim'],
   ];
 
   document.getElementById('app').innerHTML = `
   <section class="wrap" id="s0" data-page="dashboard">
     <div class="sec-head"><span class="sec-num">00</span><h2>Where the club stands</h2></div>
-    <p class="sec-sub">Five ways of asking the same question. The first two hold the age bands
-      still and let the children move through them, which is the only way seasons compare
-      honestly; the last two follow named swimmers.</p>
+    <p class="sec-sub">Three ways of asking the same question. It opens on every 11-12
+      swimmer set against the median for their age; change the age band, or switch to picking
+      swimmers yourself.</p>
 
     <div class="dmode dmode-wide" role="group" aria-label="Which chart">
       ${DASH_MODES.map(([k, lab, why]) => `<button type="button" data-dm="${k}"
@@ -2815,6 +3184,8 @@ function render(){
     ${WHY_MEDIAN}
     ${dashList ? dashRatedList(dashRated) : ''}
   </section>
+  ${meetSection()}
+  ${twoSection()}
 
   <section class="wrap" id="s1" data-page="programme">
     <div class="sec-head"><span class="sec-num">01</span><h2>Is it working?</h2></div>
@@ -3206,6 +3577,12 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
   });
   const dr = document.getElementById('dRated');
   if (dr) dr.onclick = () => { dashList = !dashList; render(); };
+  bind('msMeet', e => { msMeet = e.target.value; render(); });
+  bind('msBase', e => { msBase = e.target.value; render(); });
+  bind('msBand', e => { msBand = e.target.value; render(); });
+  bind('twA',    e => { twA = e.target.value; if (twB === twA) twB = ''; render(); });
+  bind('twB',    e => { twB = e.target.value; render(); });
+  bind('twBy',   e => { twBy = e.target.value; render(); });
 
   document.querySelectorAll('.dmode button').forEach(b => b.onclick = () => {
     dashMode = b.dataset.dm; render();

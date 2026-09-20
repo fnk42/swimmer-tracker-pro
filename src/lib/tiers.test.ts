@@ -60,9 +60,8 @@ describe("every analytics field is classified", () => {
   });
 
   test("top-level block has no unclassified section", () => {
-    const unknown = Object.keys(D).filter(
-      (k) => !(TOP_LEVEL.tier1 as readonly string[]).includes(k),
-    );
+    const classifiedTop = [...TOP_LEVEL.tier1, ...TOP_LEVEL.named] as readonly string[];
+    const unknown = Object.keys(D).filter((k) => !classifiedTop.includes(k));
     expect(unknown).toEqual([]);
   });
 
@@ -71,6 +70,21 @@ describe("every analytics field is classified", () => {
     for (const scope of ["community", "pending"] as const) {
       expect(Object.keys(shapeAnalytics(withLeak, scope))).not.toContain("secretRoster");
     }
+  });
+
+  test("pending never receives the meet-by-meet name list", () => {
+    const shaped = shapeAnalytics(D, "pending") as Rec;
+    const ms = shaped.meetSwims as Rec | undefined;
+    expect(ms).toBeDefined();
+    expect(ms!.swimmers).toEqual([]);
+    expect((ms!.rows as unknown[]).length).toBeGreaterThan(0);
+    const json = JSON.stringify(shaped);
+    for (const s of swimmers.slice(0, 40)) expect(json).not.toContain(s.name as string);
+  });
+
+  test("community does receive it, names and all", () => {
+    const ms = (shapeAnalytics(D, "community") as Rec).meetSwims as Rec;
+    expect((ms.swimmers as unknown[]).length).toBeGreaterThan(0);
   });
 
   test("bandSeasons names nobody", () => {

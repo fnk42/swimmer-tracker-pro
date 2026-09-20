@@ -122,6 +122,11 @@ export const YEAR_BLOCKS = {
 // be classified deliberately before any viewer can receive it.
 export const TOP_LEVEL = {
   tier1: ["generated", "thresholds", "bandSeasons", "years"],
+  // Carries a list of swimmer names, so unlike the rest of the top level it
+  // cannot pass through untouched: `pending` gets the block with the names
+  // emptied, which leaves the meets and the per-swim columns intact but
+  // unattributable.
+  named: ["meetSwims"],
 } as const;
 
 export type Scope =
@@ -132,7 +137,7 @@ export type Scope =
 const set = (xs: readonly string[]) => new Set<string>(xs);
 const SW_TIER1 = set(SWIMMER_FIELDS.tier1);
 const YR_TIER1 = set(YEAR_BLOCKS.tier1);
-const TOP_TIER1 = set(TOP_LEVEL.tier1);
+const TOP_TIER1 = set([...TOP_LEVEL.tier1, ...TOP_LEVEL.named]);
 
 type Rec = Record<string, unknown>;
 
@@ -176,7 +181,14 @@ export function shapeAnalytics(data: Rec, scope: Scope): Rec {
 
   // Picked, not spread: a top-level block nobody has classified is dropped
   // here rather than forwarded to a parent by default.
-  return { ...pick(data, TOP_TIER1), scope, years: shaped };
+  const top = pick(data, TOP_TIER1);
+  if (scope === "pending") {
+    for (const k of TOP_LEVEL.named) {
+      const b = top[k] as Rec | undefined;
+      if (b && Array.isArray(b.swimmers)) top[k] = { ...b, swimmers: [] };
+    }
+  }
+  return { ...top, scope, years: shaped };
 }
 
 /**
