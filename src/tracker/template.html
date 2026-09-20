@@ -881,7 +881,8 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 
 /* a meet, one column per swim */
 .mscols{display:grid;gap:3px;margin-top:4px}
-.mscol{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(120px,2fr) 66px 62px;
+/* the last column has to hold "PB, beaten since" without clipping it */
+.mscol{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(110px,2fr) 66px 104px;
   gap:11px;align-items:center;padding:5px 2px;border-bottom:1px solid var(--line);
   font-size:12.5px}
 .mscol:last-child{border-bottom:0}
@@ -899,7 +900,10 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
   text-align:right}
 .ms-v.good{color:var(--ok-deep,var(--ok))}
 .ms-v.bad{color:var(--muted)}
-.ms-pb{font-size:10.5px;color:var(--electric-deep);font-weight:700;white-space:nowrap}
+.ms-pb{font-size:10.5px;white-space:nowrap}
+.ms-best{color:var(--electric-deep);font-weight:700}
+.ms-new{color:var(--ok);font-weight:700}
+.ms-first{color:var(--muted);font-style:normal;font-weight:500}
 
 /* how long each swimmer has actually been racing */
 .twspan{margin:0 0 15px;padding:12px 14px;background:var(--sunken);border:1px solid var(--line);
@@ -1851,12 +1855,20 @@ function meetSection(){
               style="${v < 0 ? 'right:50%' : 'left:50%'};width:${w.toFixed(1)}%"></i></span>
             <span class="ms-v ${v < 0 ? 'good' : 'bad'}">${v < 0 ? '−' : '+'}${
               Math.abs(v).toFixed(1)}%</span>
-            <span class="ms-pb">${r[7] ? 'best ever' : ''}</span>
+            <span class="ms-pb">${
+              // A first outing is trivially the best you have ever done, which
+              // is why it must be called what it is and never "best ever".
+              r[7] ? '<i class="ms-first">first go</i>'
+              : r[8] && r[9] ? '<b class="ms-best">best ever</b>'
+              : r[8] ? '<b class="ms-new">PB, beaten since</b>' : ''}</span>
           </div>`;
         }).join('')}</div>`;
       })();
 
   const faster = rows.filter(r => r[col] < 0).length;
+  const firsts = rows.filter(r => r[7]).length;
+  const bests = rows.filter(r => r[8] && r[9]).length;
+  const pbs = rows.filter(r => r[8] && !r[9]).length;
   return `
   <section class="wrap" id="s0b" data-page="dashboard">
     <div class="sec-head"><span class="sec-num">00</span><h2>How a meet went</h2></div>
@@ -1881,11 +1893,21 @@ function meetSection(){
         day cannot be measured this way and are not shown. ${esc(baseWhy.split('. ').slice(-1)[0])}</li></ul>` : ''}
       ${rows.length ? `<p class="dc-hint"><span class="dc-arrow">←</span>
         <b>Bars to the left are faster.</b> ${faster} of ${rows.length} shown swims came in under
-        ${esc(baseName)}; the centre line is that baseline exactly.</p>` : ''}
+        ${esc(baseName)}; the centre line is that baseline exactly.
+        ${bests} beat a personal best that still stands${
+          pbs ? `, ${pbs} set one that has been beaten again since` : ''}${
+          firsts ? `, and ${firsts} were a first go at the event` : ''}.</p>` : ''}
       ${body}
       <p class="tw-note">${esc(baseWhy)} Columns are sorted quickest-first against the baseline,
         not by finishing position — a swimmer can win a race and still be down on their own
         average, and can come last and have swum the best race of their life.</p>
+      <p class="tw-note"><b>best ever</b> means they beat their own best that day and no swim
+        since has beaten it — it is still the quickest they have ever gone in the event.
+        <b>PB, beaten since</b> means they beat their best on the day and have gone faster again
+        in the time since. <i>first go</i> is their first ever race at the event: there was
+        nothing to beat, so it is a starting point rather than an achievement, and it is never
+        called a best. A blank is a race that did not beat what they already had, which for a
+        swimmer racing often is most of them.</p>
     </div></div>
   </section>`;
 }
