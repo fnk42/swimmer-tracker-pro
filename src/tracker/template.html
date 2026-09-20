@@ -2776,11 +2776,18 @@ function render(){
   // not a usable CSS class.
   // ---- progress window, comparison and leaderboards ----------------------
   const SEASONS = YEARS.filter(y => y !== 'all').sort();
-  // Show the period actually in force, which is the chip's unless overridden.
-  const wFrom = pwFrom || (year === 'all' ? SEASONS[0] : year);
+  const ratedIn = y => ((DATA.years[y] || {}).summary || {}).rated || 0;
+  // The club's first season holds two races by one swimmer, so nobody can have
+  // a rate inside it and a comparison starting there is empty by construction.
+  // Default to the first season that actually has rated swimmers.
+  const firstUsable = SEASONS.find(y => ratedIn(y) > 0) || SEASONS[0];
+  const wFrom = pwFrom || (year === 'all' ? firstUsable : year);
   const wTo   = pwTo   || (year === 'all' ? SEASONS[SEASONS.length - 1] : year);
+  // The count rides on the option, so a season that cannot be compared says so
+  // before it is picked rather than after.
   const opts = (sel) => SEASONS.map(y =>
-    `<option value="${y}"${y===sel?' selected':''}>${y}</option>`).join('');
+    `<option value="${y}"${y===sel?' selected':''}>${y} \u00b7 ${
+      ratedIn(y) ? ratedIn(y) + ' rated' : 'too few races'}</option>`).join('');
   const rateOfWindow = (lo, hi) => {
     const r = windowRating(lo + '-01-01', hi + '-12-31');
     return new Map(r.rows.map(x => [x.name, x]));
@@ -2796,7 +2803,9 @@ function render(){
       ${SEASONS.length > 1 ? `<button id="pwCmp" type="button"
         aria-pressed="${pwCompare}">Compare ${wFrom} vs ${wTo}</button>` : ''}
       <span class="cov"><b>${covered}</b> of ${(Y.swimmers||[]).length} swimmers have
-        enough races in this window</span>
+        enough races across ${wFrom === wTo ? wFrom : `${wFrom}\u2013${wTo}`} to be
+        rated${SEASONS.length > 1 ? `. Comparing the two seasons is a stricter test: a swimmer
+        needs enough races <em>inside each one</em>` : ''}</span>
     </div>`;
 
   // Season vs season. Coach-only: this ranks children against each other,
@@ -2818,9 +2827,28 @@ function render(){
         <td class="dir ${r.d < -1 ? 'up' : r.d > 1 ? 'down' : 'flat'}">${
           r.d < -1 ? '&uarr; picking up' : r.d > 1 ? '&darr; slowing' : '&rarr; steady'}</td>
       </tr>`).join('')}</tbody></table>
-      <p class="cmpnote">&minus; is faster. Only swimmers with three or more races
-        in the same event and course, in both seasons, can be compared.</p></div>`
-      : `<p class="nodata">No swimmer has enough races in both ${wFrom} and ${wTo}.</p>`;
+      <p class="cmpnote">&minus; is faster. Only swimmers with ${MIN_RACES} or more races
+        in the same event and course, at least ${MIN_SPAN_DAYS} days apart, <em>inside each
+        season</em>, can be compared. That is a stricter test than the rate above, which may
+        use races from any season in the window.</p></div>`
+      : (() => {
+          // Say which season is the problem. "No swimmer has enough races in
+          // both" reads as a contradiction beside a count of 114 rated.
+          const thin = [wFrom, wTo].filter(y => ratedIn(y) === 0);
+          const why = thin.length
+            ? `${thin.join(' and ')} ${thin.length > 1 ? 'hold' : 'holds'} too few races for
+               anyone to be rated inside ${thin.length > 1 ? 'them' : 'it'} \u2014 ${
+               thin.map(y => {
+                 const q = DATA.years[y].summary || {};
+                 return `${y} has ${q.swims || 0} race${q.swims === 1 ? '' : 's'} by ${
+                   q.swimmers || 0} swimmer${q.swimmers === 1 ? '' : 's'}`;
+               }).join(', ')}.`
+            : `${ratedIn(wFrom)} swimmers are rated inside ${wFrom} and ${ratedIn(wTo)} inside
+               ${wTo}, but no one swimmer appears in both with the same event and course.`;
+          return `<p class="nodata">Nothing to compare between ${wFrom} and ${wTo}. ${why}
+            The rate shown elsewhere on this page measures across the whole window instead, which
+            is why ${covered} swimmers are rated there.</p>`;
+        })();
   }
 
   // Two leaderboards: raw rate, and rate against the swimmer's own age band.
@@ -3611,14 +3639,21 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
   if (dpc) dpc.onclick = () => { dashPinned.clear(); render(); };
 
   const pwF = document.getElementById('pwFrom'), pwT = document.getElementById('pwTo');
+  // Both ends start null, meaning "whatever the season chip implies". The old
+  // guard read a null far end as an inverted window and collapsed the other
+  // end onto it, so picking a From season silently set To to the same year and
+  // the comparison had nothing to compare. Take the value off the control the
+  // reader can see instead, and only clamp when the window is really inverted.
   if (pwF) pwF.onchange = e => {
     pwFrom = e.target.value;
-    if (!pwTo || pwTo < pwFrom) pwTo = pwFrom;   // never an inverted window
+    if (!pwTo) pwTo = pwT ? pwT.value : pwFrom;
+    if (pwTo < pwFrom) pwTo = pwFrom;
     render();
   };
   if (pwT) pwT.onchange = e => {
     pwTo = e.target.value;
-    if (!pwFrom || pwFrom > pwTo) pwFrom = pwTo;
+    if (!pwFrom) pwFrom = pwF ? pwF.value : pwTo;
+    if (pwFrom > pwTo) pwFrom = pwTo;
     render();
   };
   const pwC = document.getElementById('pwCmp');
