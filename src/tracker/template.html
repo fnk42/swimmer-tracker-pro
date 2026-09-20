@@ -876,6 +876,21 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
   vector-effect:non-scaling-stroke}
 .dchart-big .dc-plot svg{max-height:none}
 
+/* said once, above every chart that has a time axis */
+.dc-hint{display:flex;align-items:flex-start;gap:9px;margin:0 0 13px;padding:9px 12px;
+  background:var(--ice);border-radius:10px;font-size:12.5px;color:var(--body);line-height:1.45}
+.dc-hint b{color:var(--ink)}
+.dc-arrow{flex:none;font-size:15px;line-height:1.1;color:var(--ok);font-weight:700}
+
+/* the total-change column down the right of the gutter */
+.dlab-tot{font-weight:700;opacity:.85}
+.dlab-ev{opacity:.6;font-size:.82em}
+
+/* why a median and not an average */
+.dwhy{margin:12px 0 0;padding:11px 14px;border:1px dashed var(--line);border-radius:11px;
+  font-size:12px;color:var(--muted);line-height:1.55}
+.dwhy b{color:var(--ink);font-weight:700}
+
 /* the rated-swimmer tile, opened */
 .dtile-btn{display:block;width:100%;text-align:left;appearance:none;font:inherit;cursor:pointer}
 .dtile-btn:hover{border-color:var(--electric-deep)}
@@ -1405,6 +1420,7 @@ const DASH_MAX = 8;
 let dashMode = 'bands';
 let dashY = 'rate';         // 'rate' | 'time' — y-axis of the band chart
 let dashList = false;       // is the rated-swimmer breakdown open
+let dashStroke = '';        // '' = every stroke
 let dashBench = '50 Free|SCM';
 let dashBand = '';          // '' = every age band
 let dashSex = '';           // '' = both
@@ -1565,6 +1581,9 @@ function dashPool(WR){
     if (dashMode === 'event') {
       const evs = idx.get(r.name) || [];
       if (!evs.some(e => e.event === wantEv && e.course === wantCo)) return false;
+    } else if (dashStroke) {
+      const evs = idx.get(r.name) || [];
+      if (!evs.some(e => strokeOf(e.event) === dashStroke)) return false;
     }
     return true;
   }).sort((a, b) => a.trend - b.trend);
@@ -1724,7 +1743,8 @@ function dashRatedList(rows){
 
 /** A swimmer's curve, rebased so it starts at their own first race. */
 function sinceCurve(idx, name){
-  const evs = idx.get(name) || [];
+  let evs = idx.get(name) || [];
+  if (dashStroke) evs = evs.filter(e => strokeOf(e.event) === dashStroke);
   const pick = evs.slice().sort((a, b) => b.swims - a.swims)[0];
   if (!pick || (pick.points || []).length < 2) return null;
   const p0 = new Date(pick.points[0].d + 'T00:00:00').getTime(), base = pick.points[0].t;
@@ -1761,12 +1781,60 @@ function medianCurve(lines, mx, steps){
   return out;
 }
 
-/** "Musyoka, Loki J" -> "Musyoka L" — short enough to sit beside a line end. */
+/** "Waweru, Makena" -> "W Makena" — short enough to sit beside a line end,
+    and the way the club refers to them. */
 function shortName(n){
   const [sur, rest] = n.split(',');
-  const f = (rest || '').trim()[0];
-  return f ? `${sur.trim()} ${f}` : sur.trim();
+  const first = (rest || '').trim().split(/\s+/)[0] || '';
+  const i = (sur || '').trim()[0] || '';
+  return first ? `${i} ${first}` : (sur || n).trim();
 }
+
+/** Total change from the first race in view to the last, as a percentage of
+    the first. Negative is faster.
+
+    `already` marks a series that has been rebased to its own first swim and so
+    is a percentage already, starting at zero — for those the last value IS the
+    total, and the ratio would be a divide by zero. */
+function totalPct(vals, already){
+  if (!vals || vals.length < 2) return null;
+  const a = vals[0], b = vals[vals.length - 1];
+  if (already) return b - a;
+  return a ? (b - a) / a * 100 : null;
+}
+
+/** Stack labels down the right-hand gutter without letting any two collide,
+    and without letting the stack leave the box. Shared by every dashboard
+    chart that names its lines. */
+function stackLabels(labs, H, gapWanted){
+  const TOP = 7, BOT = H - 6;
+  const gap = Math.min(gapWanted, (BOT - TOP) / Math.max(1, labs.length - 1));
+  labs.sort((a, b) => a.y - b.y);
+  let prev = -1e9;
+  for (const l of labs) { l.ty = Math.max(l.y, prev + gap); prev = l.ty; }
+  const over = labs[labs.length - 1].ty - BOT;
+  if (over > 0) for (const l of labs) l.ty -= over;
+  if (labs[0].ty < TOP) {
+    let q = TOP - gap;
+    for (const l of labs) { l.ty = Math.max(l.ty, q + gap); q = l.ty; }
+  }
+  // The box renders at roughly 1:1, so these units are close to real pixels.
+  // 9 came out at 8.7px on screen, which is too small to read a name in.
+  return { labs, gap, fs: Math.min(11, gap - 3.5) };
+}
+
+/** The one thing every chart here has to say, said once, in one place. */
+const DOWN_IS_FASTER = `<p class="dc-hint"><span class="dc-arrow">\u2193</span>
+  <b>A line that falls is a swimmer getting faster.</b> Times come down as they
+  improve, so down the page is progress and up the page is a slower swim.</p>`;
+
+/** Why the middle swimmer and not the average of all of them. */
+const WHY_MEDIAN = `<p class="dwhy"><b>Why the median, not the average?</b>
+  The median is the middle swimmer &mdash; half the group is better, half worse. An average
+  is pulled about by one extreme result: a single beginner improving 200% in their first
+  season would lift the club's average and make everyone look like they are improving, when
+  nothing changed for the other swimmers. The median only moves when the typical swimmer
+  moves, which is the question being asked.</p>`;
 
 /** Every swimmer in a band, aligned on their own first race rather than on the
     calendar — the comparison a date axis cannot make honestly.
@@ -1797,7 +1865,7 @@ function dashSinceSolo(P1){
   const lo = Math.min(...all.map(p => p.v), 0), hi = Math.max(...all.map(p => p.v), 0);
   // The right strip is the label gutter: the plot stops short of it so a name
   // never sits on top of another swimmer's line.
-  const W = 760, H = 430, P = 10, GUT = 132;
+  const W = 760, H = 430, P = 10, GUT = 158;
   const X = m => P + (m / mx) * (W - P - GUT);
   const Y = v => P + ((hi - v) / (hi - lo || 1)) * (H - 2 * P);
   const col = BAND_COLOURS[P1.b] || 'var(--dim)';
@@ -1810,38 +1878,25 @@ function dashSinceSolo(P1){
   // overlap. A leader line is drawn wherever a name had to move.
   // The median's own label joins the queue rather than being drawn over the
   // top of it: left out, it landed on two swimmers' names.
-  const GAP = 12.5;
-  const labs = lines.map(L => {
+  const raw = lines.map(L => {
     const e = L.pts[L.pts.length - 1];
-    return { name: shortName(L.name), full: L.name, x: X(e.m), y: Y(e.v), ty: Y(e.v) };
+    return { name: shortName(L.name), full: L.name, x: X(e.m), y: Y(e.v), ty: Y(e.v),
+             tot: totalPct(L.pts.map(q => q.v), true) };
   });
   if (medPts.length > 1) {
     const e = medPts[medPts.length - 1];
-    labs.push({ name: 'band median', full: 'median of this age band',
-                x: X(e.m), y: Y(e.v), ty: Y(e.v), med: true });
+    raw.push({ name: 'band median', full: 'median of this age band', med: true,
+               x: X(e.m), y: Y(e.v), ty: Y(e.v),
+               tot: totalPct(medPts.map(q => q.v), true) });
   }
-  labs.sort((a, b) => a.y - b.y);
-  // Push apart, then pull the whole stack back inside the box. Pushing down
-  // and then shifting up to fit sent the top of a 24-name stack to y=-26,
-  // where it drew outside the card. The gap closes up instead when a band has
-  // more swimmers than the height allows at the preferred spacing.
-  const TOP = 7, BOT = H - 6;
-  const gap = Math.min(GAP, (BOT - TOP) / Math.max(1, labs.length - 1));
-  let prev = -1e9;
-  for (const l of labs) { l.ty = Math.max(l.y, prev + gap); prev = l.ty; }
-  const over = labs[labs.length - 1].ty - BOT;
-  if (over > 0) for (const l of labs) l.ty -= over;
-  if (labs[0].ty < TOP) {
-    let p = TOP - gap;
-    for (const l of labs) { l.ty = Math.max(l.ty, p + gap); p = l.ty; }
-  }
-  const fs = Math.min(9, gap - 1.5).toFixed(1);
+  const st = stackLabels(raw, H, 15), labs = st.labs, fs = st.fs.toFixed(1);
 
   const grid = [0.25, 0.5, 0.75].map(f =>
     `<line x1="${P}" y1="${(P + f * (H - 2 * P)).toFixed(1)}" x2="${(W - GUT).toFixed(1)}"
       y2="${(P + f * (H - 2 * P)).toFixed(1)}" class="tw-grid"/>`).join('');
 
-  return `<div class="dchart dchart-big">
+  return `${DOWN_IS_FASTER}
+    <div class="dchart dchart-big">
       <div class="dc-y"><span>${pctShort(hi)}<i>slower</i></span>
         <span>${pctShort(lo)}<i>faster</i></span></div>
       <div class="dc-plot"><svg viewBox="0 0 ${W} ${H}">
@@ -1857,15 +1912,21 @@ function dashSinceSolo(P1){
             stroke="${col}"/>
           <text class="dlab${l.med ? ' dlab-med' : ''}" x="${(W - GUT + 6).toFixed(1)}"
             y="${(l.ty + 3).toFixed(1)}" style="font-size:${fs}px"
-            fill="${col}">${esc(l.name)}<title>${esc(l.full)}</title></text>`).join('')}
+            fill="${col}">${esc(l.name)}<title>${esc(l.full)}</title></text>
+          ${l.tot === null ? '' : `<text class="dlab dlab-tot${l.med ? ' dlab-med' : ''}"
+            x="${(W - 5).toFixed(1)}" y="${(l.ty + 3).toFixed(1)}" text-anchor="end"
+            style="font-size:${(st.fs - 0.5).toFixed(1)}px"
+            fill="${col}">${l.tot < 0 ? '\u2212' : '+'}${Math.abs(l.tot).toFixed(0)}%</text>`}`
+          ).join('')}
       </svg></div>
     </div>
     <p class="tw-note">Every rated ${esc(P1.b)} swimmer, each starting at their own first race
       rather than at a date, so a child who joined in 2023 and one who joined this year lie on
       top of each other. The thick line is the band median — a swimmer below it is improving
       faster than half their age group, above it slower. Down is faster. The axis runs 0 to
-      ${Math.round(mx)} months from a swimmer's first race. Names are shortened; hover one for
-      the full name.</p>`;
+      ${Math.round(mx)} months from a swimmer's first race. The figure beside each name is that
+      swimmer's total change across the whole line, not their rate per year. Names are
+      shortened; hover one for the full name.</p>`;
 }
 
 /** Several bands at once: names would collide, so each band gets a panel. */
@@ -1941,15 +2002,18 @@ function dashLineChart(WR, normalised){
   const loY = Math.min(...ys), hiY = Math.max(...ys);
   const pad = (hiY - loY) * 0.14 || 1;
   const top = hiY + pad, bot = loY - pad;
-  const W = 640, H = 300, P = 10;
-  const X = v => P + ((v - x0) / (x1 - x0 || 1)) * (W - 2 * P);
+  // The right strip is the name gutter; the plot stops short of it so a label
+  // never lands on another swimmer's line.
+  const W = 760, H = 360, P = 10, GUT = 196;
+  const X = v => P + ((v - x0) / (x1 - x0 || 1)) * (W - P - GUT);
   const Y = v => P + ((top - v) / (top - bot || 1)) * (H - 2 * P);
 
+  const RX = (W - GUT).toFixed(1);
   const grid = [0.25, 0.5, 0.75].map(f =>
-    `<line x1="${P}" y1="${(P + f * (H - 2 * P)).toFixed(1)}" x2="${W - P}"
+    `<line x1="${P}" y1="${(P + f * (H - 2 * P)).toFixed(1)}" x2="${RX}"
       y2="${(P + f * (H - 2 * P)).toFixed(1)}" class="tw-grid"/>`).join('');
   const zero = normalised && bot < 0 && top > 0
-    ? `<line x1="${P}" y1="${Y(0).toFixed(1)}" x2="${W - P}" y2="${Y(0).toFixed(1)}"
+    ? `<line x1="${P}" y1="${Y(0).toFixed(1)}" x2="${RX}" y2="${Y(0).toFixed(1)}"
         class="dz"/>` : '';
 
   const body = series.map(sr => {
@@ -1964,22 +2028,52 @@ function dashLineChart(WR, normalised){
       stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>${dots}`;
   }).join('');
 
+  // Names down the gutter instead of a wrapped legend under the chart: eight
+  // swimmers took three lines of legend and still left you tracing colours.
+  // Each carries what the swimmer actually did over the period beside it.
+  const { labs, fs } = stackLabels(series.map(sr => {
+    const e = sr.pts[sr.pts.length - 1];
+    const tot = totalPct(sr.pts.map(q => q.t), normalised);
+    return {
+      name: shortName(sr.name), full: sr.label, colour: sr.colour, tot,
+      x: X(new Date(e.d + 'T00:00:00').getTime()), y: Y(e.t), ty: Y(e.t),
+      ev: normalised ? (sr.label.split(' · ')[1] || '') : '',
+    };
+  }), H, 15);
+
   const fmt = v => normalised ? (v > 0 ? '+' : '') + v.toFixed(0) + '%' : clockAxis(v);
-  return `<div class="dchart">
-      <div class="dc-y"><span>${fmt(hiY)}<i>${normalised ? 'slower' : 'slower'}</i></span>
+  return `${DOWN_IS_FASTER}
+    <div class="dchart dchart-big">
+      <div class="dc-y"><span>${fmt(hiY)}<i>slower</i></span>
         <span>${fmt(loY)}<i>faster</i></span></div>
-      <div class="dc-plot"><svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
-        ${grid}${zero}${body}</svg>
-        <div class="dc-x"><span>${monthLabel(all.map(p => p.d).sort()[0])}</span>
+      <div class="dc-plot"><svg viewBox="0 0 ${W} ${H}">
+        ${grid}${zero}${body}
+        ${labs.map(l => `<line x1="${(l.x + 2).toFixed(1)}" y1="${l.y.toFixed(1)}"
+            x2="${(W - GUT + 3).toFixed(1)}" y2="${l.ty.toFixed(1)}" class="dlead"
+            stroke="${l.colour}"/>
+          <text class="dlab" x="${(W - GUT + 6).toFixed(1)}" y="${(l.ty + 3).toFixed(1)}"
+            style="font-size:${fs.toFixed(1)}px" fill="${l.colour}">${esc(l.name)}${
+            l.ev ? `<tspan class="dlab-ev"> ${esc(l.ev.replace(' SCM', '').replace(' LCM', ''))}</tspan>` : ''
+            }<title>${esc(l.full)}</title></text>
+          ${l.tot === null ? '' : `<text class="dlab dlab-tot" x="${(W - 5).toFixed(1)}"
+            y="${(l.ty + 3).toFixed(1)}" text-anchor="end"
+            style="font-size:${(fs - 0.5).toFixed(1)}px"
+            fill="${l.colour}">${l.tot < 0 ? '\u2212' : '+'}${Math.abs(l.tot).toFixed(0)}%</text>`}`
+          ).join('')}
+      </svg>
+        <div class="dc-x" style="padding-right:${(GUT / W * 100).toFixed(1)}%"><span>${
+          monthLabel(all.map(p => p.d).sort()[0])}</span>
           <span>${monthLabel(all.map(p => p.d).sort().slice(-1)[0])}</span></div></div>
     </div>
-    <p class="dc-legend">${series.map(sr =>
-      `<span class="dk" style="background:${sr.colour}"></span>${esc(sr.label)}`).join('')}</p>
     <p class="tw-note">${normalised
       ? 'Each line starts at that swimmer\u2019s own first swim in the period, so swimmers racing '
         + 'different events can be compared on how far they have come. It says nothing about who is quickest.'
       : 'Real times in one event at one pool length, which is the only way two swimmers\u2019 '
-        + 'seconds can honestly share an axis. A falling line means the time is coming down.'}</p>`;
+        + 'seconds can honestly share an axis.'}
+      The figure on the right of each name is that swimmer\u2019s total change across the
+      whole line, first race in view to last: \u221233% reads as
+      &ldquo;a third quicker across this period&rdquo;. That is not the same as the per-year
+      rate in the list below, which spreads the same change over the time it took.</p>`;
 }
 
 /** A distance group: one chart, one line per stroke. */
@@ -2616,7 +2710,8 @@ function render(){
         const k = e.event + '|' + e.course;
         c.set(k, (c.get(k) || 0) + 1);
       }
-    return [...c.entries()].filter(([, n]) => n >= 2)
+    return [...c.entries()].filter(([k, n]) => n >= 2
+        && (!dashStroke || strokeOf(k.split('|')[0]) === dashStroke))
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   })();
 
@@ -2674,9 +2769,19 @@ function render(){
         <option value="F"${dashSex === 'F' ? ' selected' : ''}>Female</option>
         <option value="M"${dashSex === 'M' ? ' selected' : ''}>Male</option>
       </select></label>
-      ${dashMode === 'event' ? `<label>Event<select id="dEvent">
+      ${dashMode === 'event' ? `<label>Stroke<select id="dStroke">
+        <option value="">All strokes</option>
+        ${['Free','Back','Breast','Fly','IM'].map(k => `<option value="${k}"${
+          dashStroke === k ? ' selected' : ''}>${k}</option>`).join('')}
+      </select></label>
+      <label>Event<select id="dEvent">
         ${dashEvents.map(([k, n]) => `<option value="${esc(k)}"${dashEvent === k ? ' selected' : ''}
           >${esc(k.replace('|', ' · '))} (${n})</option>`).join('')}
+      </select></label>` : ''}
+      ${dashMode === 'since' || dashMode === 'progress' ? `<label>Stroke<select id="dStroke">
+        <option value="">All strokes</option>
+        ${['Free','Back','Breast','Fly','IM'].map(k => `<option value="${k}"${
+          dashStroke === k ? ' selected' : ''}>${k}</option>`).join('')}
       </select></label>` : ''}
       ${dashMode === 'bands' ? `<label>Measure<select id="dY">
         <option value="rate"${dashY === 'rate' ? ' selected' : ''}>Improvement per year</option>
@@ -2707,6 +2812,7 @@ function render(){
       <div class="dtile"><div class="n">${dashPb === null ? '—' : dashPb + '%'}</div>
         <div class="l">Personal-best rate</div><div class="d">average of their own swims</div></div>
     </div>
+    ${WHY_MEDIAN}
     ${dashList ? dashRatedList(dashRated) : ''}
   </section>
 
@@ -3088,6 +3194,16 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
   bind('dEvent', e => { dashEvent = e.target.value; render(); });
   bind('dY',     e => { dashY = e.target.value; render(); });
   bind('dBench', e => { dashBench = e.target.value; render(); });
+  bind('dStroke', e => {
+    dashStroke = e.target.value;
+    // The chosen event may not be of this stroke any more; move to the most
+    // swum one that is, rather than showing an empty chart.
+    if (dashStroke && strokeOf(dashEvent.split('|')[0]) !== dashStroke) {
+      const first = dashEvents.find(([k]) => strokeOf(k.split('|')[0]) === dashStroke);
+      if (first) dashEvent = first[0];
+    }
+    render();
+  });
   const dr = document.getElementById('dRated');
   if (dr) dr.onclick = () => { dashList = !dashList; render(); };
 
