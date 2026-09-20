@@ -1881,11 +1881,16 @@ function meetSection(){
 
     <div class="dbody solo"><div class="dmain">
       <p class="dspan"><b>${esc(meet.name)}</b> · ${meet.date} · ${meet.course} ·
-        ${meet.swimmers} swimmers · ${meet.clubN} swims${meet.untimed
-          ? ` (${meet.n} timed, ${meet.untimed} DQ or no-show)` : ''}</p>
-      ${missing || meet.untimed ? `<ul class="dnote"><li class="dn-unrated">${
+        ${meet.swimmers} swimmers · ${meet.clubN} swims${meet.untimed || meet.withdrawn
+          ? ` (${meet.n} timed${meet.untimed ? `, ${meet.untimed} DQ or no-show` : ''}${
+              meet.withdrawn ? `, ${meet.withdrawn} time withdrawn` : ''})` : ''}</p>
+      ${missing || meet.untimed || meet.withdrawn ? `<ul class="dnote"><li class="dn-unrated">${
         meet.untimed ? `${meet.untimed} of the ${meet.clubN} swims that day were a
         disqualification or a no-show, so carry no time to compare. ` : ''}${
+        meet.withdrawn ? `${meet.withdrawn} swim${meet.withdrawn === 1 ? '' : 's'} ${
+        meet.withdrawn === 1 ? 'was' : 'were'} raced and counted, but the time the meet recorded
+        was impossible and the club has withdrawn it, so nothing is measured from
+        ${meet.withdrawn === 1 ? 'it' : 'them'}. ` : ''}${
         missing ? `${missing} of the ${total} timed swims cannot be measured this way and are
         not shown.` : ''} ${esc(baseWhy.split('. ').slice(-1)[0])}</li></ul>` : ''}
       ${rows.length ? `<p class="dc-hint"><span class="dc-arrow">←</span>
