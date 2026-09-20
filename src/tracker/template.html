@@ -866,6 +866,51 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 .dmode-wide{display:flex;width:100%;margin-top:18px;flex-wrap:wrap}
 .dmode-wide button{flex:1 1 auto;padding:9px 12px}
 
+/* names printed at the end of each line, in the chart's own gutter */
+.dlab{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:9px;
+  dominant-baseline:middle}
+.dlab-med{font-weight:700;font-size:9.5px}
+/* Most swimmers' last race falls well short of the axis end, so nearly every
+   name needs a leader across the gap. At .35 opacity they were invisible. */
+.dlead{stroke-width:.8;opacity:.5;stroke-dasharray:2.5 2.5;
+  vector-effect:non-scaling-stroke}
+.dchart-big .dc-plot svg{max-height:none}
+
+/* the rated-swimmer tile, opened */
+.dtile-btn{display:block;width:100%;text-align:left;appearance:none;font:inherit;cursor:pointer}
+.dtile-btn:hover{border-color:var(--electric-deep)}
+.dt-more{color:var(--electric-deep);font-weight:600;text-decoration:underline}
+.dlist{background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  box-shadow:var(--shadow-sm);margin-top:12px;overflow:hidden}
+.dl-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  flex-wrap:wrap;padding:13px 16px;border-bottom:1px solid var(--line);font-size:13px}
+.dl-head span{color:var(--muted);font-size:11.5px}
+.dl-bh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  flex-wrap:wrap;padding:9px 16px;background:var(--ice);font-size:12.5px;font-weight:700}
+.dl-bh span{color:var(--muted);font-weight:500;font-size:11.5px}
+.dl-row{display:grid;grid-template-columns:minmax(0,1.5fr) 150px 78px minmax(0,1fr);
+  gap:12px;align-items:center;padding:7px 16px;border-bottom:1px solid var(--line);
+  font-size:12.5px}
+.dl-row:last-child{border-bottom:0}
+.dl-nm{font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap}
+.dl-bar{position:relative;height:9px;border-radius:999px;background:var(--ice)}
+.dl-mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--dim);
+  opacity:.5}
+.dl-fill{position:absolute;top:0;bottom:0;border-radius:999px}
+.dl-fill.ok{background:var(--ok)}
+.dl-fill.off{background:var(--dim)}
+.dl-val{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;font-weight:700;
+  text-align:right}
+.dl-gap{color:var(--muted);font-size:11.5px}
+.dl-note{margin:0;padding:11px 16px;font-size:11.5px;color:var(--muted);
+  border-top:1px solid var(--line)}
+@media (max-width:700px){
+  .dl-row{grid-template-columns:minmax(0,1fr) 70px;gap:6px 10px}
+  .dl-bar{grid-column:1 / -1;order:3}
+  .dl-gap{grid-column:1 / -1;order:4}
+}
+
 /* one panel per age band, identical axes */
 /* Six bands want 3x2, not the 4+2 that auto-fit gives at this width. */
 .dsmall{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}
@@ -1359,6 +1404,7 @@ const DASH_MAX = 8;
 // first look. See the note above dashBandSeasons.
 let dashMode = 'bands';
 let dashY = 'rate';         // 'rate' | 'time' — y-axis of the band chart
+let dashList = false;       // is the rated-swimmer breakdown open
 let dashBench = '50 Free|SCM';
 let dashBand = '';          // '' = every age band
 let dashSex = '';           // '' = both
@@ -1633,63 +1679,214 @@ function dashBandSeasons(){
       outside this chart.</p>`;
 }
 
+/** The swimmers behind the "rated" count, each set against the median for
+    their own age band rather than against the club — which is the comparison
+    that means something for a child. */
+function dashRatedList(rows){
+  if (!rows.length) return '';
+  // The median of each band AS DRAWN, taken from the same filtered pool the
+  // tiles and the chart use, so the three cannot disagree.
+  const norm = {};
+  for (const b of BAND_ORDER) {
+    const g = rows.filter(r => r.band === b);
+    if (g.length) norm[b] = med(g.map(r => r.trend));
+  }
+  const byBand = BAND_ORDER.map(b => ({ b, g: rows.filter(r => r.band === b)
+    .sort((x, y) => x.trend - y.trend) })).filter(x => x.g.length);
+  const worst = Math.max(...rows.map(r => Math.abs(r.trend - (norm[r.band] ?? 0))), 1);
+
+  return `<div class="dlist">
+    <div class="dl-head"><b>${rows.length} rated swimmer${rows.length === 1 ? '' : 's'}</b>
+      <span>each against the median for their own age band · fastest improver first</span></div>
+    ${byBand.map(({ b, g }) => `
+      <div class="dl-band">
+        <div class="dl-bh">${esc(b)}<span>${g.length} rated · band median
+          ${pctShort(norm[b])}/yr</span></div>
+        ${g.map(r => {
+          const d = r.trend - norm[b];              // negative = better than the median
+          const w = Math.min(50, 50 * Math.abs(d) / worst);
+          return `<div class="dl-row">
+            <span class="dl-nm">${esc(r.name)}</span>
+            <span class="dl-bar"><i class="dl-mid"></i><i class="dl-fill ${d < 0 ? 'ok' : 'off'}"
+              style="${d < 0 ? 'right:50%;' : 'left:50%;'}width:${w.toFixed(1)}%"></i></span>
+            <span class="dl-val ${trendCls(r.trend)}">${pctShort(r.trend)}/yr</span>
+            <span class="dl-gap">${Math.abs(d) < 0.05 ? 'at the band median'
+              : `${Math.abs(d).toFixed(1)}%/yr ${d < 0 ? 'faster' : 'slower'}`}</span>
+          </div>`;
+        }).join('')}
+      </div>`).join('')}
+    <p class="dl-note">The bar shows the gap between a swimmer and the median of their own band:
+      left of centre is improving faster than half their age group, right of centre slower.
+      Half of any band is always on each side — that is what a median is — so a swimmer on the
+      right is not doing badly, only improving less quickly than their peers this period.</p>
+  </div>`;
+}
+
+/** A swimmer's curve, rebased so it starts at their own first race. */
+function sinceCurve(idx, name){
+  const evs = idx.get(name) || [];
+  const pick = evs.slice().sort((a, b) => b.swims - a.swims)[0];
+  if (!pick || (pick.points || []).length < 2) return null;
+  const p0 = new Date(pick.points[0].d + 'T00:00:00').getTime(), base = pick.points[0].t;
+  return {
+    name, event: pick.event + ' ' + pick.course,
+    pts: pick.points.map(p => ({
+      m: (new Date(p.d + 'T00:00:00').getTime() - p0) / 2629800000,
+      v: (p.t - base) / base * 100,
+    })),
+  };
+}
+
+/** Where a set of curves sits at month `m`, for swimmers still being observed
+    then. Sampled on a common grid so lines of different lengths can be
+    averaged without the median jumping each time one of them ends. */
+function medianCurve(lines, mx, steps){
+  const out = [];
+  for (let k = 0; k <= steps; k++) {
+    const m = k * mx / steps;
+    const at = [];
+    for (const L of lines) {
+      const p = L.pts;
+      if (m < p[0].m || m > p[p.length - 1].m) continue;
+      for (let i = 1; i < p.length; i++) {
+        if (p[i].m >= m) {
+          const a = p[i - 1], b = p[i];
+          at.push(a.v + (b.v - a.v) * ((m - a.m) / ((b.m - a.m) || 1)));
+          break;
+        }
+      }
+    }
+    if (at.length >= 3) out.push({ m, v: med(at) });
+  }
+  return out;
+}
+
+/** "Musyoka, Loki J" -> "Musyoka L" — short enough to sit beside a line end. */
+function shortName(n){
+  const [sur, rest] = n.split(',');
+  const f = (rest || '').trim()[0];
+  return f ? `${sur.trim()} ${f}` : sur.trim();
+}
+
 /** Every swimmer in a band, aligned on their own first race rather than on the
-    calendar — the comparison a date axis cannot make honestly. */
+    calendar — the comparison a date axis cannot make honestly.
+
+    Filtered to one band it becomes a single large chart with every swimmer
+    named against the band median, which is the view that answers "how is this
+    child doing compared with the others their age". Across several bands the
+    names would be unreadable, so it falls back to one small panel per band. */
 function dashSinceStart(WR){
   const idx = careerIndex();
   const panels = BAND_ORDER.filter(b => !dashBand || b === dashBand).map(b => {
     const names = (WR ? WR.rows : []).filter(r => r.band === b && r.trend !== null
       && (!dashSex || ((DATA.years.all.swimmers || [])
           .find(x => x.name === r.name) || {}).sex === dashSex));
-    const lines = names.map(r => {
-      const evs = idx.get(r.name) || [];
-      const pick = evs.slice().sort((a, b2) => b2.swims - a.swims)[0];
-      if (!pick || (pick.points || []).length < 2) return null;
-      const p0 = new Date(pick.points[0].d + 'T00:00:00').getTime(), base = pick.points[0].t;
-      return pick.points.map(p => ({
-        m: (new Date(p.d + 'T00:00:00').getTime() - p0) / 2629800000,
-        v: (p.t - base) / base * 100,
-      }));
-    }).filter(Boolean);
+    const lines = names.map(r => sinceCurve(idx, r.name)).filter(Boolean);
     return { b, lines, n: lines.length };
   }).filter(p => p.n > 0);
 
   if (!panels.length) return '<p class="nodata">No rated swimmers match these filters.</p>';
+  return panels.length === 1 ? dashSinceSolo(panels[0]) : dashSinceGrid(panels);
+}
 
-  const all = panels.flatMap(p => p.lines.flat());
+/** One band, full width, every line carrying its swimmer's name. */
+function dashSinceSolo(P1){
+  const lines = P1.lines;
+  const all = lines.flatMap(L => L.pts);
+  const mx = Math.max(...all.map(p => p.m), 6);
+  const lo = Math.min(...all.map(p => p.v), 0), hi = Math.max(...all.map(p => p.v), 0);
+  // The right strip is the label gutter: the plot stops short of it so a name
+  // never sits on top of another swimmer's line.
+  const W = 760, H = 430, P = 10, GUT = 132;
+  const X = m => P + (m / mx) * (W - P - GUT);
+  const Y = v => P + ((hi - v) / (hi - lo || 1)) * (H - 2 * P);
+  const col = BAND_COLOURS[P1.b] || 'var(--dim)';
+  const path = pts => pts.map((q, i) =>
+    `${i ? 'L' : 'M'}${X(q.m).toFixed(1)} ${Y(q.v).toFixed(1)}`).join(' ');
+
+  const medPts = medianCurve(lines, mx, 14);
+
+  // Names go at each line's own end, then are pushed apart just enough not to
+  // overlap. A leader line is drawn wherever a name had to move.
+  // The median's own label joins the queue rather than being drawn over the
+  // top of it: left out, it landed on two swimmers' names.
+  const GAP = 12.5;
+  const labs = lines.map(L => {
+    const e = L.pts[L.pts.length - 1];
+    return { name: shortName(L.name), full: L.name, x: X(e.m), y: Y(e.v), ty: Y(e.v) };
+  });
+  if (medPts.length > 1) {
+    const e = medPts[medPts.length - 1];
+    labs.push({ name: 'band median', full: 'median of this age band',
+                x: X(e.m), y: Y(e.v), ty: Y(e.v), med: true });
+  }
+  labs.sort((a, b) => a.y - b.y);
+  // Push apart, then pull the whole stack back inside the box. Pushing down
+  // and then shifting up to fit sent the top of a 24-name stack to y=-26,
+  // where it drew outside the card. The gap closes up instead when a band has
+  // more swimmers than the height allows at the preferred spacing.
+  const TOP = 7, BOT = H - 6;
+  const gap = Math.min(GAP, (BOT - TOP) / Math.max(1, labs.length - 1));
+  let prev = -1e9;
+  for (const l of labs) { l.ty = Math.max(l.y, prev + gap); prev = l.ty; }
+  const over = labs[labs.length - 1].ty - BOT;
+  if (over > 0) for (const l of labs) l.ty -= over;
+  if (labs[0].ty < TOP) {
+    let p = TOP - gap;
+    for (const l of labs) { l.ty = Math.max(l.ty, p + gap); p = l.ty; }
+  }
+  const fs = Math.min(9, gap - 1.5).toFixed(1);
+
+  const grid = [0.25, 0.5, 0.75].map(f =>
+    `<line x1="${P}" y1="${(P + f * (H - 2 * P)).toFixed(1)}" x2="${(W - GUT).toFixed(1)}"
+      y2="${(P + f * (H - 2 * P)).toFixed(1)}" class="tw-grid"/>`).join('');
+
+  return `<div class="dchart dchart-big">
+      <div class="dc-y"><span>${pctShort(hi)}<i>slower</i></span>
+        <span>${pctShort(lo)}<i>faster</i></span></div>
+      <div class="dc-plot"><svg viewBox="0 0 ${W} ${H}">
+        ${grid}
+        ${hi > 0 && lo < 0 ? `<line x1="${P}" y1="${Y(0).toFixed(1)}" x2="${(W - GUT).toFixed(1)}"
+          y2="${Y(0).toFixed(1)}" class="dz"/>` : ''}
+        ${lines.map(L => `<path d="${path(L.pts)}" fill="none" stroke="${col}"
+          stroke-width="1.3" opacity=".42" vector-effect="non-scaling-stroke"/>`).join('')}
+        ${medPts.length > 1 ? `<path d="${path(medPts)}" fill="none" stroke="${col}"
+          stroke-width="3.4" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` : ''}
+        ${labs.map(l => `<line x1="${(l.x + 2).toFixed(1)}" y1="${l.y.toFixed(1)}"
+            x2="${(W - GUT + 3).toFixed(1)}" y2="${l.ty.toFixed(1)}" class="dlead"
+            stroke="${col}"/>
+          <text class="dlab${l.med ? ' dlab-med' : ''}" x="${(W - GUT + 6).toFixed(1)}"
+            y="${(l.ty + 3).toFixed(1)}" style="font-size:${fs}px"
+            fill="${col}">${esc(l.name)}<title>${esc(l.full)}</title></text>`).join('')}
+      </svg></div>
+    </div>
+    <p class="tw-note">Every rated ${esc(P1.b)} swimmer, each starting at their own first race
+      rather than at a date, so a child who joined in 2023 and one who joined this year lie on
+      top of each other. The thick line is the band median — a swimmer below it is improving
+      faster than half their age group, above it slower. Down is faster. The axis runs 0 to
+      ${Math.round(mx)} months from a swimmer's first race. Names are shortened; hover one for
+      the full name.</p>`;
+}
+
+/** Several bands at once: names would collide, so each band gets a panel. */
+function dashSinceGrid(panels){
+  const all = panels.flatMap(p => p.lines.flatMap(L => L.pts));
   const mx = Math.max(...all.map(p => p.m), 6);
   const lo = Math.min(...all.map(p => p.v), 0), hi = Math.max(...all.map(p => p.v), 0);
   const W = 300, H = 170, P = 10;
   const X = m => P + (m / mx) * (W - 2 * P);
   const Y = v => P + ((hi - v) / (hi - lo || 1)) * (H - 2 * P);
+  const path = pts => pts.map((q, i) =>
+    `${i ? 'L' : 'M'}${X(q.m).toFixed(1)} ${Y(q.v).toFixed(1)}`).join(' ');
 
   return `<div class="dsmall">${panels.map(p => {
-    // The median curve, sampled on a common grid so that lines of different
-    // lengths can be averaged without the mean jumping as each one ends.
-    const step = mx / 12;
-    const medPts = [];
-    for (let k = 0; k <= 12; k++) {
-      const m = k * step;
-      const at = p.lines.map(L => {
-        if (m < L[0].m || m > L[L.length - 1].m) return null;
-        for (let i = 1; i < L.length; i++) {
-          if (L[i].m >= m) {
-            const a = L[i - 1], b2 = L[i], f = (m - a.m) / ((b2.m - a.m) || 1);
-            return a.v + (b2.v - a.v) * f;
-          }
-        }
-        return null;
-      }).filter(v => v !== null);
-      if (at.length >= 3) medPts.push({ m, v: med(at) });
-    }
-    const path = L => L.map((q, i) =>
-      `${i ? 'L' : 'M'}${X(q.m).toFixed(1)} ${Y(q.v).toFixed(1)}`).join(' ');
+    const medPts = medianCurve(p.lines, mx, 12);
     return `<figure class="dsm">
       <figcaption><b>${esc(p.b)}</b> <span>${p.n} swimmer${p.n === 1 ? '' : 's'}</span></figcaption>
       <svg viewBox="0 0 ${W} ${H}">
         ${hi > 0 && lo < 0 ? `<line x1="${P}" y1="${Y(0).toFixed(1)}" x2="${W - P}"
           y2="${Y(0).toFixed(1)}" class="dz"/>` : ''}
-        ${p.lines.map(L => `<path d="${path(L)}" fill="none" stroke="${BAND_COLOURS[p.b]}"
+        ${p.lines.map(L => `<path d="${path(L.pts)}" fill="none" stroke="${BAND_COLOURS[p.b]}"
           stroke-width="1.1" opacity=".26" vector-effect="non-scaling-stroke"/>`).join('')}
         ${medPts.length > 1 ? `<path d="${path(medPts)}" fill="none"
           stroke="${BAND_COLOURS[p.b]}" stroke-width="2.6" stroke-linejoin="round"
@@ -1702,7 +1899,8 @@ function dashSinceStart(WR){
       other instead of at opposite ends of the chart. Faint line per swimmer, solid line the band
       median. Down is faster. The axis runs 0 to ${Math.round(mx)} months from a swimmer's first
       race; vertical scale is shared by all ${panels.length} panels, so the panels are comparable
-      with each other.</p>`;
+      with each other. <strong>Pick a single age band above</strong> to see the same chart full
+      size with every swimmer named.</p>`;
 }
 
 /** Selected swimmers over time — real seconds, or normalised from their own
@@ -2499,13 +2697,17 @@ function render(){
     </div>
 
     <div class="dtiles">
-      <div class="dtile"><div class="n">${dashRated.length}</div><div class="l">Swimmers rated</div>
-        <div class="d">of ${dashAll.length} in this selection</div></div>
+      <button type="button" class="dtile dtile-btn" id="dRated"
+        aria-expanded="${dashList}"><div class="n">${dashRated.length}</div>
+        <div class="l">Swimmers rated</div>
+        <div class="d">of ${dashAll.length} in this selection · <span class="dt-more"
+          >${dashList ? 'hide the list' : 'name every one'}</span></div></button>
       <div class="dtile"><div class="n ${trendCls(dashMedian)}">${dashMedian === null ? '—' : pctShort(dashMedian) + '/yr'}</div>
         <div class="l">Median improvement</div><div class="d">across those rated</div></div>
       <div class="dtile"><div class="n">${dashPb === null ? '—' : dashPb + '%'}</div>
         <div class="l">Personal-best rate</div><div class="d">average of their own swims</div></div>
     </div>
+    ${dashList ? dashRatedList(dashRated) : ''}
   </section>
 
   <section class="wrap" id="s1" data-page="programme">
@@ -2886,6 +3088,8 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
   bind('dEvent', e => { dashEvent = e.target.value; render(); });
   bind('dY',     e => { dashY = e.target.value; render(); });
   bind('dBench', e => { dashBench = e.target.value; render(); });
+  const dr = document.getElementById('dRated');
+  if (dr) dr.onclick = () => { dashList = !dashList; render(); };
 
   document.querySelectorAll('.dmode button').forEach(b => b.onclick = () => {
     dashMode = b.dataset.dm; render();
