@@ -240,7 +240,7 @@ details[open] .chev{transform:rotate(45deg)}
    sitting on the hero rather than as part of it; the hairline above and the
    cyan underline below are enough to mark the strip. */
 .tabnav{position:relative;z-index:2;border-top:1px solid rgba(255,255,255,.10)}
-.tabwrap{max-width:1180px;margin:0 auto;padding-inline:20px;display:flex;gap:2px;
+.tabwrap{max-width:1140px;margin:0 auto;padding-inline:20px;display:flex;gap:2px;
   overflow-x:auto;scrollbar-width:none}
 .tabwrap::-webkit-scrollbar{display:none}
 .tabnav a{flex:0 0 auto;padding:0 14px;font-size:13.5px;line-height:1.2;
@@ -252,7 +252,13 @@ details[open] .chev{transform:rotate(45deg)}
 .tabnav a:focus-visible{outline:2px solid var(--cyan);outline-offset:-3px;border-radius:4px}
 
 /* One column now the rail has gone, so a table gets the whole width. */
-.shell{max-width:1180px;margin:0 auto;padding-inline:20px}
+/* width:100% matters. body is a column flex container, and `margin:0 auto` on
+   a flex item cancels the default stretch — so this box collapsed to its
+   content width (842px of an available 1180) and then centred that, which is
+   why every page looked indented and right-shifted against the hero.
+   Same max-width as .wrap and .tabwrap so the hero text, the tabs and the
+   content all share one left edge. */
+.shell{max-width:1140px;width:100%;margin:0 auto;padding-inline:20px}
 .shell section{padding-block:30px}
 .shell section:first-of-type{padding-top:24px}
 .shell .wrap{max-width:none;margin:0;padding-inline:0}
@@ -321,6 +327,31 @@ details[open] .chev{transform:rotate(45deg)}
 
 /* Age context under a rate. */
 .norm{display:block;font-size:11px;font-weight:500;color:var(--muted);margin-top:2px}
+/* What the rate rests on. A figure from two races is not the same thing as one
+   from twelve, and with a two-race minimum that difference has to be visible
+   rather than buried in the method page. */
+/* Which calculation a figure came from. The yearly rate is a trend through
+   every race; first-to-last is the difference between two swims. Both used to
+   be called "faster" with nothing to tell them apart. */
+.basis{display:block;font-size:9.5px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--dim);margin-top:1px}
+/* A swimmer measured against the club instead of their own age band should be
+   able to see that, rather than the page implying an age comparison it could
+   not make. */
+.basis.borrowed{color:var(--gold-t,#A66500);text-transform:none;letter-spacing:0;
+  font-size:10px}
+/* The one place the word "declining" belongs: a swimmer whose own time went
+   the wrong way. Never a group name. */
+.declining{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;
+  background:var(--alert-bg,#FBE9E7);color:var(--alert-t,#B3261E);
+  font-size:10px;font-weight:700;letter-spacing:.04em;vertical-align:1px}
+/* How many swimmers or races a figure rests on. An alert drawn from two people
+   should not read with the same weight as one drawn from thirty. */
+.nof{display:block;font-size:10px;font-weight:500;color:var(--dim);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.evid{display:block;font-size:10px;font-weight:500;color:var(--dim);margin-top:2px;
+  font-family:'IBM Plex Mono',ui-monospace,monospace}
+.evid.thin{color:var(--gold-t,#A66500)}
 
 /* Season-vs-season comparison, and the improvement leaderboards. */
 .cmpwrap{margin-top:16px;border:1px solid var(--line);border-radius:14px;overflow:hidden}
@@ -611,6 +642,16 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
 .pbar .menu a:hover{background:var(--sunken)}
 .pbar .menu b{display:block;font-size:13.5px;color:var(--ink)}
 .pbar .menu span{display:block;font-size:11.8px;color:var(--muted);margin-top:1px}
+/* The way in to the board. A button, in the bar, with the number of open
+   items on it — not a line buried in a menu. */
+.pbar .roadbtn{display:inline-flex;align-items:center;gap:7px;text-decoration:none;
+  background:var(--gold-400,#F5A623);color:#0F1C2E;font-weight:600;
+  padding:7px 13px;border-radius:8px;font-size:13.5px;white-space:nowrap}
+.pbar .roadbtn:hover{background:#FFB94A;color:#0F1C2E}
+.pbar .rbadge{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;
+  border-radius:999px;background:rgba(15,28,46,.82);color:#fff;font-size:11px;font-weight:700}
+@media (max-width:640px){ .pbar .roadbtn{padding:7px 10px;font-size:0;gap:5px}
+  .pbar .roadbtn span[aria-hidden]{font-size:15px} .pbar .rbadge{font-size:11px} }
 .pbar .out{font-size:12px;color:#8FA9C4;background:none;border:0;cursor:pointer;
   padding:7px 4px;margin-left:6px;font-family:inherit}
 .pbar .out:hover{color:#fff}
@@ -856,8 +897,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .gpcontact b{color:var(--ink);font-weight:600}
 .gpcontact a{color:var(--muted);text-decoration:none}
 .gpcontact a:hover{color:var(--electric-deep);text-decoration:underline}
-.gpcontact i{font-style:normal;font-family:'IBM Plex Mono',ui-monospace,monospace;
-  font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--electric-deep)}
 @media (max-width:560px){ .gpcontact{margin-left:0;gap:8px} }
 </style>
 
@@ -898,6 +937,9 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
         <a href="/admin" id="pb-admin" hidden><b>Coordinator view</b><span>Every registration and payment</span></a>
         <a href="/roadmap" id="pb-road" hidden><b>What we are building</b><span>Shipped, planned, and your ideas</span></a>
       </div>
+      <a class="t roadbtn" id="pb-roadbtn" href="/roadmap" hidden>
+        <span aria-hidden>&#128172;</span> Ideas &amp; progress
+        <span class="rbadge" id="pb-rbadge" hidden></span></a>
       <button class="out" id="pb-out" type="button">Log out</button>
     </nav>
   </div>
@@ -945,7 +987,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
       <b>Njenga</b>
       <a href="tel:+254726178216">0726&nbsp;178&nbsp;216</a>
       <a href="mailto:info@goldenpipitrecruiting.com">info@goldenpipitrecruiting.com</a>
-      <i>Fractional CTO services</i>
     </span>
   </div>
 </footer>
@@ -970,15 +1011,20 @@ const CLS = {fast:'Fast progression', improving:'Improving', stable:'Stable',
 // not: 28 of the 32 in it are still getting faster, just by less than their
 // age group manages. Four genuinely have slipped, which is why the bottom
 // description says "most" rather than claiming everyone is still improving.
+// Dr Boit's four names, with one change he asked for himself: "Declining" is
+// not used as a group name, because the bottom group is not a group of
+// declining swimmers — most of them are still getting faster, just by less
+// than their age group. It is shown per swimmer instead, and only when that
+// swimmer's own time actually went the wrong way.
 const GROUPS = [
-  {k:'fast',      slug:'fast',      t:'🚀 Improving fastest for their age',
-   d:'the biggest gains in the club once age is taken into account'},
-  {k:'improving', slug:'improving', t:'🟢 Improving faster than their age',
-   d:'making more progress than the typical swimmer their age'},
-  {k:'stable',    slug:'stable',    t:'🟡 Improving in line with their age',
-   d:'progressing at about the rate their age group does'},
-  {k:'review',    slug:'review',    t:'🔴 Improving slower than their age',
-   d:'most are still getting faster, just by less than their age group — a few have slipped back'},
+  {k:'fast',      slug:'fast',      t:'🚀 Fast improvement',
+   d:'the biggest gains in the club, once age is taken into account'},
+  {k:'improving', slug:'improving', t:'🟢 Good improvement',
+   d:'more progress than the typical swimmer their age'},
+  {k:'stable',    slug:'stable',    t:'🟡 Steady improvement',
+   d:'about the rate their age group manages'},
+  {k:'review',    slug:'review',    t:'🟠 Slowest improvement',
+   d:'still getting faster in most cases, by less than their age group — worth a look'},
   {k:'unrated',   slug:'unrated',   t:'Not enough data',
    d:'no repeat swim in the same event and course yet'},
 ];
@@ -1032,8 +1078,9 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':
 //
 // rateJS MIRRORS rate_per_year() in tools/analytics.py. If one changes the
 // other must too, or a season view and the career view stop agreeing.
-const MIN_SPAN_DAYS = 120;
-const MIN_RACES = 3;      // two races are an endpoint difference, not a trend
+const MIN_SPAN_DAYS = 60;   // mirrors tools/analytics.py
+// Mirrors MIN_RACES in tools/analytics.py — see the note there for why two.
+const MIN_RACES = 2;
 const MAX_EXTRAP = 1.5;   // never stretch a short span by more than half again
 const BAND_ORDER = ['8 & under','9-10','11-12','13-14','15-17','18 & over'];
 const MIN_BAND_N = 6;
@@ -1091,9 +1138,13 @@ function windowRating(lo, hi){
     const rates = member
       ? (idx.get(s.name) || []).map(e => rateJS(inWindow(e))).filter(r => r !== null)
       : [];
+    const races = member
+      ? (idx.get(s.name) || []).reduce((n, e) =>
+          rateJS(inWindow(e)) !== null ? n + inWindow(e).length : n, 0)
+      : 0;
     return { name: s.name, band: s.band, age: s.age, joined: s.joined,
              trend: rates.length ? Math.round(med(rates)*100)/100 : null,
-             series: rates.length };
+             series: rates.length, races };
   });
   // Norms per band, from the same window — this is what makes a 15-year-old at
   // 8%/yr read as on par rather than as a poor result.
@@ -1132,6 +1183,15 @@ function vsNorm(adj, band){
   return adj < 0
     ? `${a.toFixed(1)}%/yr more than ${band} typically gain`
     : `${a.toFixed(1)}%/yr less than ${band} typically gain`;
+}
+
+/** Where the comparison came from: their own age band, or the club median
+    standing in because the band was too thin to have a norm of its own. */
+function normNote(sw){
+  if (sw.ageNorm === null || sw.ageNorm === undefined) return '';
+  return sw.normOwn
+    ? `${sw.band} benchmark, ${sw.normN} rated`
+    : `club benchmark (${sw.normN} rated) — too few in ${sw.band}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -1330,7 +1390,7 @@ function chartCardDistance(g){
 /** One chart, as the HTML that goes inside a .chartbox. */
 function chartCard(e){
   const pts = e.points || [];
-  if (pts.length < 3) return '';
+  if (pts.length < MIN_RACES) return '';
   const ys = pts.map(p => p.t);
   const lo = Math.min(...ys), hi = Math.max(...ys);
   const improving = e.pct < 0;
@@ -1416,7 +1476,7 @@ function swimmerCard(s){
       <span class="c">${e.course}</span>
       <span class="t">${swimTime(e.first)} → ${swimTime(e.last)}${
         year==='all'&&e.firstDate?` <span style="opacity:.62">(${e.firstDate} → ${e.lastDate})</span>`:''}</span>
-      <span class="trend ${trendCls(e.pct)}">${pct(e.pct)}</span>
+      <span class="trend ${trendCls(e.pct)}">${pct(e.pct)}<span class="basis">first to last</span></span>
     </div>`).join('');
   const num = (v, suf) => v === null || v === undefined ? '—' : (v + (suf||''));
   // A bar next to each trend, scaled against 25% — roughly the largest honest
@@ -1442,7 +1502,8 @@ function swimmerCard(s){
         ${cvTrend('Last 3 months', s.t3)}
         ${cvTrend('Last 6 months', s.t6)}
         <div class="cvitem"><div class="k">PB rate</div>
-          <div class="v">${num(s.pbRate,'%')}</div>
+          <div class="v">${num(s.pbRate,'%')}${s.pbEligible
+            ? ` <span style="font-size:11px;font-weight:500;color:var(--muted)">${s.pbs} of ${s.pbEligible}</span>` : ''}</div>
           ${s.pbRate===null?'':`<div class="cvbar"><i class="${s.pbRate>=50?'ok':''}"
             style="width:${Math.min(100,s.pbRate)}%"></i></div>`}</div>
         <div class="cvitem"><div class="k">Race consistency</div>
@@ -1456,7 +1517,7 @@ function swimmerCard(s){
   // Trend charts. Chips pick the event; one chart shows at a time, which is the
   // only version that works at 390px — a child can have 22 chartable series.
   // Most-raced event first, since that is the one with the most to say.
-  const chartable = (s.events || []).filter(e => (e.points || []).length >= 3)
+  const chartable = (s.events || []).filter(e => (e.points || []).length >= MIN_RACES)
     .slice().sort((a, b) => b.swims - a.swims || a.event.localeCompare(b.event))
     // The chart keeps the full career baseline including races swum for other
     // clubs, so it has to show where NextGen actually starts.
@@ -1532,8 +1593,12 @@ function swimmerCard(s){
       <!-- No class pill here: the swimmer already sits inside that group's
            drawer, so repeating "Fast progression" on every row said nothing. -->
       <span class="trend ${trendCls(s.trend)}">${s.trend===null?'—':pct(s.trend).replace('% ','%/yr ')}${
+        s.trend !== null && s.trend > 0 ? '<span class="declining">Declining</span>' : ''}<span class="basis">yearly rate</span>${
         s.ageAdj===null||s.ageAdj===undefined?''
-          :`<span class="norm">${esc(vsNorm(s.ageAdj, s.band))}</span>`}</span>
+          :`<span class="norm">${esc(vsNorm(s.ageAdj, s.band))}</span>
+             <span class="basis${s.normOwn?'':' borrowed'}">${esc(normNote(s))}</span>`}${
+        s.rateRaces ? `<span class="evid${s.rateRaces<=3?' thin':''}">from ${s.rateRaces} race${
+          s.rateRaces===1?'':'s'} across ${s.rateSeries} event${s.rateSeries===1?'':'s'}</span>` : ''}</span>
     </summary>
     <div class="sw-body">
       ${none}
@@ -1544,7 +1609,7 @@ function swimmerCard(s){
       ${chart}
       ${coach}
       ${evs?`<div class="evlist"><h4 style="font-size:11px;font-weight:700;letter-spacing:1.1px;
-        text-transform:uppercase;color:var(--muted);margin:0 0 4px">Event by event — first to last swim</h4>${evs}</div>`:''}
+        text-transform:uppercase;color:var(--muted);margin:0 0 4px">Event by event — total change from their first swim to their most recent</h4>${evs}</div>`:''}
       ${off}
     </div>
   </details>`;
@@ -1653,7 +1718,14 @@ function render(){
   // The second is the one that is fair to a 16-year-old.
   let boards = '';
   if (coachHere) {
-    const rank = (list, key) => list.filter(x => x[key] !== null && x[key] !== undefined)
+    // A swimmer needs more than one pair of swims to lead a leaderboard.
+    // The rating threshold is two races — deliberately, so a part-finished
+    // season is usable — but "most improved in the club" is a claim, and at
+    // two races the top of this board filled with single pairs that outranked
+    // swimmers with six. Rating: 2. Ranking: LB_MIN_RACES.
+    const LB_MIN_RACES = 4;
+    const rank = (list, key) => list
+      .filter(x => x[key] !== null && x[key] !== undefined && (x.races ?? x.rateRaces ?? 0) >= LB_MIN_RACES)
       .sort((a, b) => a[key] - b[key]).slice(0, 8);
     const pool = WR ? WR.rows : (Y.swimmers || []);
     const raw = rank(pool, 'trend'), adj = rank(pool, 'ageAdj');
@@ -1661,10 +1733,11 @@ function render(){
       <span>${fmt(x)}</span></li>`).join('');
     boards = `<div class="lbgrid">
       <div class="lb"><h4>Most improved${wFrom===wTo?` in ${wTo}`:`, ${wFrom}&ndash;${wTo}`}
-        <span>fastest rate of improvement, any age &mdash; ${covered} swimmers qualify</span></h4>
+        <span>fastest rate of improvement, any age &mdash; ${covered} rated,
+          ranked among those with 4+ races</span></h4>
         <ol>${li(raw, x => pctShort(x.trend) + '/yr')}</ol></div>
       <div class="lb"><h4>Most improved for their age
-        <span>measured against the norm for their own age band</span></h4>
+        <span>against the norm for their own age band, 4+ races</span></h4>
         <ol>${li(adj, x => (x.ageAdj <= 0 ? '' : '+') + x.ageAdj.toFixed(1) + ' vs ' + x.band)}</ol></div>
     </div>`;
   }
@@ -1689,7 +1762,7 @@ function render(){
     const mx = Math.max(...Object.values(Y.strokes).map(x=>Math.abs(x.median)),1);
     return `<div class="bar"><span class="lab">${esc(k)}</span>
       <span class="track"><span class="fill f-${v.cls}" style="width:${Math.max(4,100*Math.abs(v.median)/mx)}%"></span></span>
-      <span class="val">${pctShort(v.median)}</span></div>`;}).join('');
+      <span class="val">${pctShort(v.median)}<span class="nof">${v.n} races</span></span></div>`;}).join('');
 
   const distBars = ['Sprint','Middle','Distance'].filter(k=>Y.dists[k]).map(k=>{
     const v = Y.dists[k];
@@ -1704,7 +1777,9 @@ function render(){
   const ageRows = ageSrc.map(([lab,a])=>
     `<tr><td><strong>${esc(lab)}</strong></td><td class="num">${a.swimmers}</td>
       <td class="num">${a.swims}</td><td class="num">${a.podiums}</td>
-      <td class="num ${trendCls(a.median===undefined?null:a.median)}">${a.median===null||a.median===undefined?'—':pctShort(a.median)}</td>
+      <td class="num ${trendCls(a.median===undefined?null:a.median)}">${a.median===null||a.median===undefined?'—':pctShort(a.median)}${
+        a.rated ? `<span class="nof">${a.rated} of ${a.swimmers} rated${
+          a.rated < 6 ? ' ⚠' : ''}</span>` : ''}</td>
       <td class="num">${a.rated?`<span style="color:var(--ok-t);font-weight:700">${a.improving}</span> /
         ${a.stable} / <span style="color:var(--alert-t);font-weight:700">${a.review}</span>`:'—'}</td></tr>`).join('');
 
@@ -1726,11 +1801,11 @@ function render(){
     // Same correction as GROUPS: these buckets key off the age-adjusted band,
     // so "regressing" never meant the swimmer got slower — it meant they
     // improved more slowly than their age group does.
-    ['fast','p','Progressing fast','improving much faster than others their age'],
+    ['fast','p','Fast improvement','improving much faster than others their age'],
     ['risers','g','Rising from behind','fewer podiums, improving quickly'],
-    ['plateau','a','Beginning to plateau','was improving, now flat'],
-    ['stalled','a','Strong but stalled','high podium rate, progress has stopped'],
-    ['regressing','r','Improving slower than their age','most still getting faster, by less than their age group'],
+    ['plateau','a','Improvement has flattened','was improving quickly, now level'],
+    ['stalled','a','Winning, but not improving','high podium rate, gains have levelled off'],
+    ['regressing','r','Slowest improvement','most still getting faster, by less than their age group'],
   ];
   const watchCards = wdef.filter(([k])=>(W[k]||[]).length).map(([k,c,title,why])=>`
     <div class="wcard ${c}"><h4>${title}</h4><div class="n">${W[k].length}</div>
@@ -1739,6 +1814,15 @@ function render(){
     </div>`).join('');
 
   // competition level
+  // Being last in a comparison is not a problem if everyone improved. At the
+  // August 2026 Inter-Clubs the adults improved 0.8% and were still labelled
+  // "Needs review", purely for coming last. The label now follows the number:
+  // smallest improvement when they improved, slower when they actually did.
+  const lowLabel = (o, what) =>
+    !o || o.v === null || o.v === undefined ? `Weakest ${what}`
+      : o.v < 0 ? `Smallest gain, by ${what}`
+      : `${what.charAt(0).toUpperCase()+what.slice(1)} that got slower`;
+
   const kv = (o,lbl) => o ? `<div class="cs"><div class="k">${lbl}</div>
     <div class="v">${esc(o.k)} <small>${pctShort(o.v)}</small></div></div>` : '';
   const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1765,12 +1849,13 @@ function render(){
       ${c.pbRate===null?'':`<div class="pbbar" role="img"
         aria-label="${c.pbRate}% of swims were personal bests"><i style="width:${c.pbRate}%"></i></div>`}
       <div class="compstats">
-        <div class="cs"><div class="k">PB rate</div><div class="v">${c.pbRate===null?'—':c.pbRate+'%'} <small>${c.pbs} PBs</small></div></div>
+        <div class="cs"><div class="k">PB rate</div><div class="v">${c.pbRate===null?'—':c.pbRate+'%'}
+          <small>${c.pbs} of ${c.pbEligible ?? c.swims} eligible swims</small></div></div>
         ${kv(c.bestStroke,'Best stroke')}
-        ${showWorstSt?kv(c.worstStroke,'Weakest stroke'):''}
+        ${showWorstSt?kv(c.worstStroke,lowLabel(c.worstStroke,'stroke')):''}
         ${kv(c.bestDist,'Best distance')}
         ${kv(c.bestAge,'Best age group')}
-        ${showWorstAg?kv(c.worstAge,'Needs review'):''}
+        ${showWorstAg?kv(c.worstAge,lowLabel(c.worstAge,'age group')):''}
         ${c.vsPrev!==null?`<div class="cs"><div class="k">vs previous meet</div>
           <div class="v ${c.vsPrev<0?'t-up':c.vsPrev>0?'t-down':'t-flat'}">${c.vsPrev>0?'+':''}${c.vsPrev} pts</div></div>`:''}
       </div>
@@ -1833,7 +1918,7 @@ function render(){
     ['i', '<span class="cdot" aria-hidden>&#128993;</span>Investigate', s.n_stable, ['stalled', 'plateau'], 'Stalled or plateaued',
      `Progress has flattened. Look at the swimmer, the age group and the programme
       before changing anything.`],
-    ['c', '<span class="cdot" aria-hidden>&#128308;</span>Change', s.n_review, ['regressing'], 'Going backwards',
+    ['c', '<span class="cdot" aria-hidden>&#128308;</span>Change', s.n_review, ['regressing'], 'Slowest improvement for their age',
      `These swimmers are still getting faster, but more slowly than others of
       their age. Look at the swimmer, then the programme, before concluding
       anything &mdash; a young beginner and a 16-year-old are not held to the
@@ -1861,6 +1946,18 @@ function render(){
 
   // The age-band norms, straight from the same computation the bands use, so
   // the Method page cannot drift from what the app actually did.
+  // Quoted from the live norms rather than typed in. The old sentence said
+  // "8 & under average 24%/yr" against an actual 22.8% — copy written once and
+  // never recomputed, which is the drift Dr Boit picked up.
+  const normSpread = (() => {
+    if (!WR) return '';
+    const have = BAND_ORDER.filter(b => WR.norms[b] !== undefined);
+    if (have.length < 2) return '';
+    const lo = have[0], hi = have[have.length - 1];
+    return ` &mdash; ${esc(lo)} average ${pct(WR.norms[lo])} a year against ` +
+           `${pct(WR.norms[hi])} for ${esc(hi)}`;
+  })();
+
   const normRows = WR ? BAND_ORDER.filter(b => WR.norms[b] !== undefined).map(b => {
     const n = WR.rows.filter(r => r.band === b && r.trend !== null).length;
     return `<tr><td class="em">${esc(b)}</td>
@@ -1885,7 +1982,10 @@ function render(){
     <div class="tiles">
       <div class="tile"><div class="n">${s.swimmers}</div><div class="l">Athletes</div><div class="d">${s.meets} meets</div></div>
       <div class="tile"><div class="n">${s.swims}</div><div class="l">Swims</div><div class="d">${s.offclub_swims} at other clubs</div></div>
-      <div class="tile"><div class="n g">${s.podiums}</div><div class="l">Podiums</div><div class="d">${s.wins} wins</div></div>
+      <div class="tile"><div class="n g">${s.podiums}</div><div class="l">Podiums</div>
+        <div class="d">${s.wins} wins · racing for NextGen${
+          s.podiums_any && s.podiums_any !== s.podiums
+            ? `<br>${s.podiums_any} incl. other clubs` : ''}</div></div>
       <div class="tile"><div class="n g">${s.pbs}</div><div class="l">Personal bests</div><div class="d">${year==='all'?'career':'within '+year}</div></div>
       <div class="tile"><div class="n">${s.rated}</div><div class="l">Rated</div><div class="d">in ${esc(RATED_IN)} · ${s.unrated} lack repeat swims</div></div>
     </div>
@@ -1936,14 +2036,14 @@ function render(){
     </div>
     <div class="tblwrap" style="margin-top:12px"><table>
       <thead><tr><th>${ageMode==='year'?'Age':'Age band'}</th><th class="num">Swimmers</th><th class="num">Swims</th>
-        <th class="num">Podiums</th><th class="num">Median change</th>
+        <th class="num" title="Podiums won by these swimmers, wherever they were entered">Podiums</th><th class="num">Median change</th>
         <th class="num">Improving / Stable / Review</th></tr></thead>
       <tbody>${ageRows}</tbody></table></div>
 
     <h3 style="margin-top:26px;font-size:15px;font-weight:700">Boys and girls</h3>
     <div class="tblwrap" style="margin-top:10px"><table>
       <thead><tr><th></th><th class="num">Swimmers</th><th class="num">Swims</th>
-        <th class="num">Podiums</th><th class="num">Median change</th>
+        <th class="num" title="Podiums won by these swimmers, wherever they were entered">Podiums</th><th class="num">Median change</th>
         <th class="num">Improving / Stable / Review</th></tr></thead>
       <tbody>${sexRows}</tbody></table></div>
 
@@ -1960,8 +2060,7 @@ function render(){
     <p class="sec-sub" style="margin-top:8px"><strong>How the groups work.</strong> These groups
       compare how fast a swimmer is <em>improving</em> with how fast others of the same age
       improve. They do not say who is quickest in the pool. Young swimmers gain far more each year
-      than older ones &mdash; 8&nbsp;&amp;&nbsp;under average 24%/yr against 8%/yr for
-      15&ndash;17 &mdash; so a swimmer can be getting faster every season and still sit in the
+      than older ones${normSpread} &mdash; so a swimmer can be getting faster every season and still sit in the
       bottom group. The figure beside each name is their own rate; the line under it says how that
       compares with their age group. <a href="#/method" class="mlink">How this is worked out &rsaquo;</a></p>
     <div class="filters">
@@ -2377,6 +2476,18 @@ function portalBar(me){
   evBtn.hidden = !sections.events;
   document.getElementById('pb-admin').hidden = !me.isAdmin;
   document.getElementById('pb-road').hidden = !me.isAdmin;
+  const roadBtn = document.getElementById('pb-roadbtn');
+  roadBtn.hidden = !me.isAdmin;
+  // Boit has a lot of thoughts and they were arriving through a small grey
+  // note button at the bottom of the page. This is the obvious way in.
+  if (me.isAdmin) {
+    fetch('/api/roadmap').then(r => r.ok ? r.json() : null).then(d => {
+      if (!d) return;
+      const open = (d.items || []).filter(i => i.status !== 'shipped').length;
+      const badge = document.getElementById('pb-rbadge');
+      if (open) { badge.textContent = open; badge.hidden = false; }
+    }).catch(() => {});
+  }
 
   const close = () => { menu.hidden = true; evBtn.setAttribute('aria-expanded','false'); };
   evBtn.onclick = e => {

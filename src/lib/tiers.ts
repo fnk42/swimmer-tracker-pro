@@ -38,12 +38,19 @@ export const SWIMMER_FIELDS = {
     "meets",
     "trend", // improvement rate, %/year: arithmetic on published times
     "trendTotal", // total % change over the window, same arithmetic
+    "rateSeries", // how many event-series the rate was taken across
+    "rateRaces", //  and how many races those hold. Counts of published swims,
+    //               shown so a figure resting on two races reads as one.
     "ageNorm", // the median rate for that age band — a club aggregate, names nobody
     "ageAdj", // their rate minus that norm. Still arithmetic on tier-1 numbers;
     //           what stays tier 2 is `cls`, the verdict NextGen draws from it.
     "joined", // the date they joined NextGen. Marks which part of a chart is
     //           ours — a career baseline is misleading without it.
     "pbRate",
+    "pbEligible", // how many swims the PB rate was out of. A percentage with no
+    //               denominator was read as wrong, because 13/21 is not 68%.
+    "normOwn", //    whether the age-band norm came from that band or from the
+    "normN", //      club median, and how many swimmers it rests on.
     "events", // per event: course, first/last time and date, swim count
   ],
   tier2: [
