@@ -25,11 +25,24 @@ type Status = "idea" | "planned" | "building" | "shipped" | "parked";
 type Comment = { id: string; author: string; body: string; created_at: string };
 type Coverage = { total: number; with_guardian: number; eligible: number; version: string };
 
-const COLUMNS: { k: Status; t: string; d: string }[] = [
-  { k: "building", t: "Building now", d: "in progress this week" },
-  { k: "planned",  t: "Planned",      d: "agreed, not started" },
-  { k: "idea",     t: "Ideas",        d: "raised, not yet decided" },
-  { k: "shipped",  t: "Shipped",      d: "live, with the commit it went out in" },
+// Shipped is green and carries a tick; everything still owed is amber, blue or
+// grey by how close it is. The distinction a reader needs at a glance is
+// "is this done or not", so that is the one the colour makes.
+const COLUMNS: {
+  k: Status; t: string; d: string; dot: string; chip: string; edge: string;
+}[] = [
+  { k: "shipped",  t: "Shipped",      d: "live now, with the commit it went out in",
+    dot: "#0F6E56", chip: "bg-emerald-50 text-emerald-900 border-emerald-200",
+    edge: "border-l-[3px] border-l-emerald-600" },
+  { k: "building", t: "Building now", d: "in progress, not yet live",
+    dot: "#C2761B", chip: "bg-amber-50 text-amber-900 border-amber-200",
+    edge: "border-l-[3px] border-l-amber-500" },
+  { k: "planned",  t: "Planned",      d: "agreed, not started",
+    dot: "#2C7BE5", chip: "bg-sky-50 text-sky-900 border-sky-200",
+    edge: "border-l-[3px] border-l-sky-500" },
+  { k: "idea",     t: "Ideas",        d: "raised, not yet decided",
+    dot: "#64748B", chip: "bg-slate-50 text-slate-700 border-slate-200",
+    edge: "border-l-[3px] border-l-slate-300" },
 ];
 
 const NEXT: Record<Status, Status> = {
@@ -147,7 +160,9 @@ function Roadmap() {
     <main className="mx-auto max-w-5xl px-5 py-10">
       <h1 className="text-2xl font-semibold tracking-tight">What we are building</h1>
       <p className="mt-2 max-w-2xl text-[15px] text-muted-foreground">
-        Everything shipped, everything planned, and every idea raised. Tick an item along as it
+        Everything shipped, everything planned, and every idea raised. Shipped items are green
+        and ticked; everything still owed is amber, blue or grey by how near it is. Tick an item
+        along as it
         moves. Anything marked shipped shows the commit it went out in, so this board can be
         checked against the code rather than taken on trust.
       </p>
@@ -202,18 +217,33 @@ function Roadmap() {
             return (
               <section key={col.k}>
                 <div className="flex items-baseline gap-3">
+                  <span
+                    aria-hidden
+                    className="h-2.5 w-2.5 flex-none translate-y-[-1px] rounded-full"
+                    style={{ background: col.dot }}
+                  />
                   <h2 className="text-[15px] font-semibold">{col.t}</h2>
                   <span className="text-xs text-muted-foreground">{col.d}</span>
-                  <span className="ml-auto text-xs text-muted-foreground">{rows.length}</span>
+                  <span
+                    className={`ml-auto rounded-full border px-2 py-0.5 text-xs font-semibold ${col.chip}`}
+                  >
+                    {rows.length}
+                  </span>
                 </div>
                 <ul className="mt-3 divide-y divide-border rounded-xl border border-border bg-card">
                   {rows.map((it) => (
-                    <li key={it.id} className="p-4">
+                    <li key={it.id} className={`p-4 ${col.edge}`}>
                       <div className="flex items-start gap-3">
                         <span className="min-w-0 flex-1">
                           <span className="block text-[14.5px] font-medium">
-                            {it.status === "shipped" && (
-                              <span className="mr-1.5 text-[color:var(--ng-teal,#0F6E56)]">✓</span>
+                            {it.status === "shipped" ? (
+                              <span className="mr-1.5 font-bold text-emerald-700">✓</span>
+                            ) : (
+                              <span
+                                aria-hidden
+                                className="mr-1.5 inline-block h-1.5 w-1.5 -translate-y-[2px] rounded-full"
+                                style={{ background: col.dot }}
+                              />
                             )}
                             {it.title}
                           </span>

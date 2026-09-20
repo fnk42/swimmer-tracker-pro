@@ -26,15 +26,15 @@ const SHIPPED = [
   [/Improvement measured per year/, 'Improvement measured per year, judged against age',
    'Rates are %/year so a season and a career compare. Swimmers are scored against the median for their own age band, so a 16-year-old is not ranked below a 7-year-old for the same number.', 'Dr Boit'],
   [/Per-swimmer trend charts/, 'Trend charts for every swimmer',
-   'One chart per event and course. A falling line means the time is coming down.', 'Felix'],
+   'One chart per event and course. A falling line means the time is coming down.', 'F. Njenga'],
   [/real Actions view/, 'Actions became a real view',
    'Three calls with the swimmers in each, instead of three fixed paragraphs.', 'Dr Boit'],
   [/viewport meta/, 'Fixed the phone layout',
    'The tracker had no viewport tag, so every mobile rule was inert and Android rendered it at desktop width.', 'Dr Boit'],
   [/Two tiers, enforced/, 'Two-tier data model',
-   'Competition record for the community, coaching assessment only for coaches and that child’s own guardians. A test fails the build if a field is left unclassified.', 'Felix'],
+   'Competition record for the community, coaching assessment only for coaches and that child’s own guardians. A test fails the build if a field is left unclassified.', 'F. Njenga'],
   [/Registration: one sign-on/, 'One sign-in for all of NextGen', null, 'Dr Boit'],
-  [/Coordinator approval queue/, 'Coordinator approval queue', null, 'Felix'],
+  [/Coordinator approval queue/, 'Coordinator approval queue', null, 'F. Njenga'],
   [/import the parent list/, 'Parent list import and meet drill-down', null, 'Dr Boit'],
 ];
 
@@ -44,9 +44,9 @@ const PLANNED = [
   ['planned', 'Coaching assistant',
    'Ask questions in plain English and get answers from the club’s own data. Blocked until guardians have re-accepted the consent document, which now discloses that this sends data to OpenAI outside Kenya. A child with no accepted consent is never sent.', 'Dr Boit'],
   ['planned', 'Consent drive',
-   '190 swimmers, 24 with a guardian attached. Until that closes, most families cannot see their own child and the assistant can see almost nobody.', 'Felix'],
+   '190 swimmers, 24 with a guardian attached. Until that closes, most families cannot see their own child and the assistant can see almost nobody.', 'F. Njenga'],
   ['idea', 'Confirm the reconstructed meet titles',
-   'The timing software cuts meet names at 30 characters. 34 titles are my reconstruction; data/meet_names.csv is one pass to confirm or correct them.', 'Felix'],
+   'The timing software cuts meet names at 30 characters. 34 titles are my reconstruction; data/meet_names.csv is one pass to confirm or correct them.', 'F. Njenga'],
 ];
 
 const c = new pg.Client({ connectionString: url, ssl: { rejectUnauthorized: true } });
@@ -59,14 +59,14 @@ for (const [re, title, detail, raised] of SHIPPED) {
   const hit = find(re);
   await c.query(
     `insert into public.roadmap_items (title, detail, status, raised_by, created_by, shipped_at, commit_sha, sort_order)
-     values ($1,$2,'shipped',$3,'Felix',$4,$5,$6)`,
+     values ($1,$2,'shipped',$3,'F. Njenga',$4,$5,$6)`,
     [title, detail, raised, hit ? new Date(hit.date) : null, hit?.sha ?? null, order++]);
   added++;
 }
 for (const [status, title, detail, raised] of PLANNED) {
   await c.query(
     `insert into public.roadmap_items (title, detail, status, raised_by, created_by, sort_order)
-     values ($1,$2,$3::roadmap_status,$4,'Felix',$5)`,
+     values ($1,$2,$3::roadmap_status,$4,'F. Njenga',$5)`,
     [title, detail, status, raised, order++]);
   added++;
 }

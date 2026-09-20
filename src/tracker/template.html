@@ -104,7 +104,10 @@ section{padding-block:34px}
 .sec-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .sec-num{font-family:'Anton',sans-serif;font-size:12px;letter-spacing:2px;color:var(--electric-deep)}
 h2{font-size:clamp(20px,3vw,27px);font-weight:700;letter-spacing:-.3px}
-.sec-sub{color:var(--muted);max-width:70ch;margin-top:7px;font-size:14px}
+/* 70ch broke at 728px inside a 1100px column on every page in the app, which
+   left a third of the width empty beside every section intro. 92ch still
+   keeps a readable measure without the ragged gap. */
+.sec-sub{color:var(--muted);max-width:92ch;margin-top:7px;font-size:14px}
 
 /* caution */
 .caution{margin-top:18px;background:rgba(255,194,75,.12);border:1px solid rgba(255,194,75,.42);
@@ -1878,9 +1881,13 @@ function meetSection(){
 
     <div class="dbody solo"><div class="dmain">
       <p class="dspan"><b>${esc(meet.name)}</b> · ${meet.date} · ${meet.course} ·
-        ${meet.swimmers} swimmers · ${meet.n} swims</p>
-      ${missing ? `<ul class="dnote"><li class="dn-unrated">${missing} of ${total} swims that
-        day cannot be measured this way and are not shown. ${esc(baseWhy.split('. ').slice(-1)[0])}</li></ul>` : ''}
+        ${meet.swimmers} swimmers · ${meet.clubN} swims${meet.untimed
+          ? ` (${meet.n} timed, ${meet.untimed} DQ or no-show)` : ''}</p>
+      ${missing || meet.untimed ? `<ul class="dnote"><li class="dn-unrated">${
+        meet.untimed ? `${meet.untimed} of the ${meet.clubN} swims that day were a
+        disqualification or a no-show, so carry no time to compare. ` : ''}${
+        missing ? `${missing} of the ${total} timed swims cannot be measured this way and are
+        not shown.` : ''} ${esc(baseWhy.split('. ').slice(-1)[0])}</li></ul>` : ''}
       ${rows.length ? `<p class="dc-hint"><span class="dc-arrow">←</span>
         <b>Bars to the left are faster.</b> ${faster} of ${rows.length} shown swims came in under
         ${esc(baseName)}; the centre line is that baseline exactly.
