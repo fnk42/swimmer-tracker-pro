@@ -861,6 +861,21 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
   white-space:nowrap}
 .dmode button[aria-pressed="true"]{background:var(--surface);color:var(--ink);
   box-shadow:var(--shadow-sm)}
+/* The chart chooser leads the page now, so it is a full-width row rather than
+   a chip, and wraps instead of scrolling sideways on a phone. */
+.dmode-wide{display:flex;width:100%;margin-top:18px;flex-wrap:wrap}
+.dmode-wide button{flex:1 1 auto;padding:9px 12px}
+
+/* one panel per age band, identical axes */
+/* Six bands want 3x2, not the 4+2 that auto-fit gives at this width. */
+.dsmall{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}
+@media (min-width:760px){ .dsmall{grid-template-columns:repeat(3,minmax(0,1fr))} }
+.dsm{margin:0;border:1px solid var(--line);border-radius:11px;padding:9px 10px 4px;
+  background:var(--sunken);min-width:0}
+.dsm figcaption{display:flex;justify-content:space-between;align-items:baseline;gap:6px;
+  font-size:12px;margin-bottom:3px}
+.dsm figcaption span{color:var(--muted);font-size:11px;white-space:nowrap}
+.dsm svg{display:block;width:100%;height:auto;overflow:visible}
 
 .dbody{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:16px;margin-top:14px;
   align-items:start}
@@ -891,6 +906,12 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 .dc-plot svg{display:block;width:100%;height:auto;overflow:visible}
 .dz{stroke:var(--dim);stroke-width:1.5;stroke-dasharray:4 4;opacity:.6;
   vector-effect:non-scaling-stroke}
+/* Season labels sit on their own gridline. `justify-content:space-between`
+   spread them edge to edge of the container instead, which does not match the
+   SVG's internal padding — every label was off by up to 45px. */
+.dc-xa{position:relative;height:15px;margin-top:7px;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;color:var(--muted)}
+.dc-xa span{position:absolute;top:0;white-space:nowrap}
 .dc-x{display:flex;justify-content:space-between;margin-top:7px;
   font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;color:var(--muted)}
 .dc-legend{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:11px 0 0;
@@ -927,6 +948,11 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 /* Stacked tiles ate most of a phone screen before the chart appeared. Lay each
    one out on its side so the three of them cost one screen-third, not two. */
 @media (max-width:560px){
+  /* Five buttons wrapped 2+2+1 ragged. A grid makes the odd one out
+     deliberate instead of accidental. */
+  .dmode-wide{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+  .dmode-wide button{padding:10px 8px;font-size:12.5px}
+  .dmode-wide button:last-child{grid-column:1 / -1}
   .dtiles{gap:9px}
   .dtile{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:12px;
     padding:12px 14px}
@@ -1328,7 +1354,12 @@ let chartMode = 'distance';
 //   progress every line from that swimmer's own first swim, so a 7-year-old
 //            and a 16-year-old can sit on the same axes
 const DASH_MAX = 8;
-let dashMode = 'ages';
+// Opens on the band-by-season chart: it is the only one of the five whose
+// lines all span the whole axis, so it is the one that cannot mislead on
+// first look. See the note above dashBandSeasons.
+let dashMode = 'bands';
+let dashY = 'rate';         // 'rate' | 'time' — y-axis of the band chart
+let dashBench = '50 Free|SCM';
 let dashBand = '';          // '' = every age band
 let dashSex = '';           // '' = both
 let dashEvent = '50 Free|SCM';
@@ -1516,6 +1547,164 @@ function dashAgesChart(WR){
       against the club.</p>`;
 }
 
+/* ---- charts that hold the age bands still ------------------------------
+   The problem these answer: children have ragged, non-overlapping race
+   histories. 15% of pairs of swimmers here share no calendar time at all, and
+   observed spans run from 56 days to 1,308 — so two lines on one date axis can
+   be a real comparison or a meaningless one, and the chart looks identical
+   either way. Both shapes below remove the date axis as a source of that
+   error: one replaces the individual with the age band, which is always
+   populated; the other replaces calendar time with time since a swimmer's own
+   first race, so everybody starts together. */
+
+const BAND_COLOURS = {'8 & under':'#2C7BE5','9-10':'#0F6E56','11-12':'#7C4DFF',
+                      '13-14':'#C2761B','15-17':'#B3261E','18 & over':'#0891B2'};
+
+/** Each age band across the seasons. A band is a position children pass
+    through, so every line spans the whole axis — unlike a child's. */
+function dashBandSeasons(){
+  const BS = DATA.bandSeasons;
+  if (!BS) return '<p class="nodata">This view needs a rebuild of the analytics.</p>';
+  const isTime = dashY === 'time';
+  const table = isTime ? (BS.time[dashBench] || {}) : BS.rate;
+  const rows = BAND_ORDER
+    .map(b => ({ b, cells: (table[b] || []).map(c => c || null) }))
+    .filter(r => r.cells.some(Boolean) && (!dashBand || r.b === dashBand));
+  if (!rows.length) return '<p class="nodata">Nothing to draw for this selection.</p>';
+
+  const vals = rows.flatMap(r => r.cells.filter(Boolean).map(c => c[0]));
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (!isTime) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+  const pad = (hi - lo) * 0.12 || 1;
+  const top = hi + pad, bot = lo - pad;
+  const S = BS.seasons, W = 640, H = 300, P = 12;
+  const X = i => P + (S.length === 1 ? 0.5 : i / (S.length - 1)) * (W - 2 * P);
+  const Y = v => P + ((top - v) / (top - bot || 1)) * (H - 2 * P);
+
+  const grid = S.map((_, i) =>
+    `<line x1="${X(i).toFixed(1)}" y1="${P}" x2="${X(i).toFixed(1)}" y2="${H - P}"
+      class="tw-grid"/>`).join('');
+  const zero = (!isTime && bot < 0 && top > 0)
+    ? `<line x1="${P}" y1="${Y(0).toFixed(1)}" x2="${W - P}" y2="${Y(0).toFixed(1)}" class="dz"/>`
+    : '';
+
+  const body = rows.map(r => {
+    const pts = r.cells.map((c, i) => c ? { i, v: c[0], n: c[1] } : null).filter(Boolean);
+    const col = BAND_COLOURS[r.b] || 'var(--dim)';
+    // Cells under the minimum are gaps, not joins: a line drawn straight
+    // through a season we could not measure would invent the season.
+    let d = '', prev = -2;
+    for (const p of pts) {
+      d += `${p.i === prev + 1 ? 'L' : 'M'}${X(p.i).toFixed(1)} ${Y(p.v).toFixed(1)} `;
+      prev = p.i;
+    }
+    const dots = pts.map(p => `<circle cx="${X(p.i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}"
+      r="3.2" fill="${col}" stroke="var(--surface)" stroke-width="1.5"
+      vector-effect="non-scaling-stroke"><title>${esc(r.b)} · ${S[p.i]} · ${
+        isTime ? clockAxis(p.v) : pctShort(p.v) + '/yr'} · ${p.n} swimmers</title></circle>`).join('');
+    return `<path d="${d.trim()}" fill="none" stroke="${col}" stroke-width="2.4"
+      stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>${dots}`;
+  }).join('');
+
+  const fmt = v => isTime ? clockAxis(v) : pctShort(v) + '/yr';
+  return `<div class="dchart">
+      <div class="dc-y"><span>${fmt(hi)}<i>slower</i></span>
+        <span>${fmt(lo)}<i>faster</i></span></div>
+      <div class="dc-plot"><svg viewBox="0 0 ${W} ${H}">${grid}${zero}${body}</svg>
+        <div class="dc-xa">${S.map((s, i) => {
+      const pc = (X(i) / W * 100).toFixed(2);
+      // anchored at the ends so the first and last labels stay inside the card
+      const tx = i === 0 ? '0' : i === S.length - 1 ? '-100%' : '-50%';
+      return `<span style="left:${pc}%;transform:translateX(${tx})">${s}</span>`;
+    }).join('')}</div></div>
+    </div>
+    <p class="dc-legend">${rows.map(r =>
+      `<span class="dk" style="background:${BAND_COLOURS[r.b]}"></span>${esc(r.b)}`).join('')}</p>
+    <p class="tw-note">${isTime
+      ? `Median season-best in the ${esc(dashBench.replace('|', ' '))}, for the swimmers who were
+         that age <em>at the time of the race</em>. <strong>Read this one carefully:</strong> it is a
+         different set of children each season, so a line can move because the group got quicker
+         or because who was in it changed. The rate view below is not exposed to that.`
+      : `Median improvement per year measured <em>within</em> each season, for the swimmers who
+         were that age at the time. Because each season is rated on its own races, a band can be
+         compared with itself a year earlier even though the children in it have changed.`}
+      Bands need ${BS.minN} swimmers in a season to be drawn; gaps are seasons below that.
+      ${BS.noDob} of ${BS.named} swimmers have no birth date in their registration and sit
+      outside this chart.</p>`;
+}
+
+/** Every swimmer in a band, aligned on their own first race rather than on the
+    calendar — the comparison a date axis cannot make honestly. */
+function dashSinceStart(WR){
+  const idx = careerIndex();
+  const panels = BAND_ORDER.filter(b => !dashBand || b === dashBand).map(b => {
+    const names = (WR ? WR.rows : []).filter(r => r.band === b && r.trend !== null
+      && (!dashSex || ((DATA.years.all.swimmers || [])
+          .find(x => x.name === r.name) || {}).sex === dashSex));
+    const lines = names.map(r => {
+      const evs = idx.get(r.name) || [];
+      const pick = evs.slice().sort((a, b2) => b2.swims - a.swims)[0];
+      if (!pick || (pick.points || []).length < 2) return null;
+      const p0 = new Date(pick.points[0].d + 'T00:00:00').getTime(), base = pick.points[0].t;
+      return pick.points.map(p => ({
+        m: (new Date(p.d + 'T00:00:00').getTime() - p0) / 2629800000,
+        v: (p.t - base) / base * 100,
+      }));
+    }).filter(Boolean);
+    return { b, lines, n: lines.length };
+  }).filter(p => p.n > 0);
+
+  if (!panels.length) return '<p class="nodata">No rated swimmers match these filters.</p>';
+
+  const all = panels.flatMap(p => p.lines.flat());
+  const mx = Math.max(...all.map(p => p.m), 6);
+  const lo = Math.min(...all.map(p => p.v), 0), hi = Math.max(...all.map(p => p.v), 0);
+  const W = 300, H = 170, P = 10;
+  const X = m => P + (m / mx) * (W - 2 * P);
+  const Y = v => P + ((hi - v) / (hi - lo || 1)) * (H - 2 * P);
+
+  return `<div class="dsmall">${panels.map(p => {
+    // The median curve, sampled on a common grid so that lines of different
+    // lengths can be averaged without the mean jumping as each one ends.
+    const step = mx / 12;
+    const medPts = [];
+    for (let k = 0; k <= 12; k++) {
+      const m = k * step;
+      const at = p.lines.map(L => {
+        if (m < L[0].m || m > L[L.length - 1].m) return null;
+        for (let i = 1; i < L.length; i++) {
+          if (L[i].m >= m) {
+            const a = L[i - 1], b2 = L[i], f = (m - a.m) / ((b2.m - a.m) || 1);
+            return a.v + (b2.v - a.v) * f;
+          }
+        }
+        return null;
+      }).filter(v => v !== null);
+      if (at.length >= 3) medPts.push({ m, v: med(at) });
+    }
+    const path = L => L.map((q, i) =>
+      `${i ? 'L' : 'M'}${X(q.m).toFixed(1)} ${Y(q.v).toFixed(1)}`).join(' ');
+    return `<figure class="dsm">
+      <figcaption><b>${esc(p.b)}</b> <span>${p.n} swimmer${p.n === 1 ? '' : 's'}</span></figcaption>
+      <svg viewBox="0 0 ${W} ${H}">
+        ${hi > 0 && lo < 0 ? `<line x1="${P}" y1="${Y(0).toFixed(1)}" x2="${W - P}"
+          y2="${Y(0).toFixed(1)}" class="dz"/>` : ''}
+        ${p.lines.map(L => `<path d="${path(L)}" fill="none" stroke="${BAND_COLOURS[p.b]}"
+          stroke-width="1.1" opacity=".26" vector-effect="non-scaling-stroke"/>`).join('')}
+        ${medPts.length > 1 ? `<path d="${path(medPts)}" fill="none"
+          stroke="${BAND_COLOURS[p.b]}" stroke-width="2.6" stroke-linejoin="round"
+          vector-effect="non-scaling-stroke"/>` : ''}
+      </svg>
+    </figure>`;
+  }).join('')}</div>
+    <p class="tw-note">Every rated swimmer, each one starting at their own first race rather than
+      at a date — so a child who joined in 2023 and one who joined this year lie on top of each
+      other instead of at opposite ends of the chart. Faint line per swimmer, solid line the band
+      median. Down is faster. The axis runs 0 to ${Math.round(mx)} months from a swimmer's first
+      race; vertical scale is shared by all ${panels.length} panels, so the panels are comparable
+      with each other.</p>`;
+}
+
 /** Selected swimmers over time — real seconds, or normalised from their own
     first swim so different events can share one axis. */
 function dashLineChart(WR, normalised){
@@ -1582,10 +1771,10 @@ function dashLineChart(WR, normalised){
       <div class="dc-y"><span>${fmt(hiY)}<i>${normalised ? 'slower' : 'slower'}</i></span>
         <span>${fmt(loY)}<i>faster</i></span></div>
       <div class="dc-plot"><svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
-        ${grid}${zero}${body}</svg></div>
+        ${grid}${zero}${body}</svg>
+        <div class="dc-x"><span>${monthLabel(all.map(p => p.d).sort()[0])}</span>
+          <span>${monthLabel(all.map(p => p.d).sort().slice(-1)[0])}</span></div></div>
     </div>
-    <div class="dc-x"><span>${monthLabel(all.map(p => p.d).sort()[0])}</span>
-      <span>${monthLabel(all.map(p => p.d).sort().slice(-1)[0])}</span></div>
     <p class="dc-legend">${series.map(sr =>
       `<span class="dk" style="background:${sr.colour}"></span>${esc(sr.label)}`).join('')}</p>
     <p class="tw-note">${normalised
@@ -2234,11 +2423,14 @@ function render(){
   })();
 
   const dashChart =
-    dashMode === 'ages'     ? dashAgesChart(WR)
+    dashMode === 'bands'    ? dashBandSeasons()
+    : dashMode === 'since'  ? dashSinceStart(WR)
+    : dashMode === 'ages'   ? dashAgesChart(WR)
     : dashMode === 'event'  ? dashLineChart(WR, false)
     :                         dashLineChart(WR, true);
 
-  const dashPicker = dashMode === 'ages' ? '' : `
+  // Only the two that plot named individuals need a name picker.
+  const dashPicker = (dashMode !== 'event' && dashMode !== 'progress') ? '' : `
     <div class="dpick">
       <div class="dp-head"><b>${dashRows.length} swimmer${dashRows.length === 1 ? '' : 's'}
         match${dashRows.length === 1 ? 'es' : ''}</b>
@@ -2254,11 +2446,25 @@ function render(){
         ${dashRows.length}. Narrow the filters to see the rest.</p>` : ''}
     </div>`;
 
+  const DASH_MODES = [
+    ['bands',    'Age bands by season', 'Each band across the seasons — every line spans the whole axis'],
+    ['since',    'Since they started',  'Everyone aligned on their own first race, one panel per band'],
+    ['ages',     'Bands right now',     'This period only, as bars'],
+    ['event',    'Same race',           'Real times, one event, swimmers side by side'],
+    ['progress', 'Picked swimmers',     'Chosen swimmers from their own first swim'],
+  ];
+
   document.getElementById('app').innerHTML = `
   <section class="wrap" id="s0" data-page="dashboard">
     <div class="sec-head"><span class="sec-num">00</span><h2>Where the club stands</h2></div>
-    <p class="sec-sub">Set the filters, then ask the chart a question. It opens on the shape of
-      the club by age; switch it to put swimmers side by side.</p>
+    <p class="sec-sub">Five ways of asking the same question. The first two hold the age bands
+      still and let the children move through them, which is the only way seasons compare
+      honestly; the last two follow named swimmers.</p>
+
+    <div class="dmode dmode-wide" role="group" aria-label="Which chart">
+      ${DASH_MODES.map(([k, lab, why]) => `<button type="button" data-dm="${k}"
+        aria-pressed="${dashMode === k}" title="${esc(why)}">${esc(lab)}</button>`).join('')}
+    </div>
 
     <div class="dfilters">
       <label>Age<select id="dBand">
@@ -2274,7 +2480,22 @@ function render(){
         ${dashEvents.map(([k, n]) => `<option value="${esc(k)}"${dashEvent === k ? ' selected' : ''}
           >${esc(k.replace('|', ' · '))} (${n})</option>`).join('')}
       </select></label>` : ''}
-      <span class="dfil-note">Period follows the season above: <b>${esc(RATED_IN)}</b></span>
+      ${dashMode === 'bands' ? `<label>Measure<select id="dY">
+        <option value="rate"${dashY === 'rate' ? ' selected' : ''}>Improvement per year</option>
+        <option value="time"${dashY === 'time' ? ' selected' : ''}>Median season best</option>
+      </select></label>
+      ${dashY === 'time' ? `<label>Benchmark<select id="dBench">
+        ${(DATA.bandSeasons?.events || []).map(([k, n]) => `<option value="${esc(k)}"${
+          dashBench === k ? ' selected' : ''}>${esc(k.replace('|', ' · '))} (${n})</option>`).join('')}
+      </select></label>` : ''}` : ''}
+      <span class="dfil-note">${dashMode === 'bands'
+        ? 'Every season, always — this chart <b>is</b> the comparison across seasons'
+        : `Period follows the season above: <b>${esc(RATED_IN)}</b>`}</span>
+    </div>
+
+    <div class="dbody${dashPicker ? '' : ' solo'}">
+      <div class="dmain">${dashChart}</div>
+      ${dashPicker}
     </div>
 
     <div class="dtiles">
@@ -2284,17 +2505,6 @@ function render(){
         <div class="l">Median improvement</div><div class="d">across those rated</div></div>
       <div class="dtile"><div class="n">${dashPb === null ? '—' : dashPb + '%'}</div>
         <div class="l">Personal-best rate</div><div class="d">average of their own swims</div></div>
-    </div>
-
-    <div class="dmode" role="group" aria-label="What the chart shows">
-      <button type="button" data-dm="ages"     aria-pressed="${dashMode === 'ages'}">Age groups</button>
-      <button type="button" data-dm="event"    aria-pressed="${dashMode === 'event'}">Same event</button>
-      <button type="button" data-dm="progress" aria-pressed="${dashMode === 'progress'}">Progress</button>
-    </div>
-
-    <div class="dbody${dashPicker ? '' : ' solo'}">
-      <div class="dmain">${dashChart}</div>
-      ${dashPicker}
     </div>
   </section>
 
@@ -2674,6 +2884,8 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
   bind('dBand',  e => { dashBand = e.target.value; render(); });
   bind('dSex',   e => { dashSex = e.target.value; render(); });
   bind('dEvent', e => { dashEvent = e.target.value; render(); });
+  bind('dY',     e => { dashY = e.target.value; render(); });
+  bind('dBench', e => { dashBench = e.target.value; render(); });
 
   document.querySelectorAll('.dmode button').forEach(b => b.onclick = () => {
     dashMode = b.dataset.dm; render();

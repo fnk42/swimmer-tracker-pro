@@ -112,6 +112,18 @@ export const YEAR_BLOCKS = {
   ],
 } as const;
 
+// Blocks at the top of the payload, outside `years`. These are not filtered
+// per-scope, so anything listed here must name nobody and carry no assessment
+// of anybody. `bandSeasons` qualifies: medians and head-counts per age band
+// per season, the same class of figure as `ages`.
+//
+// The list is enforced two ways — a test fails when the pipeline emits a key
+// that is not here, and shapeAnalytics keeps only these, so a new block has to
+// be classified deliberately before any viewer can receive it.
+export const TOP_LEVEL = {
+  tier1: ["generated", "thresholds", "bandSeasons", "years"],
+} as const;
+
 export type Scope =
   | "coach" // coordinator or coach: everything
   | "community" // guardian of a confirmed NextGen swimmer: tier 1 for everyone
@@ -120,6 +132,7 @@ export type Scope =
 const set = (xs: readonly string[]) => new Set<string>(xs);
 const SW_TIER1 = set(SWIMMER_FIELDS.tier1);
 const YR_TIER1 = set(YEAR_BLOCKS.tier1);
+const TOP_TIER1 = set(TOP_LEVEL.tier1);
 
 type Rec = Record<string, unknown>;
 
@@ -161,7 +174,9 @@ export function shapeAnalytics(data: Rec, scope: Scope): Rec {
     shaped[year] = kept;
   }
 
-  return { ...data, scope, years: shaped };
+  // Picked, not spread: a top-level block nobody has classified is dropped
+  // here rather than forwarded to a parent by default.
+  return { ...pick(data, TOP_TIER1), scope, years: shaped };
 }
 
 /**

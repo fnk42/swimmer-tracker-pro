@@ -11,6 +11,7 @@ import data from "../tracker/data.json";
 import {
   EVENT_FIELDS,
   SWIMMER_FIELDS,
+  TOP_LEVEL,
   YEAR_BLOCKS,
   assessmentFor,
   shapeAnalytics,
@@ -56,6 +57,27 @@ describe("every analytics field is classified", () => {
     }
     const unknown = [...seen].filter((k) => !classifiedBlocks.has(k));
     expect(unknown).toEqual([]);
+  });
+
+  test("top-level block has no unclassified section", () => {
+    const unknown = Object.keys(D).filter(
+      (k) => !(TOP_LEVEL.tier1 as readonly string[]).includes(k),
+    );
+    expect(unknown).toEqual([]);
+  });
+
+  test("an unclassified top-level block never reaches a viewer", () => {
+    const withLeak = { ...D, secretRoster: [{ name: "Child", note: "private" }] };
+    for (const scope of ["community", "pending"] as const) {
+      expect(Object.keys(shapeAnalytics(withLeak, scope))).not.toContain("secretRoster");
+    }
+  });
+
+  test("bandSeasons names nobody", () => {
+    const json = JSON.stringify((D as Rec).bandSeasons);
+    for (const s of swimmers.slice(0, 40)) {
+      expect(json).not.toContain(s.name as string);
+    }
   });
 
   test("no field is in two tiers at once", () => {
