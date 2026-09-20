@@ -72,7 +72,7 @@ const OUTSTANDING = [
    'F. Njenga', null, null],
   ['shipped', 'A swimmer who lapses twelve months goes dormant',
    'Club rule, set 20 September 2026. A swimmer with no NextGen race in twelve months is dormant: every one of their results is kept in full, and they stop counting toward club figures, the age bands and the development groups. It applies automatically from here on, measured against the club\u2019s most recent meet rather than the calendar, so the same data always rebuilds the same roster. A club-confirmed status still overrides it. First application moved 39 swimmers and took the roster from 190 to 151.',
-   'Dr Boit', 'PENDING', '2026-09-20'],
+   'F. Njenga', '8ac3c8e', '2026-09-20'],
   ['idea', 'Confirm the reconstructed meet titles',
    'The timing software cuts meet names at 30 characters. 34 titles are reconstructions; data/meet_names.csv is one pass to confirm or correct them.',
    'F. Njenga', null, null],
@@ -106,11 +106,20 @@ for (const [status, title, detail, raised, sha, on] of [...OUTSTANDING, ...ITEMS
   }
 }
 
-// Anything from the first seed we have superseded, out of the way.
+// Rows this file does not mention are LEFT ALONE.
+//
+// This used to delete them, which is wrong for a board that accumulates. A
+// dry run before the first real sync found it would have removed 14 rows —
+// twelve shipped items from Dr Boit's own review, recorded here under their
+// original wording, and with them both of the comments he had written, which
+// cascade from roadmap_items. Work that shipped is history, and a comment
+// from the person the board exists for is not something a sync script gets to
+// throw away. The cost of never deleting is a possible duplicate after a
+// retitle; that is recoverable and losing his comments is not.
 const keep = new Set([...OUTSTANDING, ...ITEMS].map(x => x[1]));
-const stale = existing.filter(r => !keep.has(r.title));
-for (const r of stale) {
-  await c.query(`delete from public.roadmap_items where id=$1::uuid`, [r.id]);
+const untouched = existing.filter(r => !keep.has(r.title));
+console.log(`roadmap: ${added} added, ${updated} updated, ${untouched.length} left untouched`);
+if (untouched.length) {
+  for (const r of untouched) console.log(`  kept: ${r.title}`);
 }
-console.log(`roadmap: ${added} added, ${updated} updated, ${stale.length} superseded rows removed`);
 await c.end();

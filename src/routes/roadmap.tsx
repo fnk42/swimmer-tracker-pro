@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import dormant from "@/tracker/dormant.json";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -158,7 +159,14 @@ function Roadmap() {
 
   return (
     <main className="mx-auto max-w-5xl px-5 py-10">
-      <h1 className="text-2xl font-semibold tracking-tight">What we are building</h1>
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">What we are building</h1>
+        <a href="/dormant"
+           className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-[13px]
+                      font-medium text-amber-900 hover:bg-amber-100">
+          {dormant.swimmers.length} dormant swimmers — review or put back →
+        </a>
+      </div>
       <p className="mt-2 max-w-2xl text-[15px] text-muted-foreground">
         Everything shipped, everything planned, and every idea raised. Shipped items are green
         and ticked; everything still owed is amber, blue or grey by how near it is. Tick an item
