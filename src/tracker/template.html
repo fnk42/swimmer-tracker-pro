@@ -836,6 +836,105 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
   .tblwrap::after{content:"";position:absolute;inset-block:0;right:0;width:26px;
     pointer-events:none;background:linear-gradient(to right,transparent,var(--surface))}
 }
+/* Dashboard: filters, three figures, one chart that changes its question. */
+.dfilters{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-top:18px;
+  padding:14px 16px;background:var(--sunken);border:1px solid var(--line);border-radius:13px}
+.dfilters label{display:flex;flex-direction:column;gap:5px;font-size:10.5px;font-weight:700;
+  letter-spacing:.9px;text-transform:uppercase;color:var(--muted)}
+.dfilters select{font:inherit;font-size:13.5px;padding:8px 11px;border-radius:9px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);min-height:38px}
+.dfil-note{margin-left:auto;font-size:12px;color:var(--muted)}
+.dfil-note b{color:var(--ink)}
+
+.dtiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;
+  margin-top:14px}
+.dtile{background:var(--surface);border:1px solid var(--line);border-radius:13px;
+  padding:15px 17px;box-shadow:var(--shadow-sm)}
+.dtile .n{font-family:'Anton',sans-serif;font-size:31px;line-height:1;letter-spacing:.5px}
+.dtile .l{font-size:12.5px;font-weight:600;color:var(--ink);margin-top:7px}
+.dtile .d{font-size:11.5px;color:var(--muted);margin-top:2px}
+
+.dmode{display:inline-flex;background:var(--ice);border-radius:10px;padding:3px;gap:3px;
+  margin-top:18px}
+.dmode button{appearance:none;border:0;background:transparent;font:inherit;font-size:13px;
+  font-weight:600;color:var(--muted);padding:7px 14px;border-radius:8px;cursor:pointer;
+  white-space:nowrap}
+.dmode button[aria-pressed="true"]{background:var(--surface);color:var(--ink);
+  box-shadow:var(--shadow-sm)}
+
+.dbody{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:16px;margin-top:14px;
+  align-items:start}
+.dbody.solo{grid-template-columns:minmax(0,1fr)}
+.dmain{background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  padding:18px 20px;box-shadow:var(--shadow-sm);min-width:0}
+
+/* age bands as bars */
+.agebars{display:grid;gap:10px}
+.agebar{display:grid;grid-template-columns:96px minmax(0,1fr) 78px 74px;gap:11px;
+  align-items:center;font-size:13px}
+.ab-lab{font-weight:600;color:var(--ink)}
+.ab-track{height:11px;border-radius:999px;background:var(--ice);overflow:hidden}
+.ab-fill{display:block;height:100%;border-radius:999px;background:var(--ok)}
+.ab-fill.down{background:var(--alert)}
+.ab-val{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;font-weight:700;
+  text-align:right}
+.ab-n{font-size:11px;color:var(--muted);white-space:nowrap}
+
+/* the line chart */
+.dchart{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px}
+.dc-y{display:flex;flex-direction:column;justify-content:space-between;text-align:right;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;color:var(--muted);
+  padding:3px 0}
+.dc-y i{display:block;font-style:normal;font-size:8.5px;font-weight:700;letter-spacing:.8px;
+  text-transform:uppercase;opacity:.7}
+.dc-plot{min-width:0}
+.dc-plot svg{display:block;width:100%;height:auto;overflow:visible}
+.dz{stroke:var(--dim);stroke-width:1.5;stroke-dasharray:4 4;opacity:.6;
+  vector-effect:non-scaling-stroke}
+.dc-x{display:flex;justify-content:space-between;margin-top:7px;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;color:var(--muted)}
+.dc-legend{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:11px 0 0;
+  font-size:12px;color:var(--body)}
+.dk{width:11px;height:11px;border-radius:3px;flex:none}
+
+/* who gets plotted */
+.dpick{background:var(--surface);border:1px solid var(--line);border-radius:14px;
+  box-shadow:var(--shadow-sm);overflow:hidden}
+.dp-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  padding:12px 14px;border-bottom:1px solid var(--line);font-size:12.5px;flex-wrap:wrap}
+.dp-head b{font-size:13px}
+.dp-head span{color:var(--muted);font-size:11.5px}
+.dp-clear{appearance:none;border:0;background:none;color:var(--electric-deep);font:inherit;
+  font-size:11.5px;cursor:pointer;text-decoration:underline;padding:0}
+.dp-list{max-height:430px;overflow-y:auto}
+.dp-item{display:block;width:100%;text-align:left;appearance:none;border:0;
+  border-bottom:1px solid var(--line);background:var(--surface);font:inherit;cursor:pointer;
+  padding:9px 14px}
+.dp-item:hover{background:var(--sunken)}
+.dp-item.on{background:var(--ice)}
+.dp-item.on .dp-nm::before{content:"\2713\00a0";color:var(--electric-deep);font-weight:700}
+.dp-nm{display:block;font-size:13px;font-weight:600;color:var(--ink)}
+.dp-meta{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+.dp-more{margin:0;padding:10px 14px;font-size:11.5px;color:var(--muted)}
+
+@media (max-width:860px){
+  .dbody{grid-template-columns:minmax(0,1fr)}
+  .dp-list{max-height:290px}
+  .agebar{grid-template-columns:78px minmax(0,1fr) 66px;gap:8px}
+  .ab-n{display:none}
+  .dfil-note{margin-left:0;width:100%}
+}
+/* Stacked tiles ate most of a phone screen before the chart appeared. Lay each
+   one out on its side so the three of them cost one screen-third, not two. */
+@media (max-width:560px){
+  .dtiles{gap:9px}
+  .dtile{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:12px;
+    padding:12px 14px}
+  .dtile .n{grid-row:1 / span 2;align-self:center;font-size:26px}
+  .dtile .l{margin-top:0}
+  .dtile .d{margin-top:1px}
+}
+
 /* Method. Reference material rather than a dashboard, so it reads as prose
    with the occasional table, not as tiles. */
 .mlink{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;letter-spacing:.11em;
@@ -961,6 +1060,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
        looks for. -->
   <nav class="tabnav" id="sidenav" aria-label="Views">
     <div class="tabwrap">
+      <a href="#/dashboard"  data-page="dashboard">Dashboard</a>
       <a href="#/programme"  data-page="programme">Programme</a>
       <a href="#/age-groups" data-page="age-groups">Ages</a>
       <a href="#/swimmers"   data-page="swimmers">Swimmers</a>
@@ -1220,6 +1320,20 @@ let pwFrom = null, pwTo = null, pwCompare = false;
 // axes — with the original single-event view a tap away.
 let chartMode = 'distance';
 
+// ---- dashboard -----------------------------------------------------------
+// One page Dr Boit can steer: the filters he asked for, three figures that
+// answer to them, and a chart that changes what it is about.
+//   ages     the club's shape, band by band — where it opens
+//   event    real times in one event, so swimmers are genuinely comparable
+//   progress every line from that swimmer's own first swim, so a 7-year-old
+//            and a 16-year-old can sit on the same axes
+const DASH_MAX = 8;
+let dashMode = 'ages';
+let dashBand = '';          // '' = every age band
+let dashSex = '';           // '' = both
+let dashEvent = '50 Free|SCM';
+const dashPinned = new Set();
+
 // The plot scales UNIFORMLY (no preserveAspectRatio="none"), because stretching
 // x more than y turned every race dot into a wide ellipse. The width is capped
 // in CSS instead, which keeps the aspect close to this box at any screen size.
@@ -1350,6 +1464,135 @@ function chartPlotMulti(series, joined){
 
   return `<svg class="tw-svg" viewBox="0 0 ${W} ${H}" aria-hidden="true">
     ${grid}${joinMark}${body}</svg>`;
+}
+
+/* ---- dashboard charts --------------------------------------------------
+   Three questions, three shapes. Real times only ever share an axis with the
+   same event at the same pool length; everything else is normalised or is a
+   comparison of rates, never of raw seconds. */
+
+const LINE_COLOURS = ['#2C7BE5','#0F6E56','#7C4DFF','#C2761B','#B3261E',
+                      '#0891B2','#9333EA','#65A30D'];
+
+/** Swimmers passing the dashboard filters, rated in the current window. */
+function dashPool(WR){
+  const idx = careerIndex();
+  const [wantEv, wantCo] = dashEvent.split('|');
+  return (WR ? WR.rows : []).filter(r => {
+    if (r.trend === null) return false;
+    if (dashBand && r.band !== dashBand) return false;
+    if (dashSex) {
+      const s = (DATA.years.all.swimmers || []).find(x => x.name === r.name);
+      if (!s || s.sex !== dashSex) return false;
+    }
+    if (dashMode === 'event') {
+      const evs = idx.get(r.name) || [];
+      if (!evs.some(e => e.event === wantEv && e.course === wantCo)) return false;
+    }
+    return true;
+  }).sort((a, b) => a.trend - b.trend);
+}
+
+/** Age bands as bars: the club's shape before any individual's. */
+function dashAgesChart(WR){
+  const rows = BAND_ORDER.map(b => {
+    const g = (WR ? WR.rows : []).filter(r => r.band === b && r.trend !== null
+      && (!dashSex || ((DATA.years.all.swimmers || [])
+          .find(x => x.name === r.name) || {}).sex === dashSex));
+    return { b, n: g.length, med: g.length ? med(g.map(x => x.trend)) : null };
+  }).filter(x => x.n > 0);
+  if (!rows.length) return '<p class="nodata">No rated swimmers match these filters.</p>';
+  const mx = Math.max(...rows.map(r => Math.abs(r.med)), 1);
+  return `<div class="agebars">${rows.map(r => `
+    <div class="agebar">
+      <span class="ab-lab">${esc(r.b)}</span>
+      <span class="ab-track"><span class="ab-fill ${r.med < 0 ? 'up' : 'down'}"
+        style="width:${Math.max(2, 100 * Math.abs(r.med) / mx)}%"></span></span>
+      <span class="ab-val ${trendCls(r.med)}">${pctShort(r.med)}/yr</span>
+      <span class="ab-n">${r.n} rated${r.n < 6 ? ' ⚠' : ''}</span>
+    </div>`).join('')}</div>
+    <p class="tw-note">Median improvement per year, by age band. Bands are compared with each
+      other here; a swimmer's own group on the Swimmers page is judged against their band, not
+      against the club.</p>`;
+}
+
+/** Selected swimmers over time — real seconds, or normalised from their own
+    first swim so different events can share one axis. */
+function dashLineChart(WR, normalised){
+  const idx = careerIndex();
+  const [wantEv, wantCo] = dashEvent.split('|');
+  const lo = (pwFrom || (year === 'all' ? YEARS.filter(y => y !== 'all').sort()[0] : year)) + '-01-01';
+  const hi = (pwTo   || (year === 'all' ? YEARS.filter(y => y !== 'all').sort().slice(-1)[0] : year)) + '-12-31';
+
+  const series = [...dashPinned].map((name, i) => {
+    const evs = idx.get(name) || [];
+    const pick = normalised
+      ? evs.slice().sort((a, b) => b.swims - a.swims)[0]
+      : evs.find(e => e.event === wantEv && e.course === wantCo);
+    if (!pick) return null;
+    let pts = (pick.points || []).filter(p => p.d >= lo && p.d <= hi);
+    if (pts.length < 2) return null;
+    if (normalised) {
+      const base = pts[0].t;
+      pts = pts.map(p => ({ d: p.d, t: (p.t - base) / base * 100, pb: p.pb }));
+    }
+    return { name, label: normalised ? `${name} · ${pick.event} ${pick.course}` : name,
+             colour: LINE_COLOURS[i % LINE_COLOURS.length], pts };
+  }).filter(Boolean);
+
+  if (!series.length) {
+    return `<p class="nodata">${dashPinned.size
+      ? 'None of the swimmers you picked raced ' + (normalised ? 'enough in this period.'
+        : esc(wantEv + ' ' + wantCo) + ' in this period.')
+      : 'Pick swimmers from the list to plot them.'}</p>`;
+  }
+
+  const all = series.flatMap(x => x.pts);
+  const xs = all.map(p => new Date(p.d + 'T00:00:00').getTime());
+  const ys = all.map(p => p.t);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const loY = Math.min(...ys), hiY = Math.max(...ys);
+  const pad = (hiY - loY) * 0.14 || 1;
+  const top = hiY + pad, bot = loY - pad;
+  const W = 640, H = 300, P = 10;
+  const X = v => P + ((v - x0) / (x1 - x0 || 1)) * (W - 2 * P);
+  const Y = v => P + ((top - v) / (top - bot || 1)) * (H - 2 * P);
+
+  const grid = [0.25, 0.5, 0.75].map(f =>
+    `<line x1="${P}" y1="${(P + f * (H - 2 * P)).toFixed(1)}" x2="${W - P}"
+      y2="${(P + f * (H - 2 * P)).toFixed(1)}" class="tw-grid"/>`).join('');
+  const zero = normalised && bot < 0 && top > 0
+    ? `<line x1="${P}" y1="${Y(0).toFixed(1)}" x2="${W - P}" y2="${Y(0).toFixed(1)}"
+        class="dz"/>` : '';
+
+  const body = series.map(sr => {
+    const d = sr.pts.map((p, i) =>
+      `${i ? 'L' : 'M'}${X(new Date(p.d + 'T00:00:00').getTime()).toFixed(1)} ${Y(p.t).toFixed(1)}`
+    ).join(' ');
+    const dots = sr.pts.map(p =>
+      `<circle cx="${X(new Date(p.d + 'T00:00:00').getTime()).toFixed(1)}"
+        cy="${Y(p.t).toFixed(1)}" r="2.6" fill="${sr.colour}" stroke="var(--surface)"
+        stroke-width="1.4" vector-effect="non-scaling-stroke"/>`).join('');
+    return `<path d="${d}" fill="none" stroke="${sr.colour}" stroke-width="2.2"
+      stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>${dots}`;
+  }).join('');
+
+  const fmt = v => normalised ? (v > 0 ? '+' : '') + v.toFixed(0) + '%' : clockAxis(v);
+  return `<div class="dchart">
+      <div class="dc-y"><span>${fmt(hiY)}<i>${normalised ? 'slower' : 'slower'}</i></span>
+        <span>${fmt(loY)}<i>faster</i></span></div>
+      <div class="dc-plot"><svg viewBox="0 0 ${W} ${H}" aria-hidden="true">
+        ${grid}${zero}${body}</svg></div>
+    </div>
+    <div class="dc-x"><span>${monthLabel(all.map(p => p.d).sort()[0])}</span>
+      <span>${monthLabel(all.map(p => p.d).sort().slice(-1)[0])}</span></div>
+    <p class="dc-legend">${series.map(sr =>
+      `<span class="dk" style="background:${sr.colour}"></span>${esc(sr.label)}`).join('')}</p>
+    <p class="tw-note">${normalised
+      ? 'Each line starts at that swimmer\u2019s own first swim in the period, so swimmers racing '
+        + 'different events can be compared on how far they have come. It says nothing about who is quickest.'
+      : 'Real times in one event at one pool length, which is the only way two swimmers\u2019 '
+        + 'seconds can honestly share an axis. A falling line means the time is coming down.'}</p>`;
 }
 
 /** A distance group: one chart, one line per stroke. */
@@ -1964,7 +2207,97 @@ function render(){
       <td class="n">${pct(WR.norms[b])}</td><td class="n">${n}</td></tr>`;
   }).join('') : '';
 
+  // ---- dashboard --------------------------------------------------------
+  const dashRows = dashPool(WR);
+  const dashAll = (WR ? WR.rows : []).filter(r =>
+    (!dashBand || r.band === dashBand) &&
+    (!dashSex || ((Y.swimmers || []).find(x => x.name === r.name) || {}).sex === dashSex));
+  const dashRated = dashAll.filter(r => r.trend !== null);
+  const dashMedian = dashRated.length ? med(dashRated.map(r => r.trend)) : null;
+  const dashPb = (() => {
+    const names = new Set(dashRated.map(r => r.name));
+    const g = (Y.swimmers || []).filter(x => names.has(x.name) && x.pbRate !== null);
+    return g.length ? Math.round(g.reduce((a, b) => a + b.pbRate, 0) / g.length) : null;
+  })();
+
+  // Every event raced by at least two swimmers, so the picker never offers a
+  // comparison that cannot be made.
+  const dashEvents = (() => {
+    const idx = careerIndex(), c = new Map();
+    for (const evs of idx.values())
+      for (const e of evs) {
+        const k = e.event + '|' + e.course;
+        c.set(k, (c.get(k) || 0) + 1);
+      }
+    return [...c.entries()].filter(([, n]) => n >= 2)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  })();
+
+  const dashChart =
+    dashMode === 'ages'     ? dashAgesChart(WR)
+    : dashMode === 'event'  ? dashLineChart(WR, false)
+    :                         dashLineChart(WR, true);
+
+  const dashPicker = dashMode === 'ages' ? '' : `
+    <div class="dpick">
+      <div class="dp-head"><b>${dashRows.length} swimmer${dashRows.length === 1 ? '' : 's'}
+        match${dashRows.length === 1 ? 'es' : ''}</b>
+        <span>${dashPinned.size} of ${DASH_MAX} plotted${
+          dashPinned.size ? ` · <button type="button" class="dp-clear">clear</button>` : ''}</span></div>
+      <div class="dp-list">${dashRows.slice(0, 60).map(r => `
+        <button type="button" class="dp-item${dashPinned.has(r.name) ? ' on' : ''}"
+          data-name="${esc(r.name)}">
+          <span class="dp-nm">${esc(r.name)}</span>
+          <span class="dp-meta">${esc(r.band)} · ${pctShort(r.trend)}/yr</span>
+        </button>`).join('')}</div>
+      ${dashRows.length > 60 ? `<p class="dp-more">Showing the 60 fastest-improving of
+        ${dashRows.length}. Narrow the filters to see the rest.</p>` : ''}
+    </div>`;
+
   document.getElementById('app').innerHTML = `
+  <section class="wrap" id="s0" data-page="dashboard">
+    <div class="sec-head"><span class="sec-num">00</span><h2>Where the club stands</h2></div>
+    <p class="sec-sub">Set the filters, then ask the chart a question. It opens on the shape of
+      the club by age; switch it to put swimmers side by side.</p>
+
+    <div class="dfilters">
+      <label>Age<select id="dBand">
+        <option value="">All ages</option>
+        ${BAND_ORDER.map(b => `<option value="${esc(b)}"${dashBand === b ? ' selected' : ''}>${esc(b)}</option>`).join('')}
+      </select></label>
+      <label>Sex<select id="dSex">
+        <option value="">All</option>
+        <option value="F"${dashSex === 'F' ? ' selected' : ''}>Female</option>
+        <option value="M"${dashSex === 'M' ? ' selected' : ''}>Male</option>
+      </select></label>
+      ${dashMode === 'event' ? `<label>Event<select id="dEvent">
+        ${dashEvents.map(([k, n]) => `<option value="${esc(k)}"${dashEvent === k ? ' selected' : ''}
+          >${esc(k.replace('|', ' · '))} (${n})</option>`).join('')}
+      </select></label>` : ''}
+      <span class="dfil-note">Period follows the season above: <b>${esc(RATED_IN)}</b></span>
+    </div>
+
+    <div class="dtiles">
+      <div class="dtile"><div class="n">${dashRated.length}</div><div class="l">Swimmers rated</div>
+        <div class="d">of ${dashAll.length} in this selection</div></div>
+      <div class="dtile"><div class="n ${trendCls(dashMedian)}">${dashMedian === null ? '—' : pctShort(dashMedian) + '/yr'}</div>
+        <div class="l">Median improvement</div><div class="d">across those rated</div></div>
+      <div class="dtile"><div class="n">${dashPb === null ? '—' : dashPb + '%'}</div>
+        <div class="l">Personal-best rate</div><div class="d">average of their own swims</div></div>
+    </div>
+
+    <div class="dmode" role="group" aria-label="What the chart shows">
+      <button type="button" data-dm="ages"     aria-pressed="${dashMode === 'ages'}">Age groups</button>
+      <button type="button" data-dm="event"    aria-pressed="${dashMode === 'event'}">Same event</button>
+      <button type="button" data-dm="progress" aria-pressed="${dashMode === 'progress'}">Progress</button>
+    </div>
+
+    <div class="dbody${dashPicker ? '' : ' solo'}">
+      <div class="dmain">${dashChart}</div>
+      ${dashPicker}
+    </div>
+  </section>
+
   <section class="wrap" id="s1" data-page="programme">
     <div class="sec-head"><span class="sec-num">01</span><h2>Is it working?</h2></div>
     <p class="sec-sub">${s.swimmers} swimmers · ${s.swims} races · ${s.meets} meet${s.meets===1?'':'s'}${
@@ -2337,6 +2670,23 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
     ageHi = hi === '' || hi === null ? null : Number(hi);
     render();
   };
+  const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.onchange = fn; };
+  bind('dBand',  e => { dashBand = e.target.value; render(); });
+  bind('dSex',   e => { dashSex = e.target.value; render(); });
+  bind('dEvent', e => { dashEvent = e.target.value; render(); });
+
+  document.querySelectorAll('.dmode button').forEach(b => b.onclick = () => {
+    dashMode = b.dataset.dm; render();
+  });
+  document.querySelectorAll('.dp-item').forEach(b => b.onclick = () => {
+    const n = b.dataset.name;
+    if (dashPinned.has(n)) dashPinned.delete(n);
+    else if (dashPinned.size < DASH_MAX) dashPinned.add(n);
+    render();
+  });
+  const dpc = document.querySelector('.dp-clear');
+  if (dpc) dpc.onclick = () => { dashPinned.clear(); render(); };
+
   const pwF = document.getElementById('pwFrom'), pwT = document.getElementById('pwTo');
   if (pwF) pwF.onchange = e => {
     pwFrom = e.target.value;
@@ -2364,7 +2714,7 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
 // Routing. Each nav item is its own page, not a scroll position: only the
 // active section is in the document flow, and the hash makes a view linkable
 // and survives a reload or the back button.
-const ALL_PAGES = ['programme','age-groups','swimmers','meets','decisions','method'];
+const ALL_PAGES = ['dashboard','programme','age-groups','swimmers','meets','decisions','method'];
 // 'club' sees every swimmer by name; 'family' gets the club-wide picture only,
 // which is aggregate throughout. The server decides which, and sends only what
 // that scope is allowed — this just keeps the nav honest about it.
