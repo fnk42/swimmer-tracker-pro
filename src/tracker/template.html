@@ -1,3 +1,6 @@
+<!doctype html>
+<html lang="en">
+<head>
 <meta charset="utf-8">
 <!-- WITHOUT THIS the page is a phone disaster, and every portrait rule below is
      dead. /tracker is served as its own HTML document by the route, so it never
@@ -10,6 +13,34 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Sora:wght@300;400;500;600;700;800&display=swap">
+<meta name="description" content="Times, personal bests and progress for every NextGen swimmer, meet by meet.">
+<meta name="robots" content="noindex">
+
+<!-- Share previews. WhatsApp found no description here and fell back to the
+     first text in the document, which was the CSS custom properties: every
+     shared link read ":root{ --navy:#0A1B33 ...". That happened because this
+     file had no <head> at all — it opened straight into <meta> and <style>,
+     and a scraper reading it as a fragment treats the stylesheet as body text.
+     The document structure below is as much of the fix as the tags are. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="NextGen Multi Sport Academy">
+<meta property="og:title" content="NextGen Performance Tracker">
+<meta property="og:description" content="Times, personal bests and progress for every NextGen swimmer, meet by meet.">
+<meta property="og:url" content="https://performance.nextgenkenya.com/tracker">
+<meta property="og:image" content="https://performance.nextgenkenya.com/og-tracker.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="NextGen Multi Sport Academy — Performance Tracker">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="NextGen Performance Tracker">
+<meta name="twitter:description" content="Times, personal bests and progress for every NextGen swimmer, meet by meet.">
+<meta name="twitter:image" content="https://performance.nextgenkenya.com/og-tracker.png">
+<meta name="theme-color" content="#0A1B33">
+
+<link rel="icon" href="/favicon.png" type="image/png" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
 <style>
 :root{
   --navy:#0A1B33; --navy-2:#12294A; --electric:#16A6E8; --electric-deep:#0E7FC0;
@@ -1186,6 +1217,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .gpcontact a:hover{color:var(--electric-deep);text-decoration:underline}
 @media (max-width:560px){ .gpcontact{margin-left:0;gap:8px} }
 </style>
+</head>
+<body>
 
 <!-- Leave a note about whatever is on screen. The tracker is raw HTML served
      outside React, so it cannot use the NoteButton component and carries its
@@ -2110,9 +2143,16 @@ const TW_COLOURS = ['#2C7BE5', '#C2761B'];
 function twoSection(){
   const MS = DATA.meetSwims;
   if (!MS) return '';
-  const all = (DATA.years.all.swimmers || []).filter(s => (s.events || []).length)
+  // This chart sits under the Swimmers filter bar, so it has to obey it:
+  // offering the whole club in the picker under a bar reading "11-12 ·
+  // Breast only" is the same contradiction the tiles had.
+  const SC = fScope();
+  let all = (DATA.years.all.swimmers || []).filter(s => (s.events || []).length)
     .map(s => s.name).sort();
-  const a = twA || all[0] || '';
+  if (fActive()) all = all.filter(n => SC.names.has(n));
+  if (!all.length) return `<p class="nodata">No swimmer matches the filters above.</p>`;
+  // A swimmer chosen before the filter narrowed may no longer be in it.
+  const a = (twA && all.includes(twA)) ? twA : all[0];
   const picked = [a, twB].filter(Boolean);
   if (!picked.length) return '';
 
@@ -2120,7 +2160,13 @@ function twoSection(){
   const series = picked.map((name, i) => {
     const si = MS.swimmers.indexOf(name);
     const bc = MS.cols.indexOf(twBase);
-    const rows = si < 0 ? [] : MS.rows.filter(r => r[1] === si && r[bc] !== null);
+    const rows = si < 0 ? [] : MS.rows.filter(r => {
+      if (r[1] !== si || r[bc] === null) return false;
+      const d = (meetById.get(r[0]) || {}).date || '';
+      if (d.slice(0, 4) < SC.lo || d.slice(0, 4) > SC.hi) return false;
+      if (fStroke && strokeOf((MS.events[r[2]] || '').split('|')[0]) !== fStroke) return false;
+      return true;
+    });
     // Grouped, then averaged within the group: a swimmer who raced six times
     // at one meet should weigh the same there as one who raced twice.
     const g = new Map();
@@ -2986,6 +3032,47 @@ function render(){
       window: (pwFrom || pwTo) ? `${lo}\u2013${hi}` : null } };
   }
   const s = Y.summary;
+
+  const CUTS = (WR && WR.TH) || Y.bands || DATA.thresholds || {};
+  const fClassCounts = (() => {
+    if (!fActive()) return { fast: s.n_fast, improving: s.n_improving - s.n_fast,
+                             stable: s.n_stable, review: s.n_review, rated: s.rated };
+    // Take the class windowRating already assigned, so this bar agrees with
+    // the development groups on the Swimmers page swimmer for swimmer.
+    // Re-deriving it from the cut-lines did not: windowRating's thresholds
+    // are percentiles of EVENT-SERIES rates, while a swimmer's trend is the
+    // median across their events, and comparing the two put 0 of 69 swimmers
+    // in "review" for 2025 where the groups themselves showed the usual
+    // three in ten.
+    //
+    // A stroke filter changes the measured rate, so there the class has to be
+    // re-derived — and the note beside the bar says the cut-lines are the
+    // club's, not the slice's.
+    const cnt = { fast: 0, improving: 0, stable: 0, review: 0 };
+    if (!fStroke) {
+      // Counted straight off windowRating's rows, which is what the
+      // development groups are built from — not off the filtered swim table.
+      // The two populations differ by design: a swimmer is rated on their
+      // whole career wherever they raced, while the swim table holds only
+      // races swum AS a NextGen member. Gatwiri, Sani N joined on 2026-08-28
+      // and has 89 races but 3 as a member, so she was rated in the groups
+      // and missing from the bar.
+      for (const r of (WR ? WR.rows : [])) {
+        if (r.trend === null) continue;
+        if (fBand && r.band !== fBand) continue;
+        if (r.cls in cnt) cnt[r.cls]++;
+      }
+    } else {
+      for (const r of FS.rated) {
+        cnt[r.trend <= (CUTS.fast ?? -8) ? 'fast'
+          : r.trend <= (CUTS.improving ?? -5) ? 'improving'
+          : r.trend <= (CUTS.stable_hi ?? 0) ? 'stable' : 'review']++;
+      }
+    }
+    const rated = cnt.fast + cnt.improving + cnt.stable + cnt.review;
+    return { ...cnt, rated };
+  })();
+
   // What period every rated figure on this page covers.
   const RATED_IN = s.window || (year === 'all' ? 'all seasons' : year);
   const bands = ['8 & under','9-10','11-12','13-14','15-17','18 & over'];
@@ -3028,7 +3115,8 @@ function render(){
       <span class="pw-span">${FS.lo === FS.hi ? FS.lo : `${FS.lo} \u2192 ${FS.hi}`}</span>
       ${SEASONS.length > 1 && FS.lo !== FS.hi ? `<button id="pwCmp" type="button"
         aria-pressed="${pwCompare}">Compare ${FS.lo} vs ${FS.hi}</button>` : ''}
-      <span class="cov"><b>${covered}</b> of ${(Y.swimmers||[]).length} swimmers have
+      <span class="cov"><b>${fActive() ? fClassCounts.rated : covered}</b> of ${
+        fActive() ? FS.swimmers : (Y.swimmers||[]).length} swimmers have
         enough races across ${FS.lo === FS.hi ? FS.lo : `${FS.lo}\u2013${FS.hi}`} to be
         rated${SEASONS.length > 1 ? `. Comparing the two seasons is a stricter test: a swimmer
         needs enough races <em>inside each one</em>` : ''}. Change the span in the bar above.</span>
@@ -3123,46 +3211,6 @@ function render(){
   // returns as TH. Using the all-seasons lines against single-season rates put
   // 69 of 91 swimmers in the top two groups and made the "three in ten" claim
   // beside the bar false.
-  const CUTS = (WR && WR.TH) || Y.bands || DATA.thresholds || {};
-  const fClassCounts = (() => {
-    if (!fActive()) return { fast: s.n_fast, improving: s.n_improving - s.n_fast,
-                             stable: s.n_stable, review: s.n_review, rated: s.rated };
-    // Take the class windowRating already assigned, so this bar agrees with
-    // the development groups on the Swimmers page swimmer for swimmer.
-    // Re-deriving it from the cut-lines did not: windowRating's thresholds
-    // are percentiles of EVENT-SERIES rates, while a swimmer's trend is the
-    // median across their events, and comparing the two put 0 of 69 swimmers
-    // in "review" for 2025 where the groups themselves showed the usual
-    // three in ten.
-    //
-    // A stroke filter changes the measured rate, so there the class has to be
-    // re-derived — and the note beside the bar says the cut-lines are the
-    // club's, not the slice's.
-    const cnt = { fast: 0, improving: 0, stable: 0, review: 0 };
-    if (!fStroke) {
-      // Counted straight off windowRating's rows, which is what the
-      // development groups are built from — not off the filtered swim table.
-      // The two populations differ by design: a swimmer is rated on their
-      // whole career wherever they raced, while the swim table holds only
-      // races swum AS a NextGen member. Gatwiri, Sani N joined on 2026-08-28
-      // and has 89 races but 3 as a member, so she was rated in the groups
-      // and missing from the bar.
-      for (const r of (WR ? WR.rows : [])) {
-        if (r.trend === null) continue;
-        if (fBand && r.band !== fBand) continue;
-        if (r.cls in cnt) cnt[r.cls]++;
-      }
-    } else {
-      for (const r of FS.rated) {
-        cnt[r.trend <= (CUTS.fast ?? -8) ? 'fast'
-          : r.trend <= (CUTS.improving ?? -5) ? 'improving'
-          : r.trend <= (CUTS.stable_hi ?? 0) ? 'stable' : 'review']++;
-      }
-    }
-    const rated = cnt.fast + cnt.improving + cnt.stable + cnt.review;
-    return { ...cnt, rated };
-  })();
-
   const cbar = ['fast','improving','stable','review'].map(k => {
     const n = fClassCounts[k];
     const w = fClassCounts.rated ? (100*n/fClassCounts.rated) : 0;
@@ -4090,6 +4138,11 @@ function filter(){
     if (lbl) lbl.textContent = filtering
       ? n + ' of ' + t + ' shown'
       : t + ' swimmer' + (t===1?'':'s');
+    // The big number beside the group name is the one people read. It showed
+    // the unfiltered total while the line beside it said "2 of 13 shown", so
+    // a group could read 13 with two swimmers under it.
+    const big = grp.querySelector('.gn');
+    if (big) big.textContent = filtering ? n : t;
     const em = grp.querySelector('[data-empty]');
     if (em) em.hidden = n > 0;
   });
@@ -4308,3 +4361,6 @@ async function boot(){
 
 boot();
 </script>
+
+</body>
+</html>
