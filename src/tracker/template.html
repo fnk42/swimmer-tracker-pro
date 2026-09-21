@@ -3116,9 +3116,56 @@ function render(){
     {t:'11–12',     lo:11, hi:12}, {t:'13–14', lo:13, hi:14},
     {t:'15–17',     lo:15, hi:17}, {t:'18+',   lo:18, hi:99},
   ].filter(p=>AGES.some(a=>a>=p.lo&&a<=p.hi));
+  // The spread heading already said "in this selection" while the bar below
+  // it still drew the whole club: 72 rated in the heading, 122 in the legend,
+  // on the same card. One source for both now.
+  // The cut-lines recomputed for the chosen span, which is what windowRating
+  // returns as TH. Using the all-seasons lines against single-season rates put
+  // 69 of 91 swimmers in the top two groups and made the "three in ten" claim
+  // beside the bar false.
+  const CUTS = (WR && WR.TH) || Y.bands || DATA.thresholds || {};
+  const fClassCounts = (() => {
+    if (!fActive()) return { fast: s.n_fast, improving: s.n_improving - s.n_fast,
+                             stable: s.n_stable, review: s.n_review, rated: s.rated };
+    // Take the class windowRating already assigned, so this bar agrees with
+    // the development groups on the Swimmers page swimmer for swimmer.
+    // Re-deriving it from the cut-lines did not: windowRating's thresholds
+    // are percentiles of EVENT-SERIES rates, while a swimmer's trend is the
+    // median across their events, and comparing the two put 0 of 69 swimmers
+    // in "review" for 2025 where the groups themselves showed the usual
+    // three in ten.
+    //
+    // A stroke filter changes the measured rate, so there the class has to be
+    // re-derived — and the note beside the bar says the cut-lines are the
+    // club's, not the slice's.
+    const cnt = { fast: 0, improving: 0, stable: 0, review: 0 };
+    if (!fStroke) {
+      // Counted straight off windowRating's rows, which is what the
+      // development groups are built from — not off the filtered swim table.
+      // The two populations differ by design: a swimmer is rated on their
+      // whole career wherever they raced, while the swim table holds only
+      // races swum AS a NextGen member. Gatwiri, Sani N joined on 2026-08-28
+      // and has 89 races but 3 as a member, so she was rated in the groups
+      // and missing from the bar.
+      for (const r of (WR ? WR.rows : [])) {
+        if (r.trend === null) continue;
+        if (fBand && r.band !== fBand) continue;
+        if (r.cls in cnt) cnt[r.cls]++;
+      }
+    } else {
+      for (const r of FS.rated) {
+        cnt[r.trend <= (CUTS.fast ?? -8) ? 'fast'
+          : r.trend <= (CUTS.improving ?? -5) ? 'improving'
+          : r.trend <= (CUTS.stable_hi ?? 0) ? 'stable' : 'review']++;
+      }
+    }
+    const rated = cnt.fast + cnt.improving + cnt.stable + cnt.review;
+    return { ...cnt, rated };
+  })();
+
   const cbar = ['fast','improving','stable','review'].map(k => {
-    const n = k==='fast'?s.n_fast : k==='improving'?(s.n_improving-s.n_fast) : k==='stable'?s.n_stable : s.n_review;
-    const w = s.rated ? (100*n/s.rated) : 0;
+    const n = fClassCounts[k];
+    const w = fClassCounts.rated ? (100*n/fClassCounts.rated) : 0;
     return w > 0 ? `<span class="s-${k}" style="width:${w}%">${w>9?Math.round(w)+'%':''}</span>` : '';
   }).join('');
 
@@ -3160,9 +3207,41 @@ function render(){
       <span class="track"><span class="fill f-${v.cls}" style="width:${Math.max(4,100*Math.abs(v.median)/mx)}%"></span></span>
       <span class="val">${pctShort(v.median)}<span class="nof">${v.n} races</span></span></div>`;}).join('');
 
-  const distBars = ['Sprint','Middle','Distance'].filter(k=>Y.dists[k]).map(k=>{
-    const v = Y.dists[k];
-    const mx = Math.max(...Object.values(Y.dists).map(x=>Math.abs(x.median)),1);
+  // Only the stroke panel was rebuilt for the filters; this one still read
+  // the whole club, so Sprint/Middle/Distance sat unchanged under a filtered
+  // bar and contradicted the stroke panel beside it.
+  const fDistTable = (() => {
+    if (!fActive()) return null;
+    const idx = careerIndex();
+    const group = d => d <= 50 ? 'Sprint' : d <= 200 ? 'Middle' : 'Distance';
+    const out = {};
+    for (const nm of FS.names) {
+      for (const e of (idx.get(nm) || [])) {
+        if (fStroke && strokeOf(e.event) !== fStroke) continue;
+        const dist = parseInt(e.event, 10);
+        if (!dist) continue;
+        const pts = (e.points || []).filter(p =>
+          p.d.slice(0,4) >= FS.lo && p.d.slice(0,4) <= FS.hi);
+        const rt = rateJS(pts);
+        if (rt === null) continue;
+        (out[group(dist)] = out[group(dist)] || []).push(rt);
+      }
+    }
+    const res = {};
+    for (const [k, v] of Object.entries(out)) {
+      const m = med(v);
+      res[k] = { median: m, n: v.length,
+                 cls: m <= (CUTS.fast ?? -8) ? 'fast'
+                    : m <= (CUTS.improving ?? -5) ? 'improving'
+                    : m <= (CUTS.stable_hi ?? 0) ? 'stable' : 'review' };
+    }
+    return res;
+  })();
+  const distSrc = fDistTable || Y.dists;
+
+  const distBars = ['Sprint','Middle','Distance'].filter(k=>distSrc[k]).map(k=>{
+    const v = distSrc[k];
+    const mx = Math.max(...Object.values(distSrc).map(x=>Math.abs(x.median)),1);
     return `<div class="bar"><span class="lab">${k}</span>
       <span class="track"><span class="fill f-${v.cls}" style="width:${Math.max(4,100*Math.abs(v.median)/mx)}%"></span></span>
       <span class="val">${pctShort(v.median)}</span></div>`;}).join('');
@@ -3218,7 +3297,42 @@ function render(){
       <td class="num">${a.rated?`<span style="color:var(--ok-t);font-weight:700">${a.improving}</span> /
         ${a.stable} / <span style="color:var(--alert-t);font-weight:700">${a.review}</span>`:'—'}</td></tr>`).join('');
 
-  const alerts = Y.alerts.map(a=>`<div class="alert ${a.t}"><span><span class="k">${esc(a.k)}</span>
+  // The alerts are written in the pipeline for the whole club. Under a filter
+  // they contradicted the very panels above them — naming Fly the fastest
+  // stroke on a page filtered to Back. Rebuilt here from the same filtered
+  // tables those panels use, in the same words.
+  const fAlerts = (() => {
+    if (!fActive()) return Y.alerts;
+    const out = [];
+    const st = Object.entries(strokeSrc).filter(([, v]) => v.median !== null && v.n);
+    if (st.length) {
+      const by = [...st].sort((a, b) => a[1].median - b[1].median);
+      const fastest = by[0], slowest = by[by.length - 1];
+      if (slowest !== fastest) {
+        out.push({ k: 'Slowest-improving stroke', v: slowest[0], t: 'warn',
+                   d: `${pctShort(slowest[1].median)} faster across ${slowest[1].n} comparable races` });
+      }
+      out.push({ k: 'Fastest-improving stroke', v: fastest[0], t: 'ok',
+                 d: `${pctShort(fastest[1].median)} faster across ${fastest[1].n} comparable races` });
+    }
+    const ds = Object.entries(distSrc).filter(([, v]) => v.median !== null);
+    if (ds.length > 1) {
+      const worst = [...ds].sort((a, b) => b[1].median - a[1].median)[0];
+      out.push({ k: 'Slowest-improving distance', v: worst[0], t: 'warn',
+                 d: `${pctShort(worst[1].median)} faster` });
+    }
+    if (fClassCounts.rated) {
+      out.push({ k: 'Swimmers needing a look', v: String(fClassCounts.review), t: 'warn',
+                 d: `of ${fClassCounts.rated} swimmers we have enough races to judge in this selection` });
+    }
+    if (!out.length) {
+      out.push({ k: 'Nothing to flag', v: '\u2014', t: 'ok',
+                 d: 'No swimmer in this selection has enough comparable races to judge.' });
+    }
+    return out;
+  })();
+
+  const alerts = fAlerts.map(a=>`<div class="alert ${a.t}"><span><span class="k">${esc(a.k)}</span>
     <span class="v">${esc(a.v)}</span><span class="d">${esc(a.d)}</span></span></div>`).join('');
 
   // boys vs girls
@@ -3465,17 +3579,21 @@ function render(){
     </div>
 
     <div class="classbar">
-      <h3>Development spread — ${fActive() ? FS.rated.length : s.rated} rated swimmer${
-        (fActive() ? FS.rated.length : s.rated) === 1 ? '' : 's'} ${fActive()
+      <h3>Development spread — ${fClassCounts.rated} rated swimmer${
+        fClassCounts.rated === 1 ? '' : 's'} ${fActive()
           ? 'in this selection' : 'in ' + esc(RATED_IN)}</h3>
       <p class="spreadnote">These groups are relative: the bottom one always holds about three in
-        ten, however well the club is doing. <a href="#/method" class="mlink">How this is worked out &rsaquo;</a></p>
+        ten, however well the club is doing.${(fBand || fStroke) ? ` The cut-lines are the whole
+        club's over ${FS.lo === FS.hi ? FS.lo : `${FS.lo}\u2013${FS.hi}`}, so this selection can
+        sit anywhere against them \u2014 that is the comparison, and three in ten is not
+        guaranteed within a slice.` : ''}
+        <a href="#/method" class="mlink">How this is worked out &rsaquo;</a></p>
       <div class="cbar">${cbar}</div>
       <div class="legend">
-        <span><span class="dot d-fast"></span><b>${s.n_fast}</b> fast progression</span>
-        <span><span class="dot d-improving"></span><b>${s.n_improving-s.n_fast}</b> improving</span>
-        <span><span class="dot d-stable"></span><b>${s.n_stable}</b> stable</span>
-        <span><span class="dot d-review"></span><b>${s.n_review}</b> review</span>
+        <span><span class="dot d-fast"></span><b>${fClassCounts.fast}</b> fast progression</span>
+        <span><span class="dot d-improving"></span><b>${fClassCounts.improving}</b> improving</span>
+        <span><span class="dot d-stable"></span><b>${fClassCounts.stable}</b> stable</span>
+        <span><span class="dot d-review"></span><b>${fClassCounts.review}</b> review</span>
       </div>
       <p class="note" style="margin-top:12px;font-size:12.5px;color:var(--muted)">
         Fast, improving and stable are measured against what NextGen swimmers actually do —
