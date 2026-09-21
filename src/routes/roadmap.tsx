@@ -161,11 +161,18 @@ function Roadmap() {
     <main className="mx-auto max-w-5xl px-5 py-10">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">What we are building</h1>
-        <a href="/dormant"
-           className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-[13px]
-                      font-medium text-amber-900 hover:bg-amber-100">
-          {dormant.swimmers.length} dormant swimmers — review or put back →
-        </a>
+        <span className="flex flex-wrap gap-2">
+          <a href="/database"
+             className="rounded-full border border-sky-300 bg-sky-50 px-3 py-1 text-[13px]
+                        font-medium text-sky-900 hover:bg-sky-100">
+            Swimmer database — birth dates and details →
+          </a>
+          <a href="/dormant"
+             className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-[13px]
+                        font-medium text-amber-900 hover:bg-amber-100">
+            {dormant.swimmers.length} dormant swimmers — review or put back →
+          </a>
+        </span>
       </div>
       <p className="mt-2 max-w-2xl text-[15px] text-muted-foreground">
         Everything shipped, everything planned, and every idea raised. Shipped items are green

@@ -14,10 +14,12 @@ import { Route as TrackerRouteImport } from './routes/tracker'
 import { Route as RoadmapRouteImport } from './routes/roadmap'
 import { Route as ParentRouteImport } from './routes/parent'
 import { Route as DormantRouteImport } from './routes/dormant'
+import { Route as DatabaseRouteImport } from './routes/database'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiSwimmersRouteImport } from './routes/api/swimmers'
 import { Route as ApiSwimmerParentsRouteImport } from './routes/api/swimmer-parents'
+import { Route as ApiSwimmerDetailsRouteImport } from './routes/api/swimmer-details'
 import { Route as ApiRosterStatusRouteImport } from './routes/api/roster-status'
 import { Route as ApiRoadmapRouteImport } from './routes/api/roadmap'
 import { Route as ApiRegistrationsRouteImport } from './routes/api/registrations'
@@ -73,6 +75,11 @@ const DormantRoute = DormantRouteImport.update({
   path: '/dormant',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DatabaseRoute = DatabaseRouteImport.update({
+  id: '/database',
+  path: '/database',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -91,6 +98,11 @@ const ApiSwimmersRoute = ApiSwimmersRouteImport.update({
 const ApiSwimmerParentsRoute = ApiSwimmerParentsRouteImport.update({
   id: '/api/swimmer-parents',
   path: '/api/swimmer-parents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSwimmerDetailsRoute = ApiSwimmerDetailsRouteImport.update({
+  id: '/api/swimmer-details',
+  path: '/api/swimmer-details',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRosterStatusRoute = ApiRosterStatusRouteImport.update({
@@ -242,6 +254,7 @@ const ApiAdminClaimsRoute = ApiAdminClaimsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/database': typeof DatabaseRoute
   '/dormant': typeof DormantRoute
   '/parent': typeof ParentRoute
   '/roadmap': typeof RoadmapRoute
@@ -256,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/api/registrations': typeof ApiRegistrationsRoute
   '/api/roadmap': typeof ApiRoadmapRouteWithChildren
   '/api/roster-status': typeof ApiRosterStatusRoute
+  '/api/swimmer-details': typeof ApiSwimmerDetailsRoute
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/claims': typeof ApiAdminClaimsRoute
@@ -282,6 +296,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/database': typeof DatabaseRoute
   '/dormant': typeof DormantRoute
   '/parent': typeof ParentRoute
   '/roadmap': typeof RoadmapRoute
@@ -296,6 +311,7 @@ export interface FileRoutesByTo {
   '/api/registrations': typeof ApiRegistrationsRoute
   '/api/roadmap': typeof ApiRoadmapRouteWithChildren
   '/api/roster-status': typeof ApiRosterStatusRoute
+  '/api/swimmer-details': typeof ApiSwimmerDetailsRoute
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/claims': typeof ApiAdminClaimsRoute
@@ -323,6 +339,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/database': typeof DatabaseRoute
   '/dormant': typeof DormantRoute
   '/parent': typeof ParentRoute
   '/roadmap': typeof RoadmapRoute
@@ -337,6 +354,7 @@ export interface FileRoutesById {
   '/api/registrations': typeof ApiRegistrationsRoute
   '/api/roadmap': typeof ApiRoadmapRouteWithChildren
   '/api/roster-status': typeof ApiRosterStatusRoute
+  '/api/swimmer-details': typeof ApiSwimmerDetailsRoute
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/claims': typeof ApiAdminClaimsRoute
@@ -365,6 +383,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/database'
     | '/dormant'
     | '/parent'
     | '/roadmap'
@@ -379,6 +398,7 @@ export interface FileRouteTypes {
     | '/api/registrations'
     | '/api/roadmap'
     | '/api/roster-status'
+    | '/api/swimmer-details'
     | '/api/swimmer-parents'
     | '/api/swimmers'
     | '/api/admin/claims'
@@ -405,6 +425,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/database'
     | '/dormant'
     | '/parent'
     | '/roadmap'
@@ -419,6 +440,7 @@ export interface FileRouteTypes {
     | '/api/registrations'
     | '/api/roadmap'
     | '/api/roster-status'
+    | '/api/swimmer-details'
     | '/api/swimmer-parents'
     | '/api/swimmers'
     | '/api/admin/claims'
@@ -445,6 +467,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/database'
     | '/dormant'
     | '/parent'
     | '/roadmap'
@@ -459,6 +482,7 @@ export interface FileRouteTypes {
     | '/api/registrations'
     | '/api/roadmap'
     | '/api/roster-status'
+    | '/api/swimmer-details'
     | '/api/swimmer-parents'
     | '/api/swimmers'
     | '/api/admin/claims'
@@ -486,6 +510,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  DatabaseRoute: typeof DatabaseRoute
   DormantRoute: typeof DormantRoute
   ParentRoute: typeof ParentRoute
   RoadmapRoute: typeof RoadmapRoute
@@ -500,6 +525,7 @@ export interface RootRouteChildren {
   ApiRegistrationsRoute: typeof ApiRegistrationsRoute
   ApiRoadmapRoute: typeof ApiRoadmapRouteWithChildren
   ApiRosterStatusRoute: typeof ApiRosterStatusRoute
+  ApiSwimmerDetailsRoute: typeof ApiSwimmerDetailsRoute
   ApiSwimmerParentsRoute: typeof ApiSwimmerParentsRoute
   ApiSwimmersRoute: typeof ApiSwimmersRouteWithChildren
   ApiAdminClaimsRoute: typeof ApiAdminClaimsRoute
@@ -558,6 +584,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DormantRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/database': {
+      id: '/database'
+      path: '/database'
+      fullPath: '/database'
+      preLoaderRoute: typeof DatabaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -584,6 +617,13 @@ declare module '@tanstack/react-router' {
       path: '/api/swimmer-parents'
       fullPath: '/api/swimmer-parents'
       preLoaderRoute: typeof ApiSwimmerParentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/swimmer-details': {
+      id: '/api/swimmer-details'
+      path: '/api/swimmer-details'
+      fullPath: '/api/swimmer-details'
+      preLoaderRoute: typeof ApiSwimmerDetailsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/roster-status': {
@@ -831,6 +871,7 @@ const ApiSwimmersRouteWithChildren = ApiSwimmersRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  DatabaseRoute: DatabaseRoute,
   DormantRoute: DormantRoute,
   ParentRoute: ParentRoute,
   RoadmapRoute: RoadmapRoute,
@@ -845,6 +886,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRegistrationsRoute: ApiRegistrationsRoute,
   ApiRoadmapRoute: ApiRoadmapRouteWithChildren,
   ApiRosterStatusRoute: ApiRosterStatusRoute,
+  ApiSwimmerDetailsRoute: ApiSwimmerDetailsRoute,
   ApiSwimmerParentsRoute: ApiSwimmerParentsRoute,
   ApiSwimmersRoute: ApiSwimmersRouteWithChildren,
   ApiAdminClaimsRoute: ApiAdminClaimsRoute,
