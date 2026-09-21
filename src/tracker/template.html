@@ -939,6 +939,9 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 .dn-unrated::before,.dn-stroke::before,.dn-sex::before{content:"\2139"}
 
 /* said once, above every chart that has a time axis */
+/* The arrow is a flex item; everything else must be ONE further item, or
+   each <b> becomes its own item and the gap pulls the sentence apart. */
+.dc-hint > span:not(.dc-arrow){display:block;min-width:0}
 .dc-hint{display:flex;align-items:flex-start;gap:9px;margin:0 0 13px;padding:9px 12px;
   background:var(--ice);border-radius:10px;font-size:12.5px;color:var(--body);line-height:1.45}
 .dc-hint b{color:var(--ink)}
@@ -1893,10 +1896,10 @@ function meetSection(){
         ${meet.withdrawn === 1 ? 'it' : 'them'}. ` : ''}${
         missing ? `${missing} of the ${total} timed swims cannot be measured this way and are
         not shown.` : ''} ${esc(baseWhy.split('. ').slice(-1)[0])}</li></ul>` : ''}
-      ${rows.length ? `<p class="dc-hint"><span class="dc-arrow">←</span>
+      ${rows.length ? `<p class="dc-hint"><span class="dc-arrow">←</span><span>
         <b>Bars to the left are faster.</b> ${faster} of ${rows.length} shown swims came in under
         ${esc(baseName)}; the centre line is that baseline exactly.
-        ${bests} of them still stand as that swimmer’s personal best.</p>` : ''}
+        ${bests} of them still stand as that swimmer’s personal best.</span></p>` : ''}
       ${body}
       <p class="tw-note">${esc(baseWhy)} Columns are sorted quickest-first against the baseline,
         not by finishing position — a swimmer can win a race and still be down on their own
@@ -1924,6 +1927,23 @@ function meetSection(){
 let twA = '';               // swimmer names; '' = pick one
 let twB = '';
 let twBy = 'meet';          // meet | season | stroke
+// What zero means on the chart. Defaults to the swimmer's own debut, which is
+// fixed on the day and so cannot move under them.
+//
+// It used to be vsAvg — their mean across every race, INCLUDING ones they had
+// not yet swum. An improving swimmer must therefore start above that mean and
+// end below it, and across the 85 swimmers with four or more meets the first
+// meet averaged +6.97% and the last -4.56%. The most eye-catching thing on the
+// chart was arithmetic.
+let twBase = 'vsFirst';
+const TW_BASE = {
+  vsFirst: ['where they started',
+            'Every race against that swimmer\u2019s own FIRST time in the same event. Zero is the day they debuted, so a falling line is genuinely a swimmer getting faster than they were. Nothing later can move the baseline.'],
+  vsPrior: ['how they had been going',
+            'Every race against that swimmer\u2019s average in the same event BEFORE this meet. Zero is exactly as well as they had been swimming, so below the line is a better day than their form suggested. The baseline moves with them, which is why it shows form rather than progress.'],
+  vsAvg:   ['their whole-career average',
+            'Every race against that swimmer\u2019s mean across every race of the event, early and late. Useful for ranking meets against each other, and MISLEADING as a trend: the mean includes races not yet swum, so an improving swimmer starts above it and ends below it whatever they do.'],
+};
 const TW_COLOURS = ['#2C7BE5', '#C2761B'];
 
 function twoSection(){
@@ -1938,7 +1958,8 @@ function twoSection(){
   const meetById = new Map(MS.meets.map(m => [m.id, m]));
   const series = picked.map((name, i) => {
     const si = MS.swimmers.indexOf(name);
-    const rows = si < 0 ? [] : MS.rows.filter(r => r[1] === si && r[5] !== null);
+    const bc = MS.cols.indexOf(twBase);
+    const rows = si < 0 ? [] : MS.rows.filter(r => r[1] === si && r[bc] !== null);
     // Grouped, then averaged within the group: a swimmer who raced six times
     // at one meet should weigh the same there as one who raced twice.
     const g = new Map();
@@ -1949,7 +1970,7 @@ function twoSection(){
               : twBy === 'stroke' ? strokeOf(MS.events[r[2]].split('|')[0])
               : m.id;
       const e = g.get(k) || { k, label: twBy === 'meet' ? m.name : k, date: m.date, v: [] };
-      e.v.push(r[5]);
+      e.v.push(r[bc]);
       if (m.date < e.date) e.date = m.date;
       g.set(k, e);
     }
@@ -2049,6 +2070,9 @@ function twoSection(){
       <label>Compare with<select id="twB"><option value="">— nobody —</option>
         ${others.map(n => `<option value="${esc(n)}"${n === twB ? ' selected' : ''}
           >${esc(n)}</option>`).join('')}</select></label>
+      <label>Measured against<select id="twBase">${Object.entries(TW_BASE).map(([k, v]) =>
+        `<option value="${k}"${twBase === k ? ' selected' : ''}>${esc(v[0])}</option>`).join('')}
+      </select></label>
       <label>Broken down by<select id="twBy">
         <option value="meet"${twBy === 'meet' ? ' selected' : ''}>Meet</option>
         <option value="season"${twBy === 'season' ? ' selected' : ''}>Season</option>
@@ -2078,15 +2102,20 @@ function twoSection(){
           <span>${esc(axisLabel(cats[0]))}</span>
           <span>${esc(axisLabel(cats[cats.length - 1]))}</span></div></div>
       </div>
-      <p class="tw-note">Each point is that swimmer’s average across the
-        ${twBy === 'meet' ? 'races they swam at that meet' : twBy === 'season' ? 'season'
-          : 'stroke'}, measured against their own average in each event — so a sprinter and a
-        distance swimmer can share the axis. Zero is that swimmer’s own normal;
-        below the flat dashed line is a better-than-usual ${twBy === 'meet' ? 'day' : twBy}.
-        A dashed stretch of a swimmer's own line spans ${twBy === 'meet' ? 'meets they did not enter'
+      <p class="dc-hint" style="margin-top:13px"><span class="dc-arrow">●</span><span>
+        <b>One dot = one ${twBy === 'meet' ? 'meet' : twBy === 'season' ? 'season' : 'stroke'}.</b>
+        It is how that swimmer swam ${twBy === 'meet' ? 'on that day' : 'over that ' + twBy},
+        averaged across their races, against <b>${esc(TW_BASE[twBase][0])}</b>.
+        <b>0% is the baseline; −5% means five per cent quicker than it.</b></span></p>
+      <p class="tw-note">${esc(TW_BASE[twBase][1])}
+        Each race is compared with the same swimmer in the same event, then averaged, so a
+        sprinter and a distance swimmer can share one axis and neither is scored on being the
+        quicker swimmer. A dashed stretch spans ${twBy === 'meet' ? 'meets they did not enter'
           : twBy === 'season' ? 'a season they did not race' : 'a stroke they did not swim'},
         joining the races either side without claiming anything in between.
-        ${series.length > 1 ? 'The two lines are each measured against their own normal, never against each other, so neither is scored on being the quicker swimmer.' : ''}</p>
+        ${series.length > 1 ? `Both lines are measured against their own baseline, never against
+        each other — where they rise and fall together, that is usually the meet rather
+        than the swimmers.` : ''}</p>
     </div></div>
   </section>`;
 }
@@ -2216,9 +2245,9 @@ function stackLabels(labs, H, gapWanted){
 }
 
 /** The one thing every chart here has to say, said once, in one place. */
-const DOWN_IS_FASTER = `<p class="dc-hint"><span class="dc-arrow">\u2193</span>
+const DOWN_IS_FASTER = `<p class="dc-hint"><span class="dc-arrow">\u2193</span><span>
   <b>A line that falls is a swimmer getting faster.</b> Times come down as they
-  improve, so down the page is progress and up the page is a slower swim.</p>`;
+  improve, so down the page is progress and up the page is a slower swim.</span></p>`;
 
 /** Why the middle swimmer and not the average of all of them. */
 const WHY_MEDIAN = `<p class="dwhy"><b>Why the median, not the average?</b>
@@ -3647,6 +3676,7 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
   bind('twA',    e => { twA = e.target.value; if (twB === twA) twB = ''; render(); });
   bind('twB',    e => { twB = e.target.value; render(); });
   bind('twBy',   e => { twBy = e.target.value; render(); });
+  bind('twBase', e => { twBase = e.target.value; render(); });
 
   document.querySelectorAll('.dmode button').forEach(b => b.onclick = () => {
     dashMode = b.dataset.dm; render();
