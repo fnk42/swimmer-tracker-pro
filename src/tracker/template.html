@@ -992,6 +992,14 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
   .fb-lab{min-width:52px}
 }
 
+/* solid vs dashed, said with actual dashes. The gap segments were the first
+   thing read on the chart and the last thing explained, in small print. */
+.dkey{display:flex;flex-wrap:wrap;gap:6px 22px;margin:9px 0 0;font-size:12px;
+  color:var(--muted);line-height:1.5}
+.dkey > span{display:flex;align-items:center;gap:7px;min-width:0}
+.dkey svg{flex:none;color:var(--dim)}
+.dkey b{color:var(--ink)}
+
 /* what window the chart is actually showing */
 .dspan{margin:0 0 11px;font-size:12px;color:var(--muted);
   font-family:'IBM Plex Mono',ui-monospace,monospace}
@@ -2191,6 +2199,18 @@ function twoSection(){
 
   if (!series.length) return `<p class="nodata">Nothing to plot for this swimmer.</p>`;
 
+  // The axis categories, needed by the span bars below as well as the chart.
+  // Keyed by meet id, but a meet id is not a label — carry the readable form
+  // alongside the key: the axis was printing "20250829-ncsa-inter-cl".
+  const catMap = new Map();
+  for (const sr of series) for (const p of sr.pts) {
+    if (!catMap.has(p.k)) catMap.set(p.k, { k: p.k, label: p.label, date: p.date });
+  }
+  const cats = [...catMap.values()].sort((x, y) => twBy === 'stroke'
+    ? x.label.localeCompare(y.label) : x.date.localeCompare(y.date));
+  const catKeys = cats.map(c => c.k);
+  const UNIT = twBy === 'meet' ? 'meets' : twBy === 'season' ? 'seasons' : 'strokes';
+
   // ---- the span bars, drawn before anything else -------------------------
   const lo = series.map(s => s.from).sort()[0];
   const hi = series.map(s => s.to).sort().slice(-1)[0];
@@ -2204,7 +2224,7 @@ function twoSection(){
       <span class="tws-track"><i style="left:${l.toFixed(1)}%;width:${Math.max(1.5, w).toFixed(1)}%;
         background:${s.colour}"></i></span>
       <span class="tws-t">${s.from.slice(0, 7)} → ${s.to.slice(0, 7)} · ${months} mo ·
-        ${s.races} races</span>
+        ${s.races} races · at ${s.pts.length} of the ${cats.length} ${UNIT} shown</span>
     </div>`;
   }).join('')}<p class="tws-note">${series.length > 1
     ? `These are the windows each swimmer has actually been racing in. Where the bars do not
@@ -2213,15 +2233,6 @@ function twoSection(){
     : `The window this swimmer has been racing in.`}</p></div>`;
 
   // ---- the lines ---------------------------------------------------------
-  // Keyed by meet id, but a meet id is not a label. Carry the readable form
-  // alongside the key: the axis was printing "20250829-ncsa-inter-cl".
-  const catMap = new Map();
-  for (const sr of series) for (const p of sr.pts) {
-    if (!catMap.has(p.k)) catMap.set(p.k, { k: p.k, label: p.label, date: p.date });
-  }
-  const cats = [...catMap.values()].sort((x, y) => twBy === 'stroke'
-    ? x.label.localeCompare(y.label) : x.date.localeCompare(y.date));
-  const catKeys = cats.map(c => c.k);
   const axisLabel = c => twBy === 'meet' ? c.date.slice(0, 7)
     : twBy === 'season' ? c.label : c.label;
   const vals = series.flatMap(s => s.pts.map(p => p.mean));
@@ -2314,6 +2325,15 @@ function twoSection(){
         It is how that swimmer swam ${twBy === 'meet' ? 'on that day' : 'over that ' + twBy},
         averaged across their races, against <b>${esc(TW_BASE[twBase][0])}</b>.
         <b>0% is the baseline; −5% means five per cent quicker than it.</b></span></p>
+      <p class="dkey">
+        <span><svg width="36" height="9" aria-hidden><line x1="1" y1="4.5" x2="35" y2="4.5"
+          stroke="currentColor" stroke-width="2.4"/></svg>
+          raced the next one too</span>
+        <span><svg width="36" height="9" aria-hidden><line x1="1" y1="4.5" x2="35" y2="4.5"
+          stroke="currentColor" stroke-width="2.4" stroke-dasharray="3 4" opacity=".6"/></svg>
+          <b>skipped what lies between</b> — the line joins the races either side without
+          claiming anything in the gap</span>
+      </p>
       <p class="tw-note">${esc(TW_BASE[twBase][1])}
         Each race is compared with the same swimmer in the same event, then averaged, so a
         sprinter and a distance swimmer can share one axis and neither is scored on being the
