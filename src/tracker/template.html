@@ -2958,9 +2958,13 @@ function render(){
   // scope, stated everywhere.
   let WR = null;
   {
-    const ys = YEARS.filter(y => y !== 'all').sort();
-    const lo = pwFrom || (year === 'all' ? ys[0] : year);
-    const hi = pwTo   || (year === 'all' ? ys[ys.length - 1] : year);
+    // The span comes from the shared filter bar, which is the only place it is
+    // set now. It used to come from pwFrom/pwTo, the old window's own selects
+    // — so once the bar replaced them, setting a span moved every COUNT and
+    // left every RATE alone: the same swimmers stayed in the same development
+    // groups, and "not enough data" still meant "not enough data across all
+    // seasons" however narrow the span.
+    const [lo, hi] = fSpan();
     WR = windowRating(lo + '-01-01', hi + '-12-31');
     const m = new Map(WR.rows.map(r => [r.name, r]));
     Y = { ...Y, swimmers: (Y.swimmers || []).map(x => {
