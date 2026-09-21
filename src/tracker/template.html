@@ -2003,16 +2003,30 @@ function twoSection(){
   const X = i => P + (cats.length === 1 ? 0.5 : i / (cats.length - 1)) * (W - P - GUT);
   const Y = v => P + ((vhi + pad - v) / ((vhi + pad) - (vlo - pad) || 1)) * (H - 2 * P);
 
+  // The axis holds every meet EITHER swimmer attended, so a swimmer who
+  // skipped one sits two categories away from their own next race. Joining
+  // only adjacent categories broke their line into loose dots — the swimmer
+  // who raced less often barely had a line at all.
+  //
+  // A swimmer's form carries across a meet they did not enter, so the line
+  // continues; it is drawn dashed over the gap, which says "they were not
+  // here" without pretending we measured them in between.
   const body = series.map(s => {
     const pts = s.pts.map(p => ({ i: catKeys.indexOf(p.k), v: p.mean }))
       .filter(p => p.i >= 0).sort((x, y) => x.i - y.i);
-    let d = '', prev = -2;
-    for (const p of pts) { d += `${p.i === prev + 1 ? 'L' : 'M'}${X(p.i).toFixed(1)} ${Y(p.v).toFixed(1)} `; prev = p.i; }
-    return `<path d="${d.trim()}" fill="none" stroke="${s.colour}" stroke-width="2.6"
-      stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-      ${pts.map(p => `<circle cx="${X(p.i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="3.2"
+    const segs = [];
+    for (let k = 1; k < pts.length; k++) {
+      const a = pts[k - 1], b = pts[k];
+      segs.push(`<path d="M${X(a.i).toFixed(1)} ${Y(a.v).toFixed(1)}
+        L${X(b.i).toFixed(1)} ${Y(b.v).toFixed(1)}" fill="none" stroke="${s.colour}"
+        stroke-width="2.6" stroke-linecap="round"${b.i - a.i > 1
+          ? ' stroke-dasharray="3 4" opacity=".55"' : ''}
+        vector-effect="non-scaling-stroke"/>`);
+    }
+    return segs.join('') +
+      pts.map(p => `<circle cx="${X(p.i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="3.2"
         fill="${s.colour}" stroke="var(--surface)" stroke-width="1.4"
-        vector-effect="non-scaling-stroke"/>`).join('')}`;
+        vector-effect="non-scaling-stroke"/>`).join('');
   }).join('');
 
   const { labs, fs } = stackLabels(series.map(s => {
@@ -2068,7 +2082,10 @@ function twoSection(){
         ${twBy === 'meet' ? 'races they swam at that meet' : twBy === 'season' ? 'season'
           : 'stroke'}, measured against their own average in each event — so a sprinter and a
         distance swimmer can share the axis. Zero is that swimmer’s own normal;
-        below the dashed line is a better-than-usual ${twBy === 'meet' ? 'day' : twBy}.
+        below the flat dashed line is a better-than-usual ${twBy === 'meet' ? 'day' : twBy}.
+        A dashed stretch of a swimmer's own line spans ${twBy === 'meet' ? 'meets they did not enter'
+          : twBy === 'season' ? 'a season they did not race' : 'a stroke they did not swim'},
+        joining the races either side without claiming anything in between.
         ${series.length > 1 ? 'The two lines are each measured against their own normal, never against each other, so neither is scored on being the quicker swimmer.' : ''}</p>
     </div></div>
   </section>`;
