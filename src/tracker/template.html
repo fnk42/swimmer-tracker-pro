@@ -998,6 +998,17 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
   min-width:200px;max-width:100%}
 .twpick:focus{outline:2px solid var(--electric);outline-offset:1px;border-color:var(--electric)}
 .twpick::placeholder{color:var(--muted)}
+.twcb{position:relative;display:inline-block}
+.twopts{position:absolute;top:calc(100% + 4px);left:0;z-index:60;margin:0;padding:4px;
+  min-width:100%;max-height:266px;overflow-y:auto;list-style:none;
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  box-shadow:0 18px 40px -18px rgba(10,27,51,.45)}
+.twopts li{padding:7px 10px;border-radius:7px;font-size:13px;color:var(--ink);
+  white-space:nowrap;cursor:pointer}
+.twopts li.on{background:var(--electric);color:#fff}
+.twopts li:hover:not(.twmore){background:var(--ice)}
+.twopts li.on:hover{background:var(--electric)}
+.twmore{color:var(--muted);font-size:11.5px;cursor:default;padding-top:6px}
 .twmsg{flex-basis:100%;font-size:12px;color:var(--alert-t);min-height:0}
 .twmsg.on{min-height:1.2em}
 
@@ -2147,6 +2158,9 @@ let twBy = 'meet';          // meet | season | stroke
 // meet averaged +6.97% and the last -4.56%. The most eye-catching thing on the
 // chart was arithmetic.
 let twBase = 'vsFirst';
+// The names the two pickers may offer, set by twoSection() on every render so
+// the list always matches whatever the filter bar has narrowed it to.
+let twNames = [];
 const TW_BASE = {
   vsFirst: ['where they started',
             'Every race against that swimmer\u2019s own FIRST time in the same event. Zero is the day they debuted, so a falling line is genuinely a swimmer getting faster than they were. Nothing later can move the baseline.'],
@@ -2196,6 +2210,7 @@ function twoSection(){
   let all = (DATA.years.all.swimmers || []).filter(s => (s.events || []).length)
     .map(s => s.name).sort();
   if (fActive()) all = all.filter(n => SC.names.has(n));
+  twNames = all;
   if (!all.length) return `<p class="nodata">No swimmer matches the filters above.</p>`;
   // A swimmer chosen before the filter narrowed may no longer be in it.
   const a = (twA && all.includes(twA)) ? twA : all[0];
@@ -2349,18 +2364,26 @@ function twoSection(){
       because that is what makes two lines comparable or not.</p>
 
     <div class="dfilters">
-      <!-- Typed, not scrolled. A select with 125 names in it means hunting
-           down an alphabetical list for a child you can already name; typing
-           three letters is the whole interaction. The datalist keeps the full
-           list one click away for anyone who would rather browse it. -->
-      <label>Swimmer<input class="twpick" id="twA" list="twAlist" type="search"
-        autocomplete="off" spellcheck="false" placeholder="Type a name\u2026"
-        value="${esc(a)}" data-prev="${esc(a)}"></label>
-      <datalist id="twAlist">${all.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
-      <label>Compare with<input class="twpick" id="twB" list="twBlist" type="search"
-        autocomplete="off" spellcheck="false" placeholder="\u2014 nobody \u2014"
-        value="${esc(twB)}" data-prev="${esc(twB)}"></label>
-      <datalist id="twBlist">${others.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+      <!-- Typed, not scrolled. A select with 125 names means hunting an
+           alphabetical list for a child you can already name.
+           A <datalist> was the first attempt and was no better: Chrome does
+           not narrow it as you type, so it was the same scroll behind a
+           different control. This is a real combobox — the list below the box
+           IS the filtered matches, and the keyboard drives it. -->
+      <label>Swimmer<span class="twcb">
+        <input class="twpick" id="twA" type="text" role="combobox" aria-expanded="false"
+          aria-autocomplete="list" aria-controls="twAbox" autocomplete="off"
+          spellcheck="false" placeholder="Type a name\u2026"
+          value="${esc(a)}" data-prev="${esc(a)}">
+        <ul class="twopts" id="twAbox" role="listbox" hidden></ul>
+      </span></label>
+      <label>Compare with<span class="twcb">
+        <input class="twpick" id="twB" type="text" role="combobox" aria-expanded="false"
+          aria-autocomplete="list" aria-controls="twBbox" autocomplete="off"
+          spellcheck="false" placeholder="\u2014 nobody \u2014"
+          value="${esc(twB)}" data-prev="${esc(twB)}">
+        <ul class="twopts" id="twBbox" role="listbox" hidden></ul>
+      </span></label>
       <span class="twmsg" id="twmsg" role="status"></span>
       <label>Measured against<select id="twBase">${Object.entries(TW_BASE).map(([k, v]) =>
         `<option value="${k}"${twBase === k ? ' selected' : ''}>${esc(v[0])}</option>`).join('')}
@@ -4116,45 +4139,103 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
   // draw. An unrecognised entry reverts to what was there rather than
   // clearing the chart, and an empty "compare with" means nobody, which is a
   // valid choice.
-  const pickName = (id, set) => {
+  // A combobox, not a select and not a datalist. Typing narrows the list
+  // below the box; the arrows move through it, Enter takes the highlighted
+  // one, Escape closes without changing anything.
+  //
+  // The datalist this replaces was no better than the select it replaced:
+  // Chrome does not narrow a datalist as you type, so it was the same scroll
+  // behind a different control.
+  const pickName = (id, set, allowEmpty) => {
     const el = document.getElementById(id);
     if (!el) return;
-    const names = [...document.querySelectorAll(`#${el.getAttribute('list')} option`)]
-      .map(o => o.value);
-    const commit = () => {
-      const v = el.value.trim();
-      if (!v && id === 'twB') { set(''); render(); return; }
-      const exact = names.find(n => n.toLowerCase() === v.toLowerCase());
-      // One partial match is unambiguous, so accept it: "makau" is a name.
-      const near = exact ? null
-        : names.filter(n => n.toLowerCase().includes(v.toLowerCase()));
-      const pick = exact || (near && near.length === 1 ? near[0] : null);
-      if (pick) { set(pick); render(); return; }
-      // Nothing matched, or too much did. Say which, rather than silently
-      // snapping the box back to the previous name and leaving the reader to
-      // wonder whether they mistyped or the swimmer does not exist.
-      const msg = document.getElementById('twmsg');
-      if (msg) {
-        msg.textContent = !near || !near.length
-          ? `No swimmer here matches \u201c${v}\u201d.`
-          : `\u201c${v}\u201d matches ${near.length}: ${near.slice(0, 3).join(', ')}${
-              near.length > 3 ? '\u2026' : ''}. Type more of the name.`;
-        msg.classList.add('on');
-      }
-      el.value = el.dataset.prev || '';   // not a swimmer we hold
+    const box = document.getElementById(el.getAttribute('aria-controls'));
+    let matches = [], active = -1;
+
+    const close = () => {
+      box.hidden = true; box.innerHTML = '';
+      el.setAttribute('aria-expanded', 'false');
+      active = -1;
     };
-    el.onchange = commit;
-    el.oninput = () => {
+    const say = t => {
       const m = document.getElementById('twmsg');
-      if (m) { m.textContent = ''; m.classList.remove('on'); }
+      if (m) { m.textContent = t || ''; m.classList.toggle('on', !!t); }
     };
-    el.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } };
+    const draw = () => {
+      if (!matches.length) { close(); return; }
+      // Capped: a list longer than the screen is the scroll this replaced.
+      box.innerHTML = matches.slice(0, 12).map((n, i) =>
+        `<li role="option" data-i="${i}" aria-selected="${i === active}"
+           class="${i === active ? 'on' : ''}">${esc(n)}</li>`).join('')
+        + (matches.length > 12
+            ? `<li class="twmore">${matches.length - 12} more \u2014 keep typing</li>` : '');
+      box.hidden = false;
+      el.setAttribute('aria-expanded', 'true');
+      const on = box.querySelector('li.on');
+      if (on) on.scrollIntoView({ block: 'nearest' });
+    };
+    const search = () => {
+      const v = el.value.trim().toLowerCase();
+      matches = !v ? twNames.slice() : twNames.filter(n => n.toLowerCase().includes(v));
+      active = matches.length ? 0 : -1;
+      draw();
+    };
+    const take = n => {
+      close(); say('');
+      el.value = n; el.dataset.prev = n;
+      set(n); render();
+    };
+
+    el.oninput = () => { say(''); search(); };
+    // Focusing offers everyone and selects the text, so typing replaces the
+    // name already there. Filtering on that name instead showed a list of one
+    // — the swimmer you were trying to move away from.
+    el.onfocus = () => {
+      el.select();
+      matches = twNames.slice();
+      active = twNames.indexOf(el.value.trim());
+      if (active < 0) active = matches.length ? 0 : -1;
+      draw();
+    };
+    el.onblur = () => setTimeout(() => {
+      if (box.hidden) return;
+      close();
+      el.value = el.dataset.prev || '';   // nothing taken, nothing changed
+    }, 140);
+
+    el.onkeydown = e => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (box.hidden) { search(); return; }
+        const n = Math.min(matches.length, 12);
+        active = (active + (e.key === 'ArrowDown' ? 1 : n - 1)) % n;
+        draw();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const v = el.value.trim();
+        if (!v && allowEmpty) { close(); take(''); return; }
+        if (active >= 0 && matches[active]) { take(matches[active]); return; }
+        say(`No swimmer here matches \u201c${v}\u201d.`);
+      } else if (e.key === 'Escape') {
+        close(); el.value = el.dataset.prev || '';
+      }
+    };
+
+    // mousedown, not click: blur fires first and would close the list from
+    // under the pointer before the click ever landed.
+    box.onmousedown = e => {
+      const li = e.target.closest('li[data-i]');
+      if (!li) return;
+      e.preventDefault();
+      take(matches[Number(li.dataset.i)]);
+    };
   };
+
   // Writes to the shared filter, so a stroke chosen on this chart stays
   // chosen on the bar above and on every other page.
   bind('twStroke', e => { fStroke = e.target.value; render(); });
-  pickName('twA', v => { twA = v; if (twB === twA) twB = ''; });
-  pickName('twB', v => { twB = v; });
+  pickName('twA', v => { twA = v; if (twB === twA) twB = ''; }, false);
+  pickName('twB', v => { twB = v; }, true);   // empty means nobody
   bind('twBy',   e => { twBy = e.target.value; render(); });
   bind('twBase', e => { twBase = e.target.value; render(); });
 
