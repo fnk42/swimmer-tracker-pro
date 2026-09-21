@@ -945,7 +945,7 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
   border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 .fb-arr{color:var(--muted);font-size:12px}
 .fb-search{flex:1 1 160px}
-.fb-search input{width:100%;min-width:0;font:inherit;font-size:13px;padding:6px 10px;
+.fb-search .f-q{width:100%;min-width:0;font:inherit;font-size:13px;padding:6px 10px;
   border-radius:9px;border:1px solid var(--line);background:var(--surface)}
 .pw-span{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;
   font-weight:700;color:var(--ink)}
@@ -1933,24 +1933,29 @@ function filterBar(withSearch){
   const ys = YEARS.filter(y => y !== 'all').sort();
   const [lo, hi] = fSpan();
   const opt = (v, sel) => `<option value="${v}"${v === sel ? ' selected' : ''}>${v}</option>`;
-  return `<div class="fbar" id="fbar">
+  // CLASSES, not ids. The bar renders on three pages, so an id appeared three
+  // times over: getElementById returned the Analytics copy every time, and the
+  // season selects on Ages and Swimmers were never bound at all. Changing one
+  // did nothing, and the next render reset it to the first season — which is
+  // what "the span reverts to 2022" was.
+  return `<div class="fbar">
     <span class="fb-grp"><span class="fb-lab">Age</span>
-      <span class="fb-chips" id="fBandChips">
+      <span class="fb-chips f-band">
         ${['', ...BAND_ORDER].map(b => `<button type="button" data-band="${esc(b)}"
           aria-pressed="${fBand === b}">${b ? esc(b) : 'All'}</button>`).join('')}
       </span></span>
     <span class="fb-grp"><span class="fb-lab">Stroke</span>
-      <span class="fb-chips" id="fStrokeChips">
+      <span class="fb-chips f-stroke">
         ${['', ...STROKE_LIST].map(k => `<button type="button" data-stroke="${k}"
           aria-pressed="${fStroke === k}">${k || 'All'}</button>`).join('')}
       </span></span>
     <span class="fb-grp"><span class="fb-lab">Seasons</span>
-      <select id="fFrom">${ys.map(y => opt(y, lo)).join('')}</select>
+      <select class="f-from" aria-label="From season">${ys.map(y => opt(y, lo)).join('')}</select>
       <span class="fb-arr" aria-hidden>&rarr;</span>
-      <select id="fTo">${ys.map(y => opt(y, hi)).join('')}</select></span>
+      <select class="f-to" aria-label="To season">${ys.map(y => opt(y, hi)).join('')}</select></span>
     ${withSearch ? `<span class="fb-grp fb-search">
-      <input id="fq" type="search" placeholder="Search name\u2026" value="${esc(fQ)}"></span>` : ''}
-    ${fActive() ? `<button type="button" class="fb-clear" id="fClear">Clear filters</button>` : ''}
+      <input class="f-q" type="search" placeholder="Search name\u2026" value="${esc(fQ)}"></span>` : ''}
+    ${fActive() ? `<button type="button" class="fb-clear">Clear filters</button>` : ''}
   </div>`;
 }
 
@@ -3802,26 +3807,32 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
   const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.onchange = fn; };
 
   // ---- the shared filter bar --------------------------------------------
-  bind('fFrom', e => {
+  // Bound on every bar, and each reads its own row's other select rather than
+  // the first one in the document. One state, three views of it: a render
+  // rebuilds all three from that state, so they cannot drift apart.
+  document.querySelectorAll('.fbar .f-from').forEach(el => el.onchange = e => {
+    const bar = e.target.closest('.fbar');
     fFrom = e.target.value;
-    if (!fTo) fTo = document.getElementById('fTo').value;
+    fTo = bar.querySelector('.f-to').value;
     if (fTo < fFrom) fTo = fFrom;
     render();
   });
-  bind('fTo', e => {
+  document.querySelectorAll('.fbar .f-to').forEach(el => el.onchange = e => {
+    const bar = e.target.closest('.fbar');
     fTo = e.target.value;
-    if (!fFrom) fFrom = document.getElementById('fFrom').value;
+    fFrom = bar.querySelector('.f-from').value;
     if (fFrom > fTo) fFrom = fTo;
     render();
   });
-  document.querySelectorAll('#fBandChips button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.fbar .f-band button').forEach(b => b.onclick = () => {
     fBand = b.dataset.band || ''; render();
   });
-  document.querySelectorAll('#fStrokeChips button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.fbar .f-stroke button').forEach(b => b.onclick = () => {
     fStroke = b.dataset.stroke || ''; render();
   });
-  const fc = document.getElementById('fClear');
-  if (fc) fc.onclick = () => { fBand = fStroke = ''; fFrom = fTo = ''; render(); };
+  document.querySelectorAll('.fbar .fb-clear').forEach(b => b.onclick = () => {
+    fBand = fStroke = ''; fFrom = fTo = ''; render();
+  });
 
   bind('msMeet', e => { msMeet = e.target.value; render(); });
   bind('msBase', e => { msBase = e.target.value; render(); });
@@ -3861,8 +3872,9 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
     const b = e.target.closest('button'); if (!b) return;
     setRange(b.dataset.lo, b.dataset.hi);
   };
-  const fqEl = document.getElementById('fq');
-  if (fqEl) fqEl.oninput = e => { fQ = e.target.value.toLowerCase(); filter(); };
+  document.querySelectorAll('.fbar .f-q').forEach(el => el.oninput = e => {
+    fQ = e.target.value.toLowerCase(); filter();
+  });
   filter();
   showPage(page);
 }
