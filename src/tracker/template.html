@@ -2278,15 +2278,31 @@ function twoSection(){
   // A swimmer's form carries across a meet they did not enter, so the line
   // continues; it is drawn dashed over the gap, which says "they were not
   // here" without pretending we measured them in between.
+  // Dashed for a real ABSENCE, not for every skipped category.
+  //
+  // The old rule dashed any segment that stepped over a category, which was
+  // tolerable while a dot averaged all of a swimmer's events. One stroke at a
+  // time it is not: on Breast, Dr Boit is at 6 of the 19 meets on the axis, so
+  // thirteen of his segments were gaps and the line was almost entirely
+  // dotted — which is what was reported.
+  //
+  // Measured in time instead. Across the club the median gap between two
+  // races of the same stroke is 71 days, so racing a stroke every couple of
+  // months is the normal rhythm and should draw a solid line. Six months is a
+  // layoff, and dashes 8% of segments rather than 55%.
+  const GAP_DAYS = 182;
   const body = series.map(s => {
-    const pts = s.pts.map(p => ({ i: catKeys.indexOf(p.k), v: p.mean }))
+    const pts = s.pts.map(p => ({ i: catKeys.indexOf(p.k), v: p.mean, d: p.date }))
       .filter(p => p.i >= 0).sort((x, y) => x.i - y.i);
     const segs = [];
     for (let k = 1; k < pts.length; k++) {
       const a = pts[k - 1], b = pts[k];
+      const away = (a.d && b.d)
+        ? (new Date(b.d) - new Date(a.d)) / 86400000 > GAP_DAYS
+        : b.i - a.i > 1;
       segs.push(`<path d="M${X(a.i).toFixed(1)} ${Y(a.v).toFixed(1)}
         L${X(b.i).toFixed(1)} ${Y(b.v).toFixed(1)}" fill="none" stroke="${s.colour}"
-        stroke-width="2.6" stroke-linecap="round"${b.i - a.i > 1
+        stroke-width="2.6" stroke-linecap="round"${away
           ? ' stroke-dasharray="3 4" opacity=".55"' : ''}
         vector-effect="non-scaling-stroke"/>`);
     }
@@ -2368,10 +2384,10 @@ function twoSection(){
       <p class="dkey">
         <span><svg width="36" height="9" aria-hidden><line x1="1" y1="4.5" x2="35" y2="4.5"
           stroke="currentColor" stroke-width="2.4"/></svg>
-          raced the next one too</span>
+          racing this stroke regularly</span>
         <span><svg width="36" height="9" aria-hidden><line x1="1" y1="4.5" x2="35" y2="4.5"
           stroke="currentColor" stroke-width="2.4" stroke-dasharray="3 4" opacity=".6"/></svg>
-          <b>skipped what lies between</b> — the line joins the races either side without
+          <b>more than six months between races</b> — the line joins either side without
           claiming anything in the gap</span>
       </p>
       <p class="tw-note">${esc(TW_BASE[twBase][1])}
