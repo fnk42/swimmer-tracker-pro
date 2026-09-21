@@ -992,6 +992,15 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
   .fb-lab{min-width:52px}
 }
 
+/* type a name instead of scrolling 125 of them */
+.twpick{font:inherit;font-size:13.5px;padding:8px 11px;border-radius:9px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  min-width:200px;max-width:100%}
+.twpick:focus{outline:2px solid var(--electric);outline-offset:1px;border-color:var(--electric)}
+.twpick::placeholder{color:var(--muted)}
+.twmsg{flex-basis:100%;font-size:12px;color:var(--alert-t);min-height:0}
+.twmsg.on{min-height:1.2em}
+
 /* solid vs dashed, said with actual dashes. The gap segments were the first
    thing read on the chart and the last thing explained, in small print. */
 .dkey{display:flex;flex-wrap:wrap;gap:6px 22px;margin:9px 0 0;font-size:12px;
@@ -2283,11 +2292,19 @@ function twoSection(){
       because that is what makes two lines comparable or not.</p>
 
     <div class="dfilters">
-      <label>Swimmer<select id="twA">${all.map(n =>
-        `<option value="${esc(n)}"${n === a ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select></label>
-      <label>Compare with<select id="twB"><option value="">— nobody —</option>
-        ${others.map(n => `<option value="${esc(n)}"${n === twB ? ' selected' : ''}
-          >${esc(n)}</option>`).join('')}</select></label>
+      <!-- Typed, not scrolled. A select with 125 names in it means hunting
+           down an alphabetical list for a child you can already name; typing
+           three letters is the whole interaction. The datalist keeps the full
+           list one click away for anyone who would rather browse it. -->
+      <label>Swimmer<input class="twpick" id="twA" list="twAlist" type="search"
+        autocomplete="off" spellcheck="false" placeholder="Type a name\u2026"
+        value="${esc(a)}" data-prev="${esc(a)}"></label>
+      <datalist id="twAlist">${all.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+      <label>Compare with<input class="twpick" id="twB" list="twBlist" type="search"
+        autocomplete="off" spellcheck="false" placeholder="\u2014 nobody \u2014"
+        value="${esc(twB)}" data-prev="${esc(twB)}"></label>
+      <datalist id="twBlist">${others.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
+      <span class="twmsg" id="twmsg" role="status"></span>
       <label>Measured against<select id="twBase">${Object.entries(TW_BASE).map(([k, v]) =>
         `<option value="${k}"${twBase === k ? ' selected' : ''}>${esc(v[0])}</option>`).join('')}
       </select></label>
@@ -4027,8 +4044,46 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
   bind('msMeet', e => { msMeet = e.target.value; render(); });
   bind('msBase', e => { msBase = e.target.value; render(); });
   bind('msBand', e => { msBand = e.target.value; render(); });
-  bind('twA',    e => { twA = e.target.value; if (twB === twA) twB = ''; render(); });
-  bind('twB',    e => { twB = e.target.value; render(); });
+  // A typed name has to be one the archive knows, or the chart has nothing to
+  // draw. An unrecognised entry reverts to what was there rather than
+  // clearing the chart, and an empty "compare with" means nobody, which is a
+  // valid choice.
+  const pickName = (id, set) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const names = [...document.querySelectorAll(`#${el.getAttribute('list')} option`)]
+      .map(o => o.value);
+    const commit = () => {
+      const v = el.value.trim();
+      if (!v && id === 'twB') { set(''); render(); return; }
+      const exact = names.find(n => n.toLowerCase() === v.toLowerCase());
+      // One partial match is unambiguous, so accept it: "makau" is a name.
+      const near = exact ? null
+        : names.filter(n => n.toLowerCase().includes(v.toLowerCase()));
+      const pick = exact || (near && near.length === 1 ? near[0] : null);
+      if (pick) { set(pick); render(); return; }
+      // Nothing matched, or too much did. Say which, rather than silently
+      // snapping the box back to the previous name and leaving the reader to
+      // wonder whether they mistyped or the swimmer does not exist.
+      const msg = document.getElementById('twmsg');
+      if (msg) {
+        msg.textContent = !near || !near.length
+          ? `No swimmer here matches \u201c${v}\u201d.`
+          : `\u201c${v}\u201d matches ${near.length}: ${near.slice(0, 3).join(', ')}${
+              near.length > 3 ? '\u2026' : ''}. Type more of the name.`;
+        msg.classList.add('on');
+      }
+      el.value = el.dataset.prev || '';   // not a swimmer we hold
+    };
+    el.onchange = commit;
+    el.oninput = () => {
+      const m = document.getElementById('twmsg');
+      if (m) { m.textContent = ''; m.classList.remove('on'); }
+    };
+    el.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } };
+  };
+  pickName('twA', v => { twA = v; if (twB === twA) twB = ''; });
+  pickName('twB', v => { twB = v; });
   bind('twBy',   e => { twBy = e.target.value; render(); });
   bind('twBase', e => { twBase = e.target.value; render(); });
 
