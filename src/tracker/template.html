@@ -2164,6 +2164,25 @@ function twoSection(){
   // offering the whole club in the picker under a bar reading "11-12 ·
   // Breast only" is the same contradiction the tiles had.
   const SC = fScope();
+  // ONE STROKE AT A TIME. A dot used to average every event a swimmer raced
+  // that day, so Dr Boit's 100 Fly at -2.9% and 100 Free at -7.0% became a
+  // single -5.0% that is neither. Fly and Free are different skills and a
+  // swimmer can be improving at one while stalling at the other; averaging
+  // them hides exactly what this chart is for.
+  //
+  // The bar's stroke filter drives it, so choosing a stroke here keeps it
+  // chosen everywhere. With no stroke picked, the chart takes the one the
+  // swimmers in view race most, and says which.
+  const twStroke = fStroke || (() => {
+    const n = {};
+    for (const r of (MS.rows || [])) {
+      const nm = MS.swimmers[r[1]];
+      if (nm !== (twA || '') && nm !== twB) continue;
+      const k = strokeOf((MS.events[r[2]] || '').split('|')[0]);
+      if (k) n[k] = (n[k] || 0) + 1;
+    }
+    return Object.entries(n).sort((x, y) => y[1] - x[1])[0]?.[0] || 'Free';
+  })();
   let all = (DATA.years.all.swimmers || []).filter(s => (s.events || []).length)
     .map(s => s.name).sort();
   if (fActive()) all = all.filter(n => SC.names.has(n));
@@ -2181,7 +2200,7 @@ function twoSection(){
       if (r[1] !== si || r[bc] === null) return false;
       const d = (meetById.get(r[0]) || {}).date || '';
       if (d.slice(0, 4) < SC.lo || d.slice(0, 4) > SC.hi) return false;
-      if (fStroke && strokeOf((MS.events[r[2]] || '').split('|')[0]) !== fStroke) return false;
+      if (strokeOf((MS.events[r[2]] || '').split('|')[0]) !== twStroke) return false;
       return true;
     });
     // Grouped, then averaged within the group: a swimmer who raced six times
@@ -2308,6 +2327,9 @@ function twoSection(){
       <label>Measured against<select id="twBase">${Object.entries(TW_BASE).map(([k, v]) =>
         `<option value="${k}"${twBase === k ? ' selected' : ''}>${esc(v[0])}</option>`).join('')}
       </select></label>
+      <label>Stroke<select id="twStroke">${STROKE_LIST.map(k =>
+        `<option value="${k}"${k === twStroke ? ' selected' : ''}>${k}</option>`).join('')}
+      </select></label>
       <label>Broken down by<select id="twBy">
         <option value="meet"${twBy === 'meet' ? ' selected' : ''}>Meet</option>
         <option value="season"${twBy === 'season' ? ' selected' : ''}>Season</option>
@@ -2338,9 +2360,10 @@ function twoSection(){
           <span>${esc(axisLabel(cats[cats.length - 1]))}</span></div></div>
       </div>
       <p class="dc-hint" style="margin-top:13px"><span class="dc-arrow">●</span><span>
-        <b>One dot = one ${twBy === 'meet' ? 'meet' : twBy === 'season' ? 'season' : 'stroke'}.</b>
+        <b>One dot = one ${twBy === 'meet' ? 'meet' : twBy === 'season' ? 'season' : 'stroke'},
+        ${esc(twStroke)} only.</b>
         It is how that swimmer swam ${twBy === 'meet' ? 'on that day' : 'over that ' + twBy},
-        averaged across their races, against <b>${esc(TW_BASE[twBase][0])}</b>.
+        across their ${esc(twStroke)} races, against <b>${esc(TW_BASE[twBase][0])}</b>.
         <b>0% is the baseline; −5% means five per cent quicker than it.</b></span></p>
       <p class="dkey">
         <span><svg width="36" height="9" aria-hidden><line x1="1" y1="4.5" x2="35" y2="4.5"
@@ -4082,6 +4105,9 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
     };
     el.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } };
   };
+  // Writes to the shared filter, so a stroke chosen on this chart stays
+  // chosen on the bar above and on every other page.
+  bind('twStroke', e => { fStroke = e.target.value; render(); });
   pickName('twA', v => { twA = v; if (twB === twA) twB = ''; });
   pickName('twB', v => { twB = v; });
   bind('twBy',   e => { twBy = e.target.value; render(); });
@@ -4178,9 +4204,29 @@ function showPage(p){
   }
 }
 
-window.addEventListener('hashchange', () => {
-  showPage(routeFromHash());
+// Tab navigation hung entirely on `hashchange`, and the browser does not
+// always fire it: clicking a tab set location.hash and left the page showing
+// the section you were already on. Selecting a meet and then reaching for
+// Swimmers kept you on Meets, which is what was reported.
+//
+// The click is handled directly now, so switching never depends on an event
+// arriving. hashchange stays for the back button and for a pasted link.
+function goTo(p){
+  if (location.hash !== '#/' + p) location.hash = '#/' + p;
+  showPage(p);
   window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+document.getElementById('sidenav').addEventListener('click', e => {
+  const a = e.target.closest('a[data-page]');
+  if (!a) return;
+  e.preventDefault();
+  goTo(a.dataset.page);
+});
+
+window.addEventListener('hashchange', () => {
+  const p = routeFromHash();
+  if (p !== page) { showPage(p); window.scrollTo({ top: 0, behavior: 'auto' }); }
 });
 
 function filter(){
