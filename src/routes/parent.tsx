@@ -119,12 +119,29 @@ function ParentPage() {
     () => groupIds.map((id) => swimmers.find((s) => s.id === id)).filter((s): s is Swimmer => !!s),
     [groupIds, swimmers],
   );
+  // Only this parent's own children.
+  //
+  // It used to offer the whole Machakos squad, so the quickest way onto
+  // somebody else's child was a mis-tap in a long alphabetical list — and
+  // because everything here is about entering and paying, the mistake landed
+  // next to a payment. Finding a child who is not yet on the account is what
+  // the search below is for, and that now refuses anyone another parent has
+  // already registered.
+  const myLinkedIds = useMemo(() => {
+    const me = myParentQ.data;
+    const links = mySwimmerParentsQ.data ?? [];
+    return new Set(
+      me ? links.filter((l) => l.parentId === me.id).map((l) => l.swimmerId) : [],
+    );
+  }, [myParentQ.data, mySwimmerParentsQ.data]);
+
   const available = useMemo(
     () =>
       swimmers
         .filter((s) => !groupIds.includes(s.id))
+        .filter((s) => myLinkedIds.has(s.id) || linkedSwimmerIds.has(s.id))
         .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
-    [swimmers, groupIds],
+    [swimmers, groupIds, myLinkedIds, linkedSwimmerIds],
   );
 
   // Chosen from the picker and waiting on the parent to say yes. Nothing is

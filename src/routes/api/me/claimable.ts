@@ -18,8 +18,15 @@ export const Route = createFileRoute("/api/me/claimable")({
       // characters, at most eight results, and no way to page through the club.
       //
       // What comes back is a name and how many adults are already on the
-      // record — never who those adults are. Swimmers already at the limit are
-      // left out, so nobody learns a child exists by being refused.
+      // record — never who they are.
+      //
+      // A child who is already on an adult's account does not appear here at
+      // all. Two adults may still share a swimmer, but the second is added by a
+      // coordinator rather than by claiming: self-claiming a child somebody
+      // else has already registered is how a parent ends up looking at another
+      // family's entry and balance, and it happened twice in one morning. A
+      // swimmer already spoken for is left out rather than refused, so nobody
+      // learns who is registered by being turned away.
       GET: async ({ request }) => {
         try {
           const s = sessionFromRequest(request);
@@ -37,10 +44,10 @@ export const Route = createFileRoute("/api/me/claimable")({
                left join public.swimmer_parents sp on sp.swimmer_id = s.id
               where s.name ilike '%' || $1 || '%'
               group by s.id, s.name
-             having count(sp.parent_id) < $3 or bool_or(sp.parent_id = $2)
+             having count(sp.parent_id) = 0 or bool_or(sp.parent_id = $2)
               order by s.name
-              limit $4`,
-            [term, s.parentId, MAX_ADULTS, LIMIT],
+              limit $3`,
+            [term, s.parentId, LIMIT],
           );
 
           return json({

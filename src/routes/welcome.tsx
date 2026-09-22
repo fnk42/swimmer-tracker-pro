@@ -225,7 +225,7 @@ function Welcome() {
               <p className="mb-6 mt-1.5 text-[14px] leading-relaxed text-white/65">
                 Optional. We will email them an invitation to set up their own access — their own
                 sign-in, not a shared one, so the agreement they give is their own. Two adults can
-                be on a swimmer.
+                be on a swimmer; a coordinator adds the second, so tell us about them here.
               </p>
 
               <label className="ng-label" htmlFor="w-2name">
@@ -263,7 +263,8 @@ function Welcome() {
               <h1 className="text-[23px] font-semibold">Which swimmers are yours?</h1>
               <p className="mb-5 mt-1.5 text-[14px] leading-relaxed text-white/65">
                 Search their name. Once you add a swimmer you can see their results and enter
-                them for meets straight away. Up to two adults can be on the same swimmer.
+                them for meets straight away. A swimmer another parent has already registered
+                will not appear — tell a coordinator and they will add you.
               </p>
               <div className="rounded-xl bg-white/[.04] p-4">
                 <FindSwimmer

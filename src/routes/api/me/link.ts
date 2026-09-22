@@ -53,13 +53,19 @@ export const Route = createFileRoute("/api/me/link")({
             });
           }
 
-          const approved = held.filter((h) => h.status !== "rejected");
-          if (approved.length >= MAX_ADULTS) {
+          // A swimmer anybody else already holds cannot be claimed here, not
+          // even up to the two-adult limit. The limit was never the thing being
+          // protected — a parent self-claiming a child another family has
+          // already registered is, and no check on the claimer's side can tell
+          // the household's second adult from a mistake. The second adult is
+          // added by a coordinator, who can.
+          const others = held.filter((h) => h.status !== "rejected" && h.parent_id !== s.parentId);
+          if (others.length > 0) {
             return json(
               {
                 error:
-                  "Two adults are already linked to that swimmer, which is the limit. " +
-                  "Ask the coordinator if one of them should be changed.",
+                  "That swimmer is already on another parent's account. If you are their " +
+                  "other parent or guardian, ask a club coordinator to add you.",
               },
               409,
             );

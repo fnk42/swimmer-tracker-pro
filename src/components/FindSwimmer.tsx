@@ -69,7 +69,8 @@ export function FindSwimmer({ onClaimed, dark = false, confirmBeforeAdd = false 
           className={dark ? "ng-field" : "h-11"}
         />
         <p className={"mt-1.5 text-xs " + (dark ? "text-white/45" : "text-muted-foreground")}>
-          Type at least two letters. Two adults can be on the same swimmer.
+          Type at least two letters. A swimmer another parent has already registered will not
+          appear — ask a coordinator to add you to them.
         </p>
       </div>
 
@@ -82,8 +83,8 @@ export function FindSwimmer({ onClaimed, dark = false, confirmBeforeAdd = false 
       {searching && !results.isLoading && found.length === 0 && (
         <p className={"rounded-lg px-3 py-2.5 text-xs " +
           (dark ? "bg-white/[.06] text-white/60" : "bg-secondary text-muted-foreground")}>
-          No swimmer matches that name, or the ones that do already have two adults on the
-          record. Ask the coordinator if that is not right.
+          No swimmer matches that name, or the ones that do are already registered by another
+          parent. If one of them is your child, ask a club coordinator to add you.
         </p>
       )}
 
@@ -98,11 +99,7 @@ export function FindSwimmer({ onClaimed, dark = false, confirmBeforeAdd = false 
                     {s.name}
                   </span>
                   <span className={"block text-xs " + (dark ? "text-white/50" : "text-muted-foreground")}>
-                    {s.mine
-                      ? "On your record"
-                      : s.adults === 0
-                        ? "No adult linked yet"
-                        : "One adult already linked · one place left"}
+                    {s.mine ? "On your record" : "Not yet on any parent's account"}
                   </span>
                 </span>
                 <Button
