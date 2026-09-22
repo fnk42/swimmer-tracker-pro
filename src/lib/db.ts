@@ -9,6 +9,7 @@
 // recorded health conditions. Here the credential never leaves the server, so
 // there is nothing to contain.
 import pg from "pg";
+import { report } from "@/lib/sentry";
 
 let pool: pg.Pool | null = null;
 
@@ -87,5 +88,8 @@ export function json(data: unknown, status = 200): Response {
 /** Log the real error server-side; tell the client only what it needs. */
 export function fail(where: string, err: unknown, message: string, status = 500): Response {
   console.error(`${where}:`, err);
+  // Every API route already funnels its failures through here, so this is the
+  // one place server errors need reporting from. No-op without SENTRY_DSN.
+  report(where, err);
   return json({ error: message }, status);
 }

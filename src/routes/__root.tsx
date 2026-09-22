@@ -12,6 +12,7 @@ import { type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { NoteButton } from "@/components/NoteButton";
+import { reportClient } from "@/lib/sentry-client";
 
 function NotFoundComponent() {
   return (
@@ -37,6 +38,9 @@ function NotFoundComponent() {
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
+  // The router already funnels every render failure here, so this is the one
+  // place browser errors need reporting from. No-op without VITE_SENTRY_DSN.
+  reportClient(error, "render");
   const router = useRouter();
 
   return (

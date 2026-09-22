@@ -216,12 +216,6 @@ function AdminPage() {
             <ClaimQueue />
 
             <section className="mt-8">
-              <h2 className="text-[15px] font-semibold">Activity</h2>
-              <p className="mt-1 mb-4 max-w-[92ch] text-[13px] leading-relaxed
-                            text-muted-foreground">
-                Who is getting in, and who is not. Built because there was no way to answer that
-                except by asking a parent.
-              </p>
               <ActivityLog />
             </section>
 
