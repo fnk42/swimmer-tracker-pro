@@ -127,7 +127,11 @@ function ParentPage() {
     [swimmers, groupIds],
   );
 
-  async function autoLinkNewSwimmer(swimmerId: string, parents: Parent[]) {
+  // Chosen from the picker and waiting on the parent to say yes. Nothing is
+  // linked while this is set.
+  const [pendingChild, setPendingChild] = useState<{ id: string; name: string } | null>(null);
+
+  async function linkSwimmer(swimmerId: string, swimmerName: string, parents: Parent[]) {
     try {
       for (let i = 0; i < parents.length; i++) {
         // parentId and sortOrder now come from the signed session server-side;
@@ -139,17 +143,13 @@ function ParentPage() {
         next.add(swimmerId);
         return next;
       });
-      toast.success(
-        parents.length === 1
-          ? "Parent auto-linked to added swimmer."
-          : "Parents auto-linked to added swimmer.",
-      );
+      toast.success(`${swimmerName} added to your account.`);
     } catch (err) {
       const info = extractErr(err);
-      console.warn("[parent] auto-link failed:", info);
+      console.warn("[parent] link failed:", info);
       const userMessage = info.isRlsDenied
         ? "Couldn't link this swimmer — your account isn't authorised for it. Sign out and back in, or contact the coordinator."
-        : info.message || "Failed to auto-link parents.";
+        : info.message || "Could not add that swimmer.";
       toast.error(userMessage);
       // Roll back the optimistic pick from addChild so the UI doesn't
       // show a "selected" chip next to a refusal toast. Also clear from
@@ -164,12 +164,29 @@ function ParentPage() {
     }
   }
 
+  // Picking a name from the list used to link the child to the account on the
+  // spot and say so in a toast — "auto-linked" — after the fact. The list is
+  // the whole Machakos squad, so one mis-tap put a parent on somebody else's
+  // child, with their entry and their balance, and the toast read as though
+  // the system had meant it. Nothing is linked now until it is confirmed.
   function addChild(id: string) {
     if (!id || groupIds.includes(id)) return;
-    setGroupIds((g) => [...g, id]);
-    if (linkedParents.length > 0 && !linkedSwimmerIds.has(id)) {
-      autoLinkNewSwimmer(id, linkedParents);
+    // Already ours: this only puts them in the group being registered, which
+    // is reversible and grants nothing new, so there is nothing to confirm.
+    if (linkedParents.length === 0 || linkedSwimmerIds.has(id)) {
+      setGroupIds((g) => [...g, id]);
+      return;
     }
+    const picked = swimmers.find((x) => x.id === id);
+    setPendingChild({ id, name: picked?.name ?? "that swimmer" });
+  }
+
+  function confirmPendingChild() {
+    const p = pendingChild;
+    if (!p) return;
+    setPendingChild(null);
+    setGroupIds((g) => (g.includes(p.id) ? g : [...g, p.id]));
+    void linkSwimmer(p.id, p.name, linkedParents);
   }
   function removeChild(id: string) {
     // Don't clear linkedParents when the picker empties — the DB record
@@ -279,6 +296,24 @@ function ParentPage() {
                     </SelectContent>
                   </Select>
                 ) : null}
+
+                {pendingChild && (
+                  <div className="rounded-lg border border-border bg-secondary px-3.5 py-3">
+                    <p className="text-[13px] leading-relaxed">
+                      Add <b>{pendingChild.name}</b> to your account? Please confirm you are
+                      their parent or guardian. They will be entered and paid for under your
+                      name.
+                    </p>
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      <Button size="sm" onClick={confirmPendingChild}>
+                        Yes, {pendingChild.name} is my child
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setPendingChild(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Whether or not they already hold a swimmer, a parent needs a
                     way onto a child's record — the second adult in a household
