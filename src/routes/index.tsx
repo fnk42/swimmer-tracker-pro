@@ -65,16 +65,23 @@ function PortalLanding() {
     }
   }
 
+  // Listed side by side with no distinction, these read as two things you get
+   // on signing in. Only Events is: the performance pages are coach-only until
+   // the consent drive closes, so a parent entering Machakos today and then
+   // looking for their child's times would find a locked door and no
+   // explanation. Say which is ready.
   const features = [
     {
       title: "Events",
       body: "What your child is entered for, what is still owed, and how to pay.",
       path: "M8 2v3m8-3v3M3.5 9.5h17M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z",
+      soon: false,
     },
     {
-      title: "Performance",
-      body: "How swimming at the club is developing — season by season, stroke by stroke, by age group.",
+      title: "NextGen Analytics",
+      body: "How swimming at the club is developing — season by season, stroke by stroke, by age group. Opening to families once every guardian has been asked to consent.",
       path: "M4 19V10m5 9V5m5 14v-6m5 6V8",
+      soon: true,
     },
   ];
 
@@ -103,8 +110,8 @@ function PortalLanding() {
             </span>
           </h1>
           <p className="mt-5 max-w-[48ch] text-[16.5px] leading-relaxed text-white/70">
-            See the events your child is entered for, and how their swimming has developed over
-            their time at the club — every race, every season.
+            Sign in to see the events your child is entered for, and to enter them for
+            Machakos. The performance pages are coming next.
           </p>
 
           <ul className="ng-panel mt-9 max-w-[520px] px-6 py-1">
@@ -127,8 +134,24 @@ function PortalLanding() {
                   </svg>
                 </span>
                 <span>
-                  <span className="block text-[15.5px] font-semibold text-white">{f.title}</span>
-                  <span className="block text-sm text-white/65">{f.body}</span>
+                  <span className="flex flex-wrap items-baseline gap-2">
+                    <span className="text-[15.5px] font-semibold text-white">{f.title}</span>
+                    {f.soon ? (
+                      <span className="rounded-full border border-[color:var(--ng-electric)]/45
+                                       bg-[color:var(--ng-electric)]/12 px-2 py-[1px]
+                                       text-[10.5px] font-semibold uppercase tracking-wide
+                                       text-[color:var(--ng-electric)]">
+                        Coming soon
+                      </span>
+                    ) : (
+                      <span className="rounded-full border border-emerald-400/40 bg-emerald-400/10
+                                       px-2 py-[1px] text-[10.5px] font-semibold uppercase
+                                       tracking-wide text-emerald-300">
+                        Live now
+                      </span>
+                    )}
+                  </span>
+                  <span className="mt-0.5 block text-sm text-white/65">{f.body}</span>
                 </span>
               </li>
             ))}
@@ -234,7 +257,15 @@ function PortalLanding() {
           height={256}
           className="mr-2 inline-block h-[17px] w-auto align-[-3px] opacity-70"
         />
-        A product of <span className="font-semibold text-white/55">Golden Pipit Solutions</span>
+        A product of{" "}
+        <a
+          href="https://goldenpipitrecruiting.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-white/55 underline-offset-4 hover:text-white hover:underline"
+        >
+          Golden Pipit Solutions
+        </a>
       </footer>
     </div>
   );

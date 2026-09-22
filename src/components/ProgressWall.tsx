@@ -111,6 +111,12 @@ export function ProgressWall() {
         <h2 id="pw-h" className="text-[19px] font-semibold text-white">
           What four years of swimming looks like
         </h2>
+        <span className="rounded-full border border-[color:var(--ng-electric)]/45
+                         bg-[color:var(--ng-electric)]/12 px-2.5 py-0.5 text-[11px]
+                         font-semibold uppercase tracking-wide
+                         text-[color:var(--ng-electric)]">
+          NextGen Analytics · coming soon
+        </span>
         <span className="font-mono text-[11px] uppercase tracking-[.14em] text-[var(--ng-cyan)]">
           Real athletes · real times
         </span>

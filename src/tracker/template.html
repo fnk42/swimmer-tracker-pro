@@ -957,12 +957,20 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 
 /* the one filter bar, shared by Analytics, Ages and Swimmers.
    Sticky under the portal bar, whose measured height is --stick. */
-.fbar{position:sticky;top:var(--stick,0px);z-index:40;display:flex;flex-wrap:wrap;
-  align-items:center;gap:10px 18px;margin:16px 0 4px;padding:11px 14px;
-  background:color-mix(in srgb, var(--surface) 92%, transparent);
+/* One row per filter, label left, controls right. Side by side, the three
+   groups wrapped unpredictably as the chip counts changed and the Age row
+   could end up split across two lines while Stroke sat alone on a third. */
+.fbar{position:sticky;top:var(--stick,0px);z-index:40;display:grid;
+  grid-template-columns:auto minmax(0,1fr);gap:9px 14px;align-items:center;
+  margin:16px 0 4px;padding:12px 14px;
+  background:color-mix(in srgb, var(--surface) 94%, transparent);
   backdrop-filter:saturate(140%) blur(8px);
   border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow-sm)}
-.fb-grp{display:flex;align-items:center;gap:7px;min-width:0}
+.fb-grp{display:grid;grid-template-columns:subgrid;grid-column:1 / -1;
+  align-items:center;min-width:0}
+@supports not (grid-template-columns: subgrid){
+  .fb-grp{display:flex;align-items:center;gap:9px}
+}
 .fb-lab{font-size:10px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
   color:var(--muted);white-space:nowrap}
 .fb-chips{display:flex;flex-wrap:wrap;gap:3px}
@@ -986,10 +994,24 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 .fnote{margin:10px 0 0;padding:9px 12px;background:var(--ice);border-radius:10px;
   font-size:12.5px;color:var(--body);line-height:1.5}
 .fnote b{color:var(--ink)}
+/* On a phone the chips are the wrong control: eight age buttons and six stroke
+   buttons wrapped to four lines and pushed the chart off the screen before it
+   could be read. Below 700px each group collapses to a single select, which
+   the phone renders as its own native picker. */
+.fb-wrap{min-width:0}
+.fb-span{display:flex;align-items:center;gap:7px;min-width:0}
+.fb-sel{display:none}
 @media (max-width:700px){
-  .fbar{gap:8px 12px;padding:10px}
-  .fb-grp{flex:1 1 100%}
-  .fb-lab{min-width:52px}
+  .fbar{grid-template-columns:minmax(0,1fr);gap:8px;padding:10px}
+  .fb-grp{display:grid;grid-template-columns:62px minmax(0,1fr);gap:8px}
+  .fb-chips{display:none}
+  .fb-sel{display:block;width:100%;min-width:0;font:inherit;font-size:13.5px;
+    padding:7px 9px;border-radius:9px;border:1px solid var(--line);
+    background:var(--surface);color:var(--ink)}
+  .fb-span select{flex:1 1 0}
+  .fb-search{grid-column:1 / -1}
+  .fb-clear{grid-column:1 / -1;text-align:left}
+  .fbar select{width:100%}
 }
 
 /* type a name instead of scrolling 125 of them */
@@ -2001,19 +2023,36 @@ function filterBar(withSearch){
   // what "the span reverts to 2022" was.
   return `<div class="fbar">
     <span class="fb-grp"><span class="fb-lab">Age</span>
-      <span class="fb-chips f-band">
-        ${['', ...BAND_ORDER].map(b => `<button type="button" data-band="${esc(b)}"
-          aria-pressed="${fBand === b}">${b ? esc(b) : 'All'}</button>`).join('')}
+      <span class="fb-wrap">
+        <span class="fb-chips f-band">
+          ${['', ...BAND_ORDER].map(b => `<button type="button" data-band="${esc(b)}"
+            aria-pressed="${fBand === b}">${b ? esc(b) : 'All'}</button>`).join('')}
+        </span>
+        <!-- Same state, shown instead of the chips on a phone. -->
+        <select class="fb-sel f-band-sel" aria-label="Age band">
+          ${['', ...BAND_ORDER].map(b => `<option value="${esc(b)}"${fBand === b ? ' selected' : ''}
+            >${b ? esc(b) : 'All ages'}</option>`).join('')}
+        </select>
       </span></span>
     <span class="fb-grp"><span class="fb-lab">Stroke</span>
-      <span class="fb-chips f-stroke">
-        ${['', ...STROKE_LIST].map(k => `<button type="button" data-stroke="${k}"
-          aria-pressed="${fStroke === k}">${k || 'All'}</button>`).join('')}
+      <span class="fb-wrap">
+        <span class="fb-chips f-stroke">
+          ${['', ...STROKE_LIST].map(k => `<button type="button" data-stroke="${k}"
+            aria-pressed="${fStroke === k}">${k || 'All'}</button>`).join('')}
+        </span>
+        <select class="fb-sel f-stroke-sel" aria-label="Stroke">
+          ${['', ...STROKE_LIST].map(k => `<option value="${k}"${fStroke === k ? ' selected' : ''}
+            >${k || 'All strokes'}</option>`).join('')}
+        </select>
       </span></span>
     <span class="fb-grp"><span class="fb-lab">Seasons</span>
-      <select class="f-from" aria-label="From season">${ys.map(y => opt(y, lo)).join('')}</select>
-      <span class="fb-arr" aria-hidden>&rarr;</span>
-      <select class="f-to" aria-label="To season">${ys.map(y => opt(y, hi)).join('')}</select></span>
+      <!-- One grid item, or the two selects and the arrow become three rows on
+           a phone and the arrow gets a row to itself. -->
+      <span class="fb-wrap fb-span">
+        <select class="f-from" aria-label="From season">${ys.map(y => opt(y, lo)).join('')}</select>
+        <span class="fb-arr" aria-hidden>&rarr;</span>
+        <select class="f-to" aria-label="To season">${ys.map(y => opt(y, hi)).join('')}</select>
+      </span></span>
     ${withSearch ? `<span class="fb-grp fb-search">
       <input class="f-q" type="search" placeholder="Search name\u2026" value="${esc(fQ)}"></span>` : ''}
     ${fActive() ? `<button type="button" class="fb-clear">Clear filters</button>` : ''}
@@ -4127,6 +4166,13 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
   });
   document.querySelectorAll('.fbar .f-stroke button').forEach(b => b.onclick = () => {
     fStroke = b.dataset.stroke || ''; render();
+  });
+  // The phone's selects carry the same state as the chips they replace.
+  document.querySelectorAll('.fbar .f-band-sel').forEach(el => el.onchange = e => {
+    fBand = e.target.value; render();
+  });
+  document.querySelectorAll('.fbar .f-stroke-sel').forEach(el => el.onchange = e => {
+    fStroke = e.target.value; render();
   });
   document.querySelectorAll('.fbar .fb-clear').forEach(b => b.onclick = () => {
     fBand = fStroke = ''; fFrom = fTo = ''; render();
