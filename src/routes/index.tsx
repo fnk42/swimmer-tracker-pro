@@ -39,6 +39,43 @@ function PortalLanding() {
     window.location.href = "/tracker";
   }, [me.isLoading, me.data, navigate]);
 
+  // Whether the shared coordinator sign-in exists at all. The server answers
+  // from one environment variable, so turning it off after testing is one
+  // change and the link disappears with it.
+  const [demoOn, setDemoOn] = useState(false);
+  const [showDemo, setShowDemo] = useState(false);
+  const [demoPw, setDemoPw] = useState("");
+  const [demoBusy, setDemoBusy] = useState(false);
+
+  useEffect(() => {
+    void fetch("/api/auth/demo")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setDemoOn(!!j?.enabled))
+      .catch(() => undefined);
+  }, []);
+
+  async function onDemo() {
+    setDemoBusy(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/auth/demo", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ password: demoPw }),
+      });
+      if (!r.ok) {
+        const b = (await r.json()) as { error?: string };
+        setError(b.error ?? "Could not sign in.");
+        return;
+      }
+      window.location.href = "/tracker";
+    } catch {
+      setError("Could not sign in.");
+    } finally {
+      setDemoBusy(false);
+    }
+  }
+
   async function onSendCode(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -193,6 +230,46 @@ function PortalLanding() {
                 If an address is not recognised, nothing is sent. Your details are visible only to
                 you and the club's coordinators.
               </p>
+
+              {/* Only rendered when DEMO_PASSWORD is set on the server, so the
+                  page never advertises a door that is not there. */}
+              {demoOn && !showDemo && (
+                <button
+                  type="button"
+                  onClick={() => { setShowDemo(true); setError(null); }}
+                  className="mt-3 w-full text-xs text-white/45 underline-offset-4
+                             hover:text-white hover:underline"
+                >
+                  Coordinator sign-in
+                </button>
+              )}
+              {demoOn && showDemo && (
+                <div className="mt-4 rounded-xl border border-white/12 bg-white/[0.04] p-4">
+                  <label className="ng-label" htmlFor="demopw">Coordinator password</label>
+                  <input
+                    id="demopw"
+                    className="ng-field"
+                    type="password"
+                    autoComplete="current-password"
+                    value={demoPw}
+                    onChange={(e) => setDemoPw(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void onDemo(); } }}
+                    placeholder="Password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void onDemo()}
+                    disabled={demoBusy || !demoPw}
+                    className="ng-btn ng-btn-primary mt-3 w-full"
+                  >
+                    {demoBusy ? "Signing in\u2026" : "Sign in"}
+                  </button>
+                  <p className="mt-2.5 text-[11px] leading-relaxed text-white/40">
+                    A shared account for the club's coordinators. Every use is recorded in the
+                    activity log.
+                  </p>
+                </div>
+              )}
             </form>
           ) : (
             <form onSubmit={onVerify}>

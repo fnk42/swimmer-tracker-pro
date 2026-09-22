@@ -45,6 +45,7 @@ import { Route as ApiMeClaimableRouteImport } from './routes/api/me/claimable'
 import { Route as ApiAuthVerifyCodeRouteImport } from './routes/api/auth/verify-code'
 import { Route as ApiAuthRequestCodeRouteImport } from './routes/api/auth/request-code'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
+import { Route as ApiAuthDemoRouteImport } from './routes/api/auth/demo'
 import { Route as ApiAthleteAssessmentRouteImport } from './routes/api/athlete/assessment'
 import { Route as ApiAdminStatusRouteImport } from './routes/api/admin/status'
 import { Route as ApiAdminParentImportRouteImport } from './routes/api/admin/parent-import'
@@ -231,6 +232,11 @@ const ApiAuthMeRoute = ApiAuthMeRouteImport.update({
   path: '/api/auth/me',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAuthDemoRoute = ApiAuthDemoRouteImport.update({
+  id: '/api/auth/demo',
+  path: '/api/auth/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAthleteAssessmentRoute = ApiAthleteAssessmentRouteImport.update({
   id: '/api/athlete/assessment',
   path: '/api/athlete/assessment',
@@ -283,6 +289,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/parent-import': typeof ApiAdminParentImportRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
+  '/api/auth/demo': typeof ApiAuthDemoRoute
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/request-code': typeof ApiAuthRequestCodeRoute
   '/api/auth/verify-code': typeof ApiAuthVerifyCodeRoute
@@ -326,6 +333,7 @@ export interface FileRoutesByTo {
   '/api/admin/parent-import': typeof ApiAdminParentImportRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
+  '/api/auth/demo': typeof ApiAuthDemoRoute
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/request-code': typeof ApiAuthRequestCodeRoute
   '/api/auth/verify-code': typeof ApiAuthVerifyCodeRoute
@@ -370,6 +378,7 @@ export interface FileRoutesById {
   '/api/admin/parent-import': typeof ApiAdminParentImportRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
+  '/api/auth/demo': typeof ApiAuthDemoRoute
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/request-code': typeof ApiAuthRequestCodeRoute
   '/api/auth/verify-code': typeof ApiAuthVerifyCodeRoute
@@ -415,6 +424,7 @@ export interface FileRouteTypes {
     | '/api/admin/parent-import'
     | '/api/admin/status'
     | '/api/athlete/assessment'
+    | '/api/auth/demo'
     | '/api/auth/me'
     | '/api/auth/request-code'
     | '/api/auth/verify-code'
@@ -458,6 +468,7 @@ export interface FileRouteTypes {
     | '/api/admin/parent-import'
     | '/api/admin/status'
     | '/api/athlete/assessment'
+    | '/api/auth/demo'
     | '/api/auth/me'
     | '/api/auth/request-code'
     | '/api/auth/verify-code'
@@ -501,6 +512,7 @@ export interface FileRouteTypes {
     | '/api/admin/parent-import'
     | '/api/admin/status'
     | '/api/athlete/assessment'
+    | '/api/auth/demo'
     | '/api/auth/me'
     | '/api/auth/request-code'
     | '/api/auth/verify-code'
@@ -545,6 +557,7 @@ export interface RootRouteChildren {
   ApiAdminParentImportRoute: typeof ApiAdminParentImportRoute
   ApiAdminStatusRoute: typeof ApiAdminStatusRoute
   ApiAthleteAssessmentRoute: typeof ApiAthleteAssessmentRoute
+  ApiAuthDemoRoute: typeof ApiAuthDemoRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
   ApiAuthRequestCodeRoute: typeof ApiAuthRequestCodeRoute
   ApiAuthVerifyCodeRoute: typeof ApiAuthVerifyCodeRoute
@@ -814,6 +827,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthMeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/auth/demo': {
+      id: '/api/auth/demo'
+      path: '/api/auth/demo'
+      fullPath: '/api/auth/demo'
+      preLoaderRoute: typeof ApiAuthDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/athlete/assessment': {
       id: '/api/athlete/assessment'
       path: '/api/athlete/assessment'
@@ -914,6 +934,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminParentImportRoute: ApiAdminParentImportRoute,
   ApiAdminStatusRoute: ApiAdminStatusRoute,
   ApiAthleteAssessmentRoute: ApiAthleteAssessmentRoute,
+  ApiAuthDemoRoute: ApiAuthDemoRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
   ApiAuthRequestCodeRoute: ApiAuthRequestCodeRoute,
   ApiAuthVerifyCodeRoute: ApiAuthVerifyCodeRoute,
