@@ -34,15 +34,19 @@ export const Route = createFileRoute("/api/me/claimable")({
           const term = new URL(request.url).searchParams.get("q")?.trim() ?? "";
           if (term.length < MIN_QUERY) return json({ swimmers: [], needsQuery: true });
 
-          const rows = await q<{ id: string; name: string; adults: number; mine: boolean }>(
+          const rows = await q<{
+            id: string; name: string; adults: number; mine: boolean; in_squad: boolean;
+          }>(
             `select s.id,
                     s.name,
                     count(sp.parent_id)::int as adults,
-                    bool_or(sp.parent_id = $2) as mine
+                    bool_or(sp.parent_id = $2) as mine,
+                    (s.event_squad
+                       or s.id in (select swimmer_id from public.registrations)) as in_squad
                from public.swimmers s
                left join public.swimmer_parents sp on sp.swimmer_id = s.id
               where s.name ilike '%' || $1 || '%'
-              group by s.id, s.name
+              group by s.id, s.name, s.event_squad
              having count(sp.parent_id) < $3 or bool_or(sp.parent_id = $2)
               order by s.name
               limit $4`,
@@ -55,6 +59,7 @@ export const Route = createFileRoute("/api/me/claimable")({
               name: r.name,
               adults: r.adults,
               mine: !!r.mine,
+              inSquad: !!r.in_squad,
               slotsLeft: MAX_ADULTS - r.adults,
             })),
           });

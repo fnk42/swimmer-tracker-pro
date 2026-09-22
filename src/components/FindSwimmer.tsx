@@ -23,8 +23,10 @@ import { useClaimable, useClaimSwimmer } from "@/lib/api";
 // prompt attached to each row. The Nationals page has no such screen: a parent
 // is adding a child mid-task, next to a payment, and a link now takes effect
 // immediately, so that is where the question gets asked.
-export function FindSwimmer({ onClaimed, dark = false, confirmBeforeAdd = false }:
-  { onClaimed?: (name: string) => void; dark?: boolean; confirmBeforeAdd?: boolean }) {
+export function FindSwimmer({ onClaimed, dark = false, confirmBeforeAdd = false,
+                              squadOnly = false }:
+  { onClaimed?: (name: string) => void; dark?: boolean; confirmBeforeAdd?: boolean;
+    squadOnly?: boolean }) {
   const [term, setTerm] = useState("");
   const [debounced, setDebounced] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -106,31 +108,39 @@ export function FindSwimmer({ onClaimed, dark = false, confirmBeforeAdd = false 
         </p>
       )}
 
+      {/* On the Nationals page a child who is not in the squad is still shown —
+          hiding them reads as "we have lost your child" — but greyed and
+          unselectable, because nothing here can enter them for a meet they are
+          not in. */}
       {found.length > 0 && (
         <ul className={"overflow-hidden rounded-xl border " +
           (dark ? "divide-y divide-white/10 border-white/15" : "divide-y divide-border border-border")}>
-          {found.map((s) => (
+          {found.map((s) => {
+            const offSquad = squadOnly && !s.inSquad;
+            return (
             <li key={s.id} className={dark ? "bg-white/[.03]" : "bg-card"}>
-              <div className="flex items-center gap-3 px-3.5 py-2.5">
+              <div className={"flex items-center gap-3 px-3.5 py-2.5 " + (offSquad ? "opacity-50" : "")}>
                 <span className="min-w-0 flex-1">
                   <span className={"block truncate text-sm font-medium " + (dark ? "text-white" : "")}>
                     {s.name}
                   </span>
                   <span className={"block text-xs " + (dark ? "text-white/50" : "text-muted-foreground")}>
-                    {s.mine
-                      ? "On your record"
-                      : s.adults === 0
-                        ? "Not yet on any parent's account"
-                        : "One parent already · you can be the second"}
+                    {offSquad
+                      ? "Not in the Nationals team"
+                      : s.mine
+                        ? "On your record"
+                        : s.adults === 0
+                          ? "Not yet on any parent's account"
+                          : "One parent already · you can be the second"}
                   </span>
                 </span>
                 <Button
                   size="sm"
-                  variant={s.mine ? "outline" : "default"}
-                  disabled={s.mine || claim.isPending}
+                  variant={s.mine || offSquad ? "outline" : "default"}
+                  disabled={s.mine || offSquad || claim.isPending}
                   onClick={() => attempt(s.id, s.name, s.adults)}
                 >
-                  {s.mine ? "Added" : "This is my child"}
+                  {offSquad ? "Not entered" : s.mine ? "Added" : "This is my child"}
                 </Button>
               </div>
 
@@ -184,7 +194,8 @@ export function FindSwimmer({ onClaimed, dark = false, confirmBeforeAdd = false 
                 </div>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </div>

@@ -281,6 +281,32 @@ function ParentPage() {
           </p>
         </div>
 
+        {/* Who this page is about, before anything else on it.
+            Everything below — the form, the balance, the M-Pesa reference — is
+            about whoever is named here, and that was only visible as small grey
+            chips three cards down. A parent with four children could fill in a
+            form for the wrong one without ever seeing a name. */}
+        {groupSwimmers.length > 0 && (
+          <div
+            className="rounded-xl px-4 py-3.5 text-white shadow-sm"
+            style={{ background: "linear-gradient(135deg,var(--ng-electric),var(--ng-electric-deep))" }}
+          >
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/75">
+              You are registering
+            </p>
+            <p className="mt-1 text-[19px] font-semibold leading-tight">
+              {groupSwimmers.map((s) => s.name).join(" · ")}
+            </p>
+            <p className="mt-1 text-[12.5px] text-white/80">
+              {groupSwimmers.length} swimmer{groupSwimmers.length === 1 ? "" : "s"} ·{" "}
+              {formatKes(EVENT.totalKes * groupSwimmers.length)} total
+              {groupSwimmers.some((s) => registeredIds.has(s.id))
+                ? " · entry form already saved"
+                : ""}
+            </p>
+          </div>
+        )}
+
         {loading ? (
           <Card>
             <CardContent className="py-8 text-sm text-muted-foreground text-center">
@@ -311,14 +337,15 @@ function ParentPage() {
                     {groupSwimmers.map((s) => (
                       <span
                         key={s.id}
-                        className="inline-flex items-center gap-1 rounded-full bg-accent text-accent-foreground text-xs font-medium pl-3 pr-1 py-1"
+                        className="inline-flex items-center gap-1 rounded-full text-white text-xs font-semibold pl-3 pr-1 py-1"
+                        style={{ background: "var(--ng-electric)" }}
                       >
                         {s.name}
                         {registeredIds.has(s.id) ? " ✓" : ""}
                         <button
                           type="button"
                           onClick={() => removeChild(s.id)}
-                          className="rounded-full hover:bg-accent p-0.5"
+                          className="rounded-full p-0.5 hover:bg-white/25"
                           aria-label={`Remove ${s.name}`}
                         >
                           <X className="h-3 w-3" />
@@ -375,7 +402,7 @@ function ParentPage() {
                   {/* Confirmed explicitly here: a parent is adding a child
                       mid-task, beside a payment, and the link is live the
                       moment it is made. */}
-                  <FindSwimmer confirmBeforeAdd />
+                  <FindSwimmer confirmBeforeAdd squadOnly />
                 </div>
 
                 {/* Undoing a wrong link, without waiting on anybody.

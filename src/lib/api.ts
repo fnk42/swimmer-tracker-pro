@@ -572,6 +572,8 @@ export type ClaimableSwimmer = {
   name: string;
   adults: number;
   mine: boolean;
+  /** On the Machakos squad, or already entered for it. */
+  inSquad: boolean;
   slotsLeft: number;
 };
 
