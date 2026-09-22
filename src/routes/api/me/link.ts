@@ -4,6 +4,7 @@ import { adminEmails } from "@/lib/session";
 import { sendClaimNotice } from "@/lib/mailer";
 import { normalizeKePhone } from "@/lib/phone";
 import { sessionFromRequest } from "@/lib/session";
+import { note } from "@/lib/activity";
 
 const MAX_ADULTS = 2;
 
@@ -74,6 +75,10 @@ export const Route = createFileRoute("/api/me/link")({
              returning *`,
             [swimmerId, s.parentId, slot],
           );
+
+          await note("swimmer_claimed", {
+            email: s.email, parentId: s.parentId, detail: `swimmer ${swimmerId}`,
+          });
 
           // Tell the coordinators. A claim nobody looks at is a parent locked
           // out, so this is not optional — but a mail failure must not undo a

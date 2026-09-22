@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { one, q, json, fail } from "@/lib/db";
 import { hashCode, createSession, cookieHeader, isAdminEmail } from "@/lib/session";
+import { note } from "@/lib/activity";
 
 const MAX_ATTEMPTS = 5;
 
@@ -38,6 +39,7 @@ export const Route = createFileRoute("/api/auth/verify-code")({
                            order by created_at desc limit 1)`,
               [email],
             );
+            await note("code_wrong", { email, ok: false });
             return json({ error: "That code is wrong or has expired" }, 401);
           }
 
@@ -47,6 +49,7 @@ export const Route = createFileRoute("/api/auth/verify-code")({
           );
           const admin = isAdminEmail(email);
           if (!parent && !admin) {
+            await note("code_wrong", { email, ok: false, detail: "correct code, no record" });
             return json({ error: "No record for that address" }, 403);
           }
 
@@ -56,6 +59,10 @@ export const Route = createFileRoute("/api/auth/verify-code")({
             email,
             parentId: parent?.id,
             isAdmin: admin,
+          });
+          await note("signed_in", {
+            email, parentId: parent?.id ?? null,
+            detail: admin ? "coordinator" : "parent",
           });
           return new Response(
             JSON.stringify({

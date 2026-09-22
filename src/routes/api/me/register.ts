@@ -3,6 +3,7 @@ import { one, json, fail, tx } from "@/lib/db";
 import { sessionFromRequest } from "@/lib/session";
 import { CONSENT_DOCUMENT, CONSENT_VERSION } from "@/lib/scope";
 import { sendParentInvite } from "@/lib/mailer";
+import { note } from "@/lib/activity";
 
 // Finish registration: profile, an optional second guardian, and consent.
 //
@@ -95,6 +96,13 @@ export const Route = createFileRoute("/api/me/register")({
           // registration the guardian has already completed.
           if (invited) await sendParentInvite(invited, fullName).catch(() => {});
 
+          // The two milestones a coordinator actually chases: the form
+          // finished, and the current consent document accepted.
+          await note("registration_done", { email: s.email, parentId: pid });
+          await note("consent_given", {
+            email: s.email, parentId: pid,
+            detail: `version ${CONSENT_VERSION}`,
+          });
           return json({ ok: true, invited });
         } catch (err) {
           return fail("POST /api/me/register", err, "Could not finish setting up your account");

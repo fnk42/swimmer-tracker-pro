@@ -49,6 +49,7 @@ import { Route as ApiAthleteAssessmentRouteImport } from './routes/api/athlete/a
 import { Route as ApiAdminStatusRouteImport } from './routes/api/admin/status'
 import { Route as ApiAdminParentImportRouteImport } from './routes/api/admin/parent-import'
 import { Route as ApiAdminClaimsRouteImport } from './routes/api/admin/claims'
+import { Route as ApiAdminActivityRouteImport } from './routes/api/admin/activity'
 
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
@@ -250,6 +251,11 @@ const ApiAdminClaimsRoute = ApiAdminClaimsRouteImport.update({
   path: '/api/admin/claims',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminActivityRoute = ApiAdminActivityRouteImport.update({
+  id: '/api/admin/activity',
+  path: '/api/admin/activity',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -272,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/api/swimmer-details': typeof ApiSwimmerDetailsRoute
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
+  '/api/admin/activity': typeof ApiAdminActivityRoute
   '/api/admin/claims': typeof ApiAdminClaimsRoute
   '/api/admin/parent-import': typeof ApiAdminParentImportRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
@@ -314,6 +321,7 @@ export interface FileRoutesByTo {
   '/api/swimmer-details': typeof ApiSwimmerDetailsRoute
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
+  '/api/admin/activity': typeof ApiAdminActivityRoute
   '/api/admin/claims': typeof ApiAdminClaimsRoute
   '/api/admin/parent-import': typeof ApiAdminParentImportRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
@@ -357,6 +365,7 @@ export interface FileRoutesById {
   '/api/swimmer-details': typeof ApiSwimmerDetailsRoute
   '/api/swimmer-parents': typeof ApiSwimmerParentsRoute
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
+  '/api/admin/activity': typeof ApiAdminActivityRoute
   '/api/admin/claims': typeof ApiAdminClaimsRoute
   '/api/admin/parent-import': typeof ApiAdminParentImportRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
@@ -401,6 +410,7 @@ export interface FileRouteTypes {
     | '/api/swimmer-details'
     | '/api/swimmer-parents'
     | '/api/swimmers'
+    | '/api/admin/activity'
     | '/api/admin/claims'
     | '/api/admin/parent-import'
     | '/api/admin/status'
@@ -443,6 +453,7 @@ export interface FileRouteTypes {
     | '/api/swimmer-details'
     | '/api/swimmer-parents'
     | '/api/swimmers'
+    | '/api/admin/activity'
     | '/api/admin/claims'
     | '/api/admin/parent-import'
     | '/api/admin/status'
@@ -485,6 +496,7 @@ export interface FileRouteTypes {
     | '/api/swimmer-details'
     | '/api/swimmer-parents'
     | '/api/swimmers'
+    | '/api/admin/activity'
     | '/api/admin/claims'
     | '/api/admin/parent-import'
     | '/api/admin/status'
@@ -528,6 +540,7 @@ export interface RootRouteChildren {
   ApiSwimmerDetailsRoute: typeof ApiSwimmerDetailsRoute
   ApiSwimmerParentsRoute: typeof ApiSwimmerParentsRoute
   ApiSwimmersRoute: typeof ApiSwimmersRouteWithChildren
+  ApiAdminActivityRoute: typeof ApiAdminActivityRoute
   ApiAdminClaimsRoute: typeof ApiAdminClaimsRoute
   ApiAdminParentImportRoute: typeof ApiAdminParentImportRoute
   ApiAdminStatusRoute: typeof ApiAdminStatusRoute
@@ -829,6 +842,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminClaimsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/activity': {
+      id: '/api/admin/activity'
+      path: '/api/admin/activity'
+      fullPath: '/api/admin/activity'
+      preLoaderRoute: typeof ApiAdminActivityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -889,6 +909,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSwimmerDetailsRoute: ApiSwimmerDetailsRoute,
   ApiSwimmerParentsRoute: ApiSwimmerParentsRoute,
   ApiSwimmersRoute: ApiSwimmersRouteWithChildren,
+  ApiAdminActivityRoute: ApiAdminActivityRoute,
   ApiAdminClaimsRoute: ApiAdminClaimsRoute,
   ApiAdminParentImportRoute: ApiAdminParentImportRoute,
   ApiAdminStatusRoute: ApiAdminStatusRoute,

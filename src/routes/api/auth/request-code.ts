@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { q, one, json, fail } from "@/lib/db";
 import { newCode, hashCode, isAdminEmail } from "@/lib/session";
+import { note } from "@/lib/activity";
 import { sendLoginCode } from "@/lib/mailer";
 
 const WINDOW_MIN = 15;
@@ -37,7 +38,13 @@ export const Route = createFileRoute("/api/auth/request-code")({
           // Coordinators need a code even if they have no child registered.
           // Always answer the same way whether or not the address is known —
           // otherwise this endpoint tells a stranger who is involved.
-          if (!parent && !isAdminEmail(email)) return json({ ok: true });
+          if (!parent && !isAdminEmail(email)) {
+            // Recorded, because a stranger repeatedly asking for codes is
+            // worth seeing — and because a parent whose address the club has
+            // wrong looks exactly like this and needs chasing.
+            await note("code_requested", { email, ok: false, detail: "no record for that address" });
+            return json({ ok: true });
+          }
 
           const code = newCode();
           await q(
@@ -46,6 +53,7 @@ export const Route = createFileRoute("/api/auth/request-code")({
             [email, hashCode(email, code)],
           );
           const sent = await sendLoginCode(email, code);
+          await note("code_requested", { email, parentId: parent?.id ?? null });
 
           // The response is deliberately the same shape whether or not the
           // address was known, so this cannot be used to discover who is
@@ -53,6 +61,10 @@ export const Route = createFileRoute("/api/auth/request-code")({
           // something to tell the caller about — it is logged loudly instead,
           // and the code is written to the server log so nobody is stranded.
           if (!sent.delivered) {
+            await note("code_undelivered", {
+              email, parentId: parent?.id ?? null, ok: false,
+              detail: `via ${sent.via}${sent.error ? `: ${sent.error}` : ""}`,
+            });
             console.error(
               `[auth] code generated for ${email} but NOT delivered ` +
                 `(via ${sent.via}${sent.error ? `, ${sent.error}` : ""}). ` +

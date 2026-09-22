@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { RosterManager } from "@/components/RosterManager";
 import { ClaimQueue } from "@/components/ClaimQueue";
+import { ActivityLog } from "@/components/ActivityLog";
 import { ParentImport } from "@/components/ParentImport";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -213,6 +214,16 @@ function AdminPage() {
 
             {/* Then approvals: a claim nobody looks at is a parent locked out. */}
             <ClaimQueue />
+
+            <section className="mt-8">
+              <h2 className="text-[15px] font-semibold">Activity</h2>
+              <p className="mt-1 mb-4 max-w-[92ch] text-[13px] leading-relaxed
+                            text-muted-foreground">
+                Who is getting in, and who is not. Built because there was no way to answer that
+                except by asking a parent.
+              </p>
+              <ActivityLog />
+            </section>
 
             <Card>
               <CardHeader>
