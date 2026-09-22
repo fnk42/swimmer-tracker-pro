@@ -15,7 +15,8 @@ export type Kind =
   | "signed_in"           // a session was created
   | "registration_done"   // a parent finished the registration form
   | "consent_given"       // a guardian accepted the current consent document
-  | "swimmer_claimed";    // a parent claimed a child, awaiting approval
+  | "swimmer_claimed"     // a parent put a child on their account
+  | "swimmer_unlinked";   // a parent took a child back off their own account
 
 export async function note(
   kind: Kind,

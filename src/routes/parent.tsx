@@ -21,6 +21,7 @@ import {
 import { normalizeKePhone } from "@/lib/phone";
 import {
   useSwimmers,
+  useUnlinkSwimmer,
   useMyRegistrations,
   useMyPayments,
   useMyParent,
@@ -135,6 +136,16 @@ function ParentPage() {
     );
   }, [myParentQ.data, mySwimmerParentsQ.data]);
 
+  // Everyone currently on this parent's account, whether or not they are in
+  // the group being registered.
+  const myAccountSwimmers = useMemo(
+    () =>
+      swimmers
+        .filter((s) => myLinkedIds.has(s.id) || linkedSwimmerIds.has(s.id))
+        .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
+    [swimmers, myLinkedIds, linkedSwimmerIds],
+  );
+
   const available = useMemo(
     () =>
       swimmers
@@ -147,6 +158,28 @@ function ParentPage() {
   // Chosen from the picker and waiting on the parent to say yes. Nothing is
   // linked while this is set.
   const [pendingChild, setPendingChild] = useState<{ id: string; name: string } | null>(null);
+  // The one the parent has said is not theirs and is being asked to confirm.
+  const [removing, setRemoving] = useState<{ id: string; name: string } | null>(null);
+  const unlinkMut = useUnlinkSwimmer();
+
+  async function confirmRemove() {
+    const r = removing;
+    if (!r) return;
+    try {
+      await unlinkMut.mutateAsync(r.id);
+      setRemoving(null);
+      setGroupIds((g) => g.filter((x) => x !== r.id));
+      setLinkedSwimmerIds((sIds) => {
+        if (!sIds.has(r.id)) return sIds;
+        const next = new Set(sIds);
+        next.delete(r.id);
+        return next;
+      });
+      toast.success(`${r.name} removed from your account.`);
+    } catch (err) {
+      toast.error(extractErr(err).message || "Could not remove that swimmer.");
+    }
+  }
 
   async function linkSwimmer(swimmerId: string, swimmerName: string, parents: Parent[]) {
     try {
@@ -344,6 +377,58 @@ function ParentPage() {
                       moment it is made. */}
                   <FindSwimmer confirmBeforeAdd />
                 </div>
+
+                {/* Undoing a wrong link, without waiting on anybody.
+                    Removes only this parent's own link — the child, the other
+                    adult and everything the club holds stay exactly as they
+                    are — and hands the child back to whoever should have had
+                    them, since a swimmer nobody holds is the only kind that
+                    can be claimed. */}
+                {myAccountSwimmers.length > 0 && (
+                  <div className="border-t border-border pt-3">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      On your account
+                    </p>
+                    <ul className="divide-y divide-border rounded-lg border border-border">
+                      {myAccountSwimmers.map((s) => (
+                        <li key={s.id}>
+                          <div className="flex items-center gap-3 px-3.5 py-2.5">
+                            <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                              {s.name}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setRemoving({ id: s.id, name: s.name })}
+                              className="text-xs text-muted-foreground underline-offset-4 hover:text-destructive hover:underline"
+                            >
+                              Not my child
+                            </button>
+                          </div>
+                          {removing?.id === s.id && (
+                            <div className="border-t border-border bg-secondary px-3.5 py-3">
+                              <p className="text-[13px] leading-relaxed">
+                                Remove <b>{s.name}</b> from your account? You will no longer see
+                                their entry, payments or results. Nothing about {s.name} is
+                                deleted, and any other parent on their record keeps their access.
+                              </p>
+                              <div className="mt-2.5 flex flex-wrap gap-2">
+                                <Button size="sm" variant="destructive"
+                                        disabled={unlinkMut.isPending}
+                                        onClick={() => void confirmRemove()}>
+                                  Yes, remove {s.name}
+                                </Button>
+                                <Button size="sm" variant="outline"
+                                        onClick={() => setRemoving(null)}>
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

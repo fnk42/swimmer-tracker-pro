@@ -28,6 +28,49 @@ export const Route = createFileRoute("/api/me/link")({
       // The database enforces the same cap (migration/04_two_parents.sql), so a
       // race between two adults claiming the last slot at the same moment fails
       // on the unique index rather than quietly adding a third.
+      // Take myself off a child's record.
+      //
+      // A parent can only ever remove THEIR OWN link — the swimmer, the other
+      // adult and everything the club holds are untouched. That makes this
+      // safe to hand to parents: the worst case is someone removing themselves
+      // from their own child, which they can undo by claiming again if nobody
+      // else has.
+      //
+      // It is also the repair for the mistake this app made easy for one
+      // morning. A parent who has tagged the wrong child can put it right
+      // themselves, immediately, instead of waiting on a coordinator — and the
+      // moment they do, the child becomes claimable by the parent it belongs
+      // to, because a swimmer nobody holds is the only kind that can be
+      // claimed.
+      DELETE: async ({ request }) => {
+        try {
+          const s = sessionFromRequest(request);
+          if (!s?.parentId) return json({ error: "Not signed in" }, 401);
+          const b = await request.json().catch(() => ({}));
+          const swimmerId = String(b?.swimmerId ?? "");
+          if (!swimmerId) return json({ error: "swimmerId required" }, 400);
+
+          const gone = await one<{ name: string }>(
+            `delete from public.swimmer_parents sp
+              using public.swimmers sw
+              where sw.id = sp.swimmer_id
+                and sp.swimmer_id = $1
+                and sp.parent_id = $2
+             returning sw.name`,
+            [swimmerId, s.parentId],
+          );
+          if (!gone) return json({ error: "That swimmer is not on your account" }, 404);
+
+          await note("swimmer_unlinked", {
+            email: s.email, parentId: s.parentId,
+            detail: `removed ${gone.name} from their own account`,
+          });
+          return json({ ok: true, name: gone.name });
+        } catch (err) {
+          return fail("DELETE /api/me/link", err, "Could not remove that swimmer");
+        }
+      },
+
       POST: async ({ request }) => {
         try {
           const s = sessionFromRequest(request);

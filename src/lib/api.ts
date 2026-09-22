@@ -606,6 +606,25 @@ export function useClaimSwimmer() {
   });
 }
 
+/** Take myself off a child's record. Only ever removes my own link. */
+export function useUnlinkSwimmer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (swimmerId: string) =>
+      apiFetch<{ ok: boolean; name: string }>("/api/me/link", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ swimmerId }),
+      }),
+    onSuccess: () => {
+      // ["me"] is a prefix of ["me","data"], so this refreshes the account
+      // and the swimmer list behind it in one go.
+      qc.invalidateQueries({ queryKey: ["me"] });
+      qc.invalidateQueries({ queryKey: ["claimable"] });
+    },
+  });
+}
+
 export function useSignOut() {
   const qc = useQueryClient();
   return useMutation({
