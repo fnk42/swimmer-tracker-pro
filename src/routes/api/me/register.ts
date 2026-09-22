@@ -3,6 +3,7 @@ import { one, json, fail, tx } from "@/lib/db";
 import { sessionFromRequest } from "@/lib/session";
 import { CONSENT_DOCUMENT, CONSENT_VERSION } from "@/lib/scope";
 import { sendParentInvite } from "@/lib/mailer";
+import { normalizeKePhone } from "@/lib/phone";
 import { note } from "@/lib/activity";
 
 // Finish registration: profile, an optional second guardian, and consent.
@@ -33,8 +34,19 @@ export const Route = createFileRoute("/api/me/register")({
           const second = (b.secondParent ?? null) as { name?: string; email?: string } | null;
 
           if (fullName.length < 2) return json({ error: "Enter your full name" }, 400);
-          if (phone.replace(/\D/g, "").length < 9) {
-            return json({ error: "Enter a phone number we can reach you on" }, 400);
+
+          // Normalised here, not merely counted. The column insists on the
+          // canonical 254XXXXXXXXX form, and a parent types 0712 345 678 — so
+          // a digit count that passed validation still failed the constraint,
+          // and the guardian was told only "could not finish setting up your
+          // account". Returning families never saw it: their number arrives
+          // prefilled from a record that is already canonical.
+          const phoneOk = normalizeKePhone(phone);
+          if (!phoneOk) {
+            return json(
+              { error: "Enter a Kenyan mobile number we can reach you on, like 0712 345 678" },
+              400,
+            );
           }
           if (!["mother", "father", "guardian"].includes(relationship)) {
             return json({ error: "Tell us whether you are the mother, father or guardian" }, 400);
@@ -59,7 +71,7 @@ export const Route = createFileRoute("/api/me/register")({
                   set full_name = $2, phone = $3, relationship = $4,
                       profile_complete = true, updated_at = now()
                 where id = $1`,
-              [pid, fullName, phone, relationship],
+              [pid, fullName, phoneOk, relationship],
             );
 
             // Versioned, and a withdrawal is a separate row rather than a
@@ -84,8 +96,13 @@ export const Route = createFileRoute("/api/me/register")({
               email,
             ]);
             if (existing.rowCount === 0) {
+              // phone is NOT NULL with no default, and we do not know this
+              // person's number — they give it themselves when they register.
+              // Omitting it threw, which rolled back the whole transaction and
+              // failed the registration of the guardian who invited them.
               await c.query(
-                `insert into public.parents (full_name, email, invited_by) values ($1, $2, $3)`,
+                `insert into public.parents (full_name, email, invited_by, phone)
+                 values ($1, $2, $3, '')`,
                 [name, email, pid],
               );
             }

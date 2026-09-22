@@ -40,38 +40,40 @@ export function ConsentText() {
         <strong className="text-white">No other family sees an assessment of your child.</strong>
       </p>
 
-      <h3 className="mt-4 font-semibold text-white">The coaching assistant</h3>
+      <h3 className="mt-4 font-semibold text-white">Analytics that help your child</h3>
       <p className="mt-1">
-        Our coaches can ask questions about training in plain English — &ldquo;who in the 13&ndash;14
-        group has stopped improving?&rdquo; To answer, the club sends the relevant race data to{" "}
-        <strong className="text-white">OpenAI</strong>, the company behind ChatGPT, which processes
-        it on computers <strong className="text-white">outside Kenya</strong> and sends an answer
-        back. This is the one place your child's data leaves NextGen.
+        We use analytics tools to understand how each swimmer is developing &mdash; who is
+        improving, who has stalled, and what they should work on next. To do that, the club
+        sometimes sends the relevant race data to trusted service providers who process it on
+        computers <strong className="text-white">outside Kenya</strong> and send an answer back.
+        This is the only circumstance in which your child&rsquo;s data leaves NextGen, and it is
+        only ever done to help your child swim better.
       </p>
       <p className="mt-2">
-        OpenAI acts only on our instructions, is not permitted to use this data to train its
-        systems, and keeps nothing afterwards. Only coaches can use the assistant. It is never
-        shown to other families.
+        Those providers act only on our instructions. They may not use this data for their own
+        purposes or to train their systems, and they keep nothing afterwards. Only coaches see
+        what comes back. It is never shown to other families.
       </p>
       <p className="mt-2">
         <strong className="text-white">You can say no to this and still use everything else.</strong>{" "}
-        If you do, your child is left out of anything the assistant is asked, and nothing about
-        them is ever sent.
+        If you do, your child is left out of any such analysis, and nothing about them is ever
+        sent.
       </p>
 
       <h3 className="mt-4 font-semibold text-white">What we will not do</h3>
       <p className="mt-1">
-        We will not sell this data, or use it for anything other than your child's development and
-        the running of the club. Apart from the coaching assistant described above, and the
-        organisers who already publish meet results, we do not share it outside NextGen.
+        We will not sell this data, and we will not use it for anything other than your
+        child&rsquo;s development and the running of the club. We look after it carefully. Apart
+        from the analytics described above, and the organisers who already publish meet results,
+        we do not share it outside NextGen.
       </p>
 
       <h3 className="mt-4 font-semibold text-white">Your choices</h3>
       <ul className="mt-1 list-disc space-y-1 pl-5">
         <li>You can ask us to keep your child out of the club-wide view at any time.</li>
         <li>
-          You can keep your child out of the coaching assistant while agreeing to everything
-          else, and you can change your mind either way at any time.
+          You can keep your child out of that analysis while agreeing to everything else, and
+          you can change your mind either way at any time.
         </li>
         <li>
           You can withdraw this consent at any time, and your child's name will be removed from
