@@ -1,5 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { GOLDEN_PIPIT_URL } from "@/lib/links";
+import {
+  GOLDEN_PIPIT_URL,
+  GOLDEN_PIPIT_EMAIL,
+  GOLDEN_PIPIT_PHONE,
+  GOLDEN_PIPIT_PHONE_DISPLAY,
+} from "@/lib/links";
 import { useEffect, useMemo, useState } from "react";
 import { useMe, useClaimable, useClaimSwimmer } from "@/lib/api";
 import { FindSwimmer } from "@/components/FindSwimmer";
@@ -91,8 +96,9 @@ function Welcome() {
         return;
       }
       await me.refetch();
-      // Straight into the analytics, same as a returning sign-in.
-      window.location.href = "/tracker";
+      // Straight into Events, same as a returning sign-in: it is what they
+      // just registered for, and the analytics are not ready for parents yet.
+      navigate({ to: "/parent" });
     } catch {
       setError("Could not reach the server. Please try again.");
     } finally {
@@ -246,11 +252,11 @@ function Welcome() {
             <>
               <h1 className="text-[23px] font-semibold">Which swimmers are yours?</h1>
               <p className="mb-5 mt-1.5 text-[14px] leading-relaxed text-white/65">
-                Search their name. A coordinator confirms each one before you can see named
-                results, so this may say "waiting" for a little while.
+                Search their name. Once you add a swimmer you can see their results and enter
+                them for meets straight away. Up to two adults can be on the same swimmer.
               </p>
               <div className="rounded-xl bg-white/[.04] p-4">
-                <FindSwimmer onClaimed={() => setClaimed((n) => n + 1)} dark />
+                <FindSwimmer onClaimed={() => setClaimed((n) => n + 1)} dark parentName={fullName} />
               </div>
               {claimed > 0 && (
                 <p className="mt-4 text-[13.5px] font-medium text-[var(--ng-cyan)]">
@@ -345,6 +351,17 @@ function Welcome() {
         A product of <a href={GOLDEN_PIPIT_URL} target="_blank" rel="noopener noreferrer"
           className="font-semibold text-white/55 underline-offset-4 hover:text-white hover:underline"
         >Golden Pipit Solutions</a>
+        <span className="mt-2 block text-white/40">
+          <a href={`mailto:${GOLDEN_PIPIT_EMAIL}`}
+             className="underline-offset-4 hover:text-white/70 hover:underline">
+            {GOLDEN_PIPIT_EMAIL}
+          </a>
+          <span className="px-2 text-white/25">·</span>
+          <a href={`tel:${GOLDEN_PIPIT_PHONE}`}
+             className="underline-offset-4 hover:text-white/70 hover:underline">
+            {GOLDEN_PIPIT_PHONE_DISPLAY}
+          </a>
+        </span>
       </footer>
     </div>
   );

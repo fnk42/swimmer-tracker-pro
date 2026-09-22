@@ -1359,9 +1359,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
       A product of <a class="gplink" href="https://goldenpipitsolutions.com"
         target="_blank" rel="noopener noreferrer"><b>Golden Pipit Solutions</b></a></span>
     <span class="gpcontact">
-      <b>Njenga</b>
+      <a href="mailto:hello@goldenpipitsolutions.com">hello@goldenpipitsolutions.com</a>
       <a href="tel:+254726178216">0726&nbsp;178&nbsp;216</a>
-      <a href="mailto:info@goldenpipitrecruiting.com">info@goldenpipitrecruiting.com</a>
     </span>
   </div>
 </footer>
@@ -4631,6 +4630,35 @@ async function boot(){
   let me = null;
   try { me = await fetch('/api/auth/me').then(r => r.ok ? r.json() : null); } catch (e) {}
   portalBar(me);
+
+  // Parents get a holding page, not the numbers.
+  //
+  // The analytics are real and the scope rules behind them work, but they have
+  // not been through the club yet, and a parent reading a half-finished
+  // assessment of somebody's child cannot be taken back. Coordinators see the
+  // whole thing; everyone else is told plainly that this is coming, with the
+  // way back to the part that is finished. The server still enforces this
+  // independently — /api/tracker/data answers to scope, not to this check.
+  if (me && me.signedIn && !me.isAdmin) {
+    document.getElementById('foot').textContent = '';
+    app.innerHTML =
+      '<section class="wrap" style="padding-block:56px 72px;max-width:640px">'
+      + '<p style="font:700 11px/1 Inter,system-ui;letter-spacing:1.6px;text-transform:uppercase;'
+      + 'color:var(--electric);margin:0 0 14px">Coming soon</p>'
+      + '<h1 style="font-size:30px;line-height:1.15;margin:0 0 14px">NextGen Analytics</h1>'
+      + '<p class="sec-sub" style="font-size:15px;margin:0 0 18px">Every race your child has '
+      + 'swum for the club, how their times are moving season by season, and where they sit '
+      + 'against their own age group. We are checking it with the coaches before any of it '
+      + 'goes in front of parents.</p>'
+      + '<p class="sec-sub" style="font-size:15px;margin:0 0 26px">Nothing here yet is missing '
+      + 'from your account &mdash; entries, payments and your swimmers all live under '
+      + '<b>Events</b>, which is ready now.</p>'
+      + '<a href="/parent" style="display:inline-block;padding:11px 18px;border-radius:9px;'
+      + 'background:var(--electric);color:#fff;font-weight:600;font-size:15px;'
+      + 'text-decoration:none">Go to Events</a>'
+      + '</section>';
+    return;
+  }
 
   try {
     const res = await fetch('/api/tracker/data');

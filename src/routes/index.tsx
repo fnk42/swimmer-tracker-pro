@@ -1,5 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { GOLDEN_PIPIT_URL } from "@/lib/links";
+import {
+  GOLDEN_PIPIT_URL,
+  GOLDEN_PIPIT_EMAIL,
+  GOLDEN_PIPIT_PHONE,
+  GOLDEN_PIPIT_PHONE_DISPLAY,
+} from "@/lib/links";
 import { useEffect, useState } from "react";
 import { useMe, useRequestCode, useVerifyCode } from "@/lib/api";
 import { ProgressWall } from "@/components/ProgressWall";
@@ -31,12 +36,14 @@ function PortalLanding() {
 
   useEffect(() => {
     if (me.isLoading || !me.data?.signedIn) return;
-    // Everyone lands on the analytics. It is the thing people actually come
-    // back for, and it is the best-looking page we have — Events is one click
-    // away in the bar. Coordinators are never held behind registration.
+    // Coordinators land on the analytics; everyone else lands on Events,
+    // which is the part that is actually finished and the reason parents are
+    // here this month. Analytics is still one click away in the bar, and says
+    // for itself that it is not ready. Coordinators are never held behind
+    // registration.
     if (me.data.isAdmin) { window.location.href = "/tracker"; return; }
     if (me.data.needsRegistration) { navigate({ to: "/welcome" }); return; }
-    window.location.href = "/tracker";
+    navigate({ to: "/parent" });
   }, [me.isLoading, me.data, navigate]);
 
   // Whether the shared coordinator sign-in exists at all. The server answers
@@ -96,8 +103,7 @@ function PortalLanding() {
       if (r.isAdmin) { window.location.href = "/tracker"; return; }
       const who = await fetch("/api/auth/me").then((x) => x.json()).catch(() => null);
       if (who?.needsRegistration) { navigate({ to: "/welcome" }); return; }
-      // Plain anchor navigation: /tracker is its own HTML document, not a route.
-      window.location.href = "/tracker";
+      navigate({ to: "/parent" });
     } catch {
       setError("That code is wrong or has expired. Check the email, or send a new code.");
     }
@@ -346,6 +352,17 @@ function PortalLanding() {
         >
           Golden Pipit Solutions
         </a>
+        <span className="mt-2 block text-white/40">
+          <a href={`mailto:${GOLDEN_PIPIT_EMAIL}`}
+             className="underline-offset-4 hover:text-white/70 hover:underline">
+            {GOLDEN_PIPIT_EMAIL}
+          </a>
+          <span className="px-2 text-white/25">·</span>
+          <a href={`tel:${GOLDEN_PIPIT_PHONE}`}
+             className="underline-offset-4 hover:text-white/70 hover:underline">
+            {GOLDEN_PIPIT_PHONE_DISPLAY}
+          </a>
+        </span>
       </footer>
     </div>
   );
