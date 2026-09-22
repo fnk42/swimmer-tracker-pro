@@ -201,8 +201,9 @@ function PortalLanding() {
             <form onSubmit={onSendCode}>
               <h2 className="text-[20px] font-semibold">Sign in</h2>
               <p className="mb-6 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
-                Use the email address the club has for you. We send a six-digit code — there is
-                no password to remember.
+                Any email address — new to the club or not. We send a six-digit code, so there
+                is no password to remember. First time here? Sign in the same way and we will
+                set you up.
               </p>
               <label className="ng-label" htmlFor="email">
                 Email address
@@ -275,8 +276,9 @@ function PortalLanding() {
             <form onSubmit={onVerify}>
               <h2 className="text-[20px] font-semibold">Check your email</h2>
               <p className="mb-6 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
-                If <span className="font-semibold text-white">{email}</span> is known to the club,
-                a six-digit code is on its way. It expires in 10 minutes.
+                A six-digit code is on its way to{" "}
+                <span className="font-semibold text-white">{email}</span>. It expires in 10
+                minutes. If it is not there, check your spam folder.
               </p>
               <label className="ng-label" htmlFor="code">
                 Six-digit code

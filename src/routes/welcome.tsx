@@ -51,6 +51,12 @@ function Welcome() {
     if (me.data?.isAdmin) navigate({ to: "/admin" });
   }, [me.isLoading, me.data, navigate]);
 
+  // Nobody had this address on the club's list, so the account was opened by
+  // the sign-in itself. Say so first, before asking for anything: a parent who
+  // expected the club to know them needs to be told why it is asking, or they
+  // assume something has gone wrong and stop.
+  const firstTime = !!me.data?.firstTime;
+
   const idx = STEPS.indexOf(step);
   const canAdvance = useMemo(() => {
     if (step === "you") {
@@ -128,11 +134,27 @@ function Welcome() {
         <div className="ng-panel p-6 text-white sm:p-7">
           {step === "you" && (
             <>
-              <h1 className="text-[23px] font-semibold">Let's set up your account</h1>
-              <p className="mb-6 mt-1.5 text-[14px] leading-relaxed text-white/65">
-                This is a one-off, even if you registered for the Nationals. We need it to know
-                who to contact and which swimmers are yours.
-              </p>
+              <h1 className="text-[23px] font-semibold">
+                {firstTime ? "Welcome — let's get you set up" : "Let's set up your account"}
+              </h1>
+              {firstTime ? (
+                <>
+                  <p className="mb-2 mt-1.5 text-[14px] leading-relaxed text-white/65">
+                    We don't have this email address on the club's list yet, so you are
+                    registering for the first time. Nothing is wrong — it takes a minute.
+                  </p>
+                  <p className="mb-6 text-[14px] leading-relaxed text-white/65">
+                    Tell us who you are, then search for your swimmer. You can enter them for
+                    the Nationals and pay straight away; a coordinator confirms the link
+                    afterwards before you see their results.
+                  </p>
+                </>
+              ) : (
+                <p className="mb-6 mt-1.5 text-[14px] leading-relaxed text-white/65">
+                  This is a one-off, even if you registered for the Nationals. We need it to know
+                  who to contact and which swimmers are yours.
+                </p>
+              )}
 
               <label className="ng-label" htmlFor="w-name">
                 Your full name

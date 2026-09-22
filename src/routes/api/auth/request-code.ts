@@ -35,17 +35,21 @@ export const Route = createFileRoute("/api/auth/request-code")({
             [email],
           );
 
-          // Coordinators need a code even if they have no child registered.
-          // Always answer the same way whether or not the address is known —
-          // otherwise this endpoint tells a stranger who is involved.
-          if (!parent && !isAdminEmail(email)) {
-            // Recorded, because a stranger repeatedly asking for codes is
-            // worth seeing — and because a parent whose address the club has
-            // wrong looks exactly like this and needs chasing.
-            await note("code_requested", { email, ok: false, detail: "no record for that address" });
-            return json({ ok: true });
-          }
-
+          // EVERY address gets a code, known to the club or not.
+          //
+          // It used to be only the addresses already in `parents`. That meant a
+          // parent the club had no record of — or had under their spouse's
+          // address — was told a code was on its way and then sat waiting for
+          // an email that was never generated, which is how a family missed
+          // paying for the Nationals. Being told nothing is worse than the club
+          // roster being guessable.
+          //
+          // Holding the door open is safe because the door is not the guard:
+          // the account a stranger reaches is empty, claiming a swimmer is
+          // PENDING until a coordinator approves it (api/me/link), and no named
+          // result is served before that approval (lib/scope). What they can do
+          // is identify themselves and claim their own child, which is the
+          // point.
           const code = newCode();
           await q(
             `insert into public.auth_codes (email, code_hash, expires_at)
@@ -53,13 +57,17 @@ export const Route = createFileRoute("/api/auth/request-code")({
             [email, hashCode(email, code)],
           );
           const sent = await sendLoginCode(email, code);
-          await note("code_requested", { email, parentId: parent?.id ?? null });
+          await note("code_requested", {
+            email,
+            parentId: parent?.id ?? null,
+            // Flagged so the coordinator can see first-timers arriving in the
+            // sign-in log, and chase anyone who stalls before claiming a child.
+            detail: parent || isAdminEmail(email) ? undefined : "first time — no record yet",
+          });
 
-          // The response is deliberately the same shape whether or not the
-          // address was known, so this cannot be used to discover who is
-          // registered. A delivery failure is an operational problem, not
-          // something to tell the caller about — it is logged loudly instead,
-          // and the code is written to the server log so nobody is stranded.
+          // A delivery failure is an operational problem, not something to
+          // tell the caller about — it is logged loudly instead, and the code
+          // is written to the server log so nobody is stranded.
           if (!sent.delivered) {
             await note("code_undelivered", {
               email, parentId: parent?.id ?? null, ok: false,

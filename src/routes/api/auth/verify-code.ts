@@ -43,14 +43,36 @@ export const Route = createFileRoute("/api/auth/verify-code")({
             return json({ error: "That code is wrong or has expired" }, 401);
           }
 
-          const parent = await one<{ id: string; full_name: string; email: string }>(
+          let parent = await one<{ id: string; full_name: string; email: string }>(
             `select id, full_name, email from public.parents where lower(email) = $1`,
             [email],
           );
           const admin = isAdminEmail(email);
-          if (!parent && !admin) {
-            await note("code_wrong", { email, ok: false, detail: "correct code, no record" });
-            return json({ error: "No record for that address" }, 403);
+
+          // First time this address has proved it owns its own inbox: open an
+          // empty account for it rather than turning it away. Name and phone
+          // are deliberately blank, which is precisely what viewer() reads as
+          // needsProfile — so the very next page they see is /welcome, where
+          // they say who they are and search for their child.
+          //
+          // The row is worth nothing on its own. It holds no claim on any
+          // swimmer, and until a coordinator approves one it never will.
+          const firstTime = !parent && !admin;
+          if (firstTime) {
+            parent = await one<{ id: string; full_name: string; email: string }>(
+              `insert into public.parents (email, full_name, phone, profile_complete)
+               values ($1, '', '', false)
+               on conflict do nothing
+               returning id, full_name, email`,
+              [email],
+            );
+            // Lost a race with another tab signing in at the same moment.
+            if (!parent) {
+              parent = await one<{ id: string; full_name: string; email: string }>(
+                `select id, full_name, email from public.parents where lower(email) = $1`,
+                [email],
+              );
+            }
           }
 
           await q(`update public.auth_codes set consumed_at = now() where id = $1`, [row.id]);
@@ -62,12 +84,13 @@ export const Route = createFileRoute("/api/auth/verify-code")({
           });
           await note("signed_in", {
             email, parentId: parent?.id ?? null,
-            detail: admin ? "coordinator" : "parent",
+            detail: admin ? "coordinator" : firstTime ? "parent — first time" : "parent",
           });
           return new Response(
             JSON.stringify({
               ok: true,
               isAdmin: admin,
+              firstTime,
               parent: parent ? { id: parent.id, fullName: parent.full_name } : null,
             }),
             {

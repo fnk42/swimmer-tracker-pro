@@ -29,6 +29,10 @@ export const Route = createFileRoute("/api/auth/me")({
             // every parent has both — the distinction matters once parents of
             // non-registered swimmers can sign in too.
             sections: { performance: true, events: s.isAdmin || !!s.parentId },
+            // An account that has never been filled in. /welcome greets these
+            // people as first-time registrants rather than asking them to
+            // confirm details they have never given.
+            firstTime: !s.isAdmin && !!p && !p.full_name,
             // Registration state, from the same place every route reads it.
             // Coordinators are never flagged — see the note in scope.ts.
             ...(await (async () => {

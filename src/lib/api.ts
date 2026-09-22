@@ -351,6 +351,8 @@ export type Me = {
   sections?: { performance: boolean; events: boolean };
   scope?: "coach" | "community" | "pending";
   needsRegistration?: boolean;
+  /** Account opened by signing in, never filled in. Greet them as new. */
+  firstTime?: boolean;
   needsProfile?: boolean;
   needsConsent?: boolean;
   pendingClaims?: number;
@@ -381,6 +383,7 @@ export function useMe() {
         sections: d.sections ?? { performance: true, events: true },
         scope: d.scope,
         needsRegistration: !!d.needsRegistration,
+        firstTime: !!d.firstTime,
         needsProfile: !!d.needsProfile,
         needsConsent: !!d.needsConsent,
         pendingClaims: d.pendingClaims ?? 0,
