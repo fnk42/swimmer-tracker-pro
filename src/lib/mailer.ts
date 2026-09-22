@@ -129,9 +129,11 @@ export async function sendParentInvite(email: string, invitedBy: string): Promis
  * parent locked out — and an unattended queue is how the club ends up
  * approving things in bulk without reading them.
  *
- * Deliberately carries no approve link. A one-click approval in an email is a
- * decision made by whoever has the email, which for a claim about a child is
- * not good enough: the coordinator signs in and sees the evidence.
+ * Since claims take effect when the parent makes them, this is a notice and
+ * not a request: it exists so a wrong link is noticed by a person quickly,
+ * which is the only control left once the approval step is gone. It carries no
+ * action link — undoing a link about a child is a decision made signed in,
+ * looking at the record, not by whoever happens to hold the email.
  */
 export async function sendClaimNotice(
   to: string[],
@@ -140,7 +142,7 @@ export async function sendClaimNotice(
   const key = process.env.RESEND_API_KEY;
   const url = "https://events.nextgenkenya.com/admin";
   const hint = claim.phoneMatch
-    ? "Their phone number matches the one on that swimmer's registration, so the club already had them down as a contact."
+    ? "Their phone number matches the one on that swimmer's registration, so the club already had them down as a contact. Nothing to do."
     : "Their phone number does NOT match that swimmer's registration, so this one is worth a second look.";
 
   if (!to.length) return { delivered: false, via: "console" };
@@ -148,7 +150,7 @@ export async function sendClaimNotice(
   if (!key) {
     console.warn(
       `\n[mailer] RESEND_API_KEY not set — not emailing.\n` +
-        `[mailer] Claim waiting: ${claim.parentName} -> ${claim.swimmer}\n`,
+        `[mailer] Linked: ${claim.parentName} -> ${claim.swimmer}\n`,
     );
     return { delivered: false, via: "console" };
   }
@@ -160,26 +162,27 @@ export async function sendClaimNotice(
       body: JSON.stringify({
         from: FROM,
         to,
-        subject: `Approval needed — ${claim.parentName} says they are ${claim.swimmer}'s parent`,
+        subject: `${claim.parentName} is now linked to ${claim.swimmer}`,
         text:
-          `A parent has asked to be linked to a NextGen swimmer.\n\n` +
+          `A parent has linked themselves to a NextGen swimmer.\n\n` +
           `Parent:  ${claim.parentName} (${claim.parentEmail})\n` +
           `Swimmer: ${claim.swimmer}\n\n` +
           `${hint}\n\n` +
-          `Until this is approved they cannot see any swimmer by name — only the ` +
-          `club's overall numbers. Approve or decline it here:\n${url}\n\n` +
+          `The link is already live — they can see that swimmer's results and ` +
+          `enter them for meets. A swimmer can have at most two adults. If this ` +
+          `one is wrong, sign in and remove it:\n${url}\n\n` +
           `NextGen Multi Sport Academy`,
         html:
-          `<p>A parent has asked to be linked to a NextGen swimmer.</p>` +
+          `<p>A parent has linked themselves to a NextGen swimmer.</p>` +
           `<table style="font:14px system-ui;border-collapse:collapse">` +
           `<tr><td style="padding:2px 12px 2px 0;color:#666">Parent</td>` +
           `<td><strong>${claim.parentName}</strong> (${claim.parentEmail})</td></tr>` +
           `<tr><td style="padding:2px 12px 2px 0;color:#666">Swimmer</td>` +
           `<td><strong>${claim.swimmer}</strong></td></tr></table>` +
           `<p>${hint}</p>` +
-          `<p>Until this is approved they cannot see any swimmer by name — only the ` +
-          `club's overall numbers.</p>` +
-          `<p><a href="${url}">Open the approval queue</a></p>` +
+          `<p>The link is already live — they can see that swimmer's results and enter ` +
+          `them for meets. A swimmer can have at most two adults.</p>` +
+          `<p>If this one is wrong, <a href="${url}">sign in and remove it</a>.</p>` +
           `<p style="color:#666;font-size:13px">NextGen Multi Sport Academy</p>`,
       }),
     });

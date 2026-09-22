@@ -209,15 +209,21 @@ function AdminPage() {
               links={links}
             />
 
-            {/* The ask first: the parent list is what unblocks every family. */}
-            <ParentImport onDone={() => swimmersQ.refetch()} />
-
-            {/* Then approvals: a claim nobody looks at is a parent locked out. */}
-            <ClaimQueue />
-
+            {/* First, because it is the thing a coordinator opens this page to
+                check on a registration weekend: is anybody stuck at the door?
+                It used to sit below the roster tools, far enough down that it
+                was reported missing. */}
             <section className="mt-8">
               <ActivityLog />
             </section>
+
+            {/* The parent list is what unblocks every family. */}
+            <ParentImport onDone={() => swimmersQ.refetch()} />
+
+            {/* Swimmer claims no longer wait here — they take effect when the
+                parent makes them. What is left is children nobody could find on
+                the roster, which still needs a person. */}
+            <ClaimQueue />
 
             <Card>
               <CardHeader>

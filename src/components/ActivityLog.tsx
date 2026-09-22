@@ -42,7 +42,17 @@ export function ActivityLog() {
 
   useEffect(() => { void load(); }, []);
 
-  if (denied) return null;
+  // Say so rather than vanishing. Rendering nothing on a 403 meant the log
+  // simply was not on the page, with no way to tell "you are not a coordinator"
+  // apart from "this feature is broken" — which is how it got reported missing.
+  if (denied)
+    return (
+      <div className="rounded-xl border border-border bg-card px-4 py-3 text-[13px]
+                      text-muted-foreground">
+        <b className="font-semibold text-foreground">Sign-in log</b> — coordinators only. This
+        account is not on the coordinator list, so there is nothing to show here.
+      </div>
+    );
   if (!rows) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
   return (

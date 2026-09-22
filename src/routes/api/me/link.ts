@@ -18,8 +18,12 @@ export const Route = createFileRoute("/api/me/link")({
       // third is refused: past two it stops being a household and starts being
       // someone seeing a child who is not theirs.
       //
-      // Every claim made here starts PENDING and is confirmed by a coordinator.
-      // Claiming is not proof of anything.
+      // A claim takes effect immediately. There is no approval step: the two-
+      // adult cap is the control, and a coordinator can still unlink someone
+      // who should not be there. Holding every claim for a human meant a parent
+      // who had done everything right still could not see their own child until
+      // somebody happened to look, which on a registration weekend is the same
+      // as being locked out.
       //
       // The database enforces the same cap (migration/04_two_parents.sql), so a
       // race between two adults claiming the last slot at the same moment fails
@@ -32,9 +36,7 @@ export const Route = createFileRoute("/api/me/link")({
           const swimmerId = String(b?.swimmerId ?? "");
           if (!swimmerId) return json({ error: "swimmerId required" }, 400);
 
-          // Approved links only count towards the two-adult cap. A pending
-          // claim reserves nothing, so two parents can both be waiting on a
-          // coordinator without the second being turned away.
+          // Every link counts towards the cap now that none of them wait.
           const held = await q<{ parent_id: string; sort_order: number; status: string }>(
             `select parent_id, sort_order, status::text from public.swimmer_parents
              where swimmer_id = $1 order by sort_order`,
@@ -51,7 +53,7 @@ export const Route = createFileRoute("/api/me/link")({
             });
           }
 
-          const approved = held.filter((h) => h.status === "approved");
+          const approved = held.filter((h) => h.status !== "rejected");
           if (approved.length >= MAX_ADULTS) {
             return json(
               {
@@ -65,13 +67,13 @@ export const Route = createFileRoute("/api/me/link")({
 
           const slot = held.some((h) => h.sort_order === 1) ? 2 : 1;
 
-          // Pending, always. A parent claiming a child proves nothing by
-          // claiming; an unapproved claim grants no access to named data.
-          // Auto-approval on a phone or email match against club records is a
-          // coordinator-side job, not something the claimer can trigger.
+          // Live immediately, and stamped as self-claimed so the record still
+          // says where the link came from rather than implying a coordinator
+          // looked at it.
           const row = await one(
-            `insert into public.swimmer_parents (swimmer_id, parent_id, sort_order, status)
-             values ($1, $2, $3, 'pending')
+            `insert into public.swimmer_parents
+               (swimmer_id, parent_id, sort_order, status, decided_at, decided_note)
+             values ($1, $2, $3, 'approved', now(), 'self-claimed at registration')
              returning *`,
             [swimmerId, s.parentId, slot],
           );
