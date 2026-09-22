@@ -287,7 +287,10 @@ function ParentPage() {
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     {swimmers.length === 0 ? "Find your swimmer" : "Add another child"}
                   </p>
-                  <FindSwimmer />
+                  {/* Confirmed explicitly here: a parent is adding a child
+                      mid-task, beside a payment, and the link is live the
+                      moment it is made. */}
+                  <FindSwimmer confirmBeforeAdd />
                 </div>
               </CardContent>
             </Card>

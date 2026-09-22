@@ -6,7 +6,7 @@ import {
   GOLDEN_PIPIT_PHONE_DISPLAY,
 } from "@/lib/links";
 import { useEffect, useMemo, useState } from "react";
-import { useMe, useClaimable, useClaimSwimmer } from "@/lib/api";
+import { useMe, useClaimable, useClaimSwimmer, useMySwimmers } from "@/lib/api";
 import { FindSwimmer } from "@/components/FindSwimmer";
 import { ConsentText } from "@/components/ConsentText";
 
@@ -29,6 +29,10 @@ type Step = (typeof STEPS)[number];
 function Welcome() {
   const navigate = useNavigate();
   const me = useMe();
+  // Swimmers already on the account, so the list before finishing reflects the
+  // record rather than only what was added in this sitting. A parent who got
+  // this far once and stopped comes back to their children still listed.
+  const mine = useMySwimmers();
   const [step, setStep] = useState<Step>("you");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +42,7 @@ function Welcome() {
   const [relationship, setRelationship] = useState("");
   const [secondName, setSecondName] = useState("");
   const [secondEmail, setSecondEmail] = useState("");
-  const [claimed, setClaimed] = useState(0);
+  const [claimed, setClaimed] = useState<string[]>([]);
   const [consentData, setConsentData] = useState(false);
   const [consentCommunity, setConsentCommunity] = useState(false);
 
@@ -61,6 +65,12 @@ function Welcome() {
   // expected the club to know them needs to be told why it is asking, or they
   // assume something has gone wrong and stop.
   const firstTime = !!me.data?.firstTime;
+
+  // What the review list shows: everything on the record, plus anything added
+  // in this sitting that has not come back from the server yet.
+  const addedNames = Array.from(
+    new Set([...(mine.data ?? []).map((s) => s.name), ...claimed].filter(Boolean)),
+  );
 
   const idx = STEPS.indexOf(step);
   const canAdvance = useMemo(() => {
@@ -256,11 +266,18 @@ function Welcome() {
                 them for meets straight away. Up to two adults can be on the same swimmer.
               </p>
               <div className="rounded-xl bg-white/[.04] p-4">
-                <FindSwimmer onClaimed={() => setClaimed((n) => n + 1)} dark parentName={fullName} />
+                <FindSwimmer
+                  onClaimed={(name) => {
+                    setClaimed((all) => (all.includes(name) ? all : [...all, name]));
+                    void mine.refetch();
+                  }}
+                  dark
+                />
               </div>
-              {claimed > 0 && (
+              {claimed.length > 0 && (
                 <p className="mt-4 text-[13.5px] font-medium text-[var(--ng-cyan)]">
-                  {claimed} swimmer{claimed === 1 ? "" : "s"} added. You can add more, or carry on.
+                  {claimed.length} swimmer{claimed.length === 1 ? "" : "s"} added. You can add
+                  more, or carry on.
                 </p>
               )}
               <p className="mt-3 text-xs text-white/45">
@@ -276,6 +293,36 @@ function Welcome() {
                 Please read this. Both boxes need ticking — we cannot set up your account without
                 them.
               </p>
+
+              {/* Last look before anything is committed. The names are what a
+                  parent can actually check — the consent below refers to "the
+                  swimmers I have selected", and until now that phrase pointed
+                  at a screen they had already left. */}
+              <div className="mb-5 rounded-xl border border-white/15 bg-white/[.04] p-4">
+                <p className="ng-label mb-2">Swimmers you are adding</p>
+                {addedNames.length === 0 ? (
+                  <p className="text-[13.5px] text-white/60">
+                    None yet.{" "}
+                    <button type="button" onClick={() => setStep("children")}
+                            className="font-semibold text-[var(--ng-cyan)] underline-offset-4 hover:underline">
+                      Go back and add your swimmer
+                    </button>
+                    .
+                  </p>
+                ) : (
+                  <>
+                    <ul className="space-y-1">
+                      {addedNames.map((n) => (
+                        <li key={n} className="text-[14.5px] font-medium text-white">{n}</li>
+                      ))}
+                    </ul>
+                    <button type="button" onClick={() => setStep("children")}
+                            className="mt-2.5 text-[13px] text-white/55 underline-offset-4 hover:text-white hover:underline">
+                      Not right? Change this
+                    </button>
+                  </>
+                )}
+              </div>
 
               <ConsentText />
 
