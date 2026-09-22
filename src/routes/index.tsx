@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { GOLDEN_PIPIT_URL } from "@/lib/links";
 import { useEffect, useState } from "react";
 import { useMe, useRequestCode, useVerifyCode } from "@/lib/api";
 import { ProgressWall } from "@/components/ProgressWall";
@@ -259,7 +260,7 @@ function PortalLanding() {
         />
         A product of{" "}
         <a
-          href="https://goldenpipitrecruiting.com"
+          href={GOLDEN_PIPIT_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="font-semibold text-white/55 underline-offset-4 hover:text-white hover:underline"

@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { GOLDEN_PIPIT_URL } from "@/lib/links";
 import { useEffect, useMemo, useState } from "react";
 import { useMe, useClaimable, useClaimSwimmer } from "@/lib/api";
 import { FindSwimmer } from "@/components/FindSwimmer";
@@ -319,7 +320,9 @@ function Welcome() {
           height={256}
           className="mr-2 inline-block h-[17px] w-auto align-[-3px] opacity-70"
         />
-        A product of <span className="font-semibold text-white/55">Golden Pipit Solutions</span>
+        A product of <a href={GOLDEN_PIPIT_URL} target="_blank" rel="noopener noreferrer"
+          className="font-semibold text-white/55 underline-offset-4 hover:text-white hover:underline"
+        >Golden Pipit Solutions</a>
       </footer>
     </div>
   );

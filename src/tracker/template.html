@@ -1260,6 +1260,10 @@ footer{border-top:1px solid var(--line);margin-top:22px;padding-block:24px 36px;
 /* Dark variant on a dark ground; the mark's linework is black otherwise. */
 .gpline img{height:18px;width:auto;opacity:.8}
 footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
+/* Raw HTML, so this URL cannot import the constant in src/lib/links.ts.
+   Change both together. */
+.gplink{color:inherit;text-decoration:none}
+.gplink:hover b{text-decoration:underline}
 .gpcontact{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-left:auto;
   font-size:12px}
 .gpcontact b{color:var(--ink);font-weight:600}
@@ -1352,7 +1356,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
   </div>
   <div class="wrap gpline">
     <span><img src="/golden-pipit-bird.png" alt="" width="306" height="256">
-      A product of <b>Golden Pipit Solutions</b></span>
+      A product of <a class="gplink" href="https://claude.ai/artifact/SN9r4aiykg4zy5Jf9FVgtB"
+        target="_blank" rel="noopener noreferrer"><b>Golden Pipit Solutions</b></a></span>
     <span class="gpcontact">
       <b>Njenga</b>
       <a href="tel:+254726178216">0726&nbsp;178&nbsp;216</a>
