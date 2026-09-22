@@ -4,6 +4,8 @@ import { sessionFromRequest } from "@/lib/session";
 import { CONSENT_DOCUMENT, CONSENT_VERSION } from "@/lib/scope";
 import { sendParentInvite } from "@/lib/mailer";
 import { normalizeKePhone } from "@/lib/phone";
+import { adoptPhone } from "@/lib/identity";
+import { createSession, cookieHeader } from "@/lib/session";
 import { note } from "@/lib/activity";
 
 // Finish registration: profile, an optional second guardian, and consent.
@@ -23,7 +25,8 @@ export const Route = createFileRoute("/api/me/register")({
         try {
           const s = sessionFromRequest(request);
           if (!s?.parentId) return json({ error: "Not signed in" }, 401);
-          const pid = s.parentId;
+          let pid = s.parentId;
+          let refreshed: string | null = null;
 
           const b = (await request.json().catch(() => ({}))) as Record<string, unknown>;
           const fullName = String(b.fullName ?? "").trim();
@@ -62,6 +65,18 @@ export const Route = createFileRoute("/api/me/register")({
             );
           }
 
+          // The number decides which account this is. Signing in from a second
+          // address opened a second, empty one — nothing at the door could have
+          // known it was the same person — and this is where they say so. If
+          // the number already belongs to an account, the two become one and
+          // the session follows the survivor.
+          const adopted = await adoptPhone(pid, phoneOk);
+          if (!adopted.ok) return json({ error: adopted.error }, 400);
+          if (adopted.merged) {
+            pid = adopted.parentId;
+            refreshed = createSession({ email: s.email, parentId: pid, isAdmin: !!s.isAdmin });
+          }
+
           // One connection, one transaction. q() takes an arbitrary
           // connection from the pool, so BEGIN/COMMIT through it would not wrap
           // anything.
@@ -71,7 +86,7 @@ export const Route = createFileRoute("/api/me/register")({
                   set full_name = $2, phone = $3, relationship = $4,
                       profile_complete = true, updated_at = now()
                 where id = $1`,
-              [pid, fullName, phoneOk, relationship],
+              [pid, fullName, adopted.phone, relationship],
             );
 
             // Versioned, and a withdrawal is a separate row rather than a
@@ -100,11 +115,19 @@ export const Route = createFileRoute("/api/me/register")({
               // person's number — they give it themselves when they register.
               // Omitting it threw, which rolled back the whole transaction and
               // failed the registration of the guardian who invited them.
-              await c.query(
+              const made = await c.query<{ id: string }>(
                 `insert into public.parents (full_name, email, invited_by, phone)
-                 values ($1, $2, $3, '')`,
+                 values ($1, $2, $3, '')
+                 returning id`,
                 [name, email, pid],
               );
+              if (made.rows[0]) {
+                await c.query(
+                  `insert into public.parent_emails (email, parent_id) values ($1, $2)
+                   on conflict (email) do nothing`,
+                  [email, made.rows[0].id],
+                );
+              }
             }
             return email;
           });
@@ -120,6 +143,13 @@ export const Route = createFileRoute("/api/me/register")({
             email: s.email, parentId: pid,
             detail: `version ${CONSENT_VERSION}`,
           });
+          if (refreshed) {
+            return new Response(JSON.stringify({ ok: true, invited }), {
+              status: 200,
+              headers: { "content-type": "application/json",
+                         "set-cookie": cookieHeader(refreshed) },
+            });
+          }
           return json({ ok: true, invited });
         } catch (err) {
           return fail("POST /api/me/register", err, "Could not finish setting up your account");

@@ -43,8 +43,13 @@ export const Route = createFileRoute("/api/auth/verify-code")({
             return json({ error: "That code is wrong or has expired" }, 401);
           }
 
+          // Resolved through parent_emails, not parents.email: one parent may
+          // sign in from any address they have ever used.
           let parent = await one<{ id: string; full_name: string; email: string }>(
-            `select id, full_name, email from public.parents where lower(email) = $1`,
+            `select p.id, p.full_name, p.email
+               from public.parent_emails pe
+               join public.parents p on p.id = pe.parent_id
+              where pe.email = $1`,
             [email],
           );
           const admin = isAdminEmail(email);
@@ -71,6 +76,15 @@ export const Route = createFileRoute("/api/auth/verify-code")({
               parent = await one<{ id: string; full_name: string; email: string }>(
                 `select id, full_name, email from public.parents where lower(email) = $1`,
                 [email],
+              );
+            }
+            // The address itself, so this account is reachable from it again —
+            // and so it survives being folded into another by phone number.
+            if (parent) {
+              await q(
+                `insert into public.parent_emails (email, parent_id) values ($1, $2)
+                 on conflict (email) do nothing`,
+                [email, parent.id],
               );
             }
           }

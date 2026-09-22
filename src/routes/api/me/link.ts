@@ -5,6 +5,8 @@ import { sendClaimNotice } from "@/lib/mailer";
 import { normalizeKePhone } from "@/lib/phone";
 import { sessionFromRequest } from "@/lib/session";
 import { note } from "@/lib/activity";
+import { adoptPhone, otherAdultPhones } from "@/lib/identity";
+import { createSession, cookieHeader } from "@/lib/session";
 
 const MAX_ADULTS = 2;
 
@@ -77,7 +79,12 @@ export const Route = createFileRoute("/api/me/link")({
           if (!s?.parentId) return json({ error: "Not signed in" }, 401);
           const b = await request.json().catch(() => ({}));
           const swimmerId = String(b?.swimmerId ?? "");
+          const givenPhone = String(b?.phone ?? "").trim();
           if (!swimmerId) return json({ error: "swimmerId required" }, 400);
+          // Both may change under us: adopting a phone number can fold this
+          // account into an older one, and the session then has to follow.
+          let parentId = s.parentId;
+          let refreshed: string | null = null;
 
           // Every link counts towards the cap now that none of them wait.
           const held = await q<{ parent_id: string; sort_order: number; status: string }>(
@@ -86,32 +93,92 @@ export const Route = createFileRoute("/api/me/link")({
             [swimmerId],
           );
 
-          const mine = held.find((h) => h.parent_id === s.parentId);
+          const mine = held.find((h) => h.parent_id === parentId);
           if (mine) {
             return json({
               swimmer_id: swimmerId,
-              parent_id: s.parentId,
+              parent_id: parentId,
               sort_order: mine.sort_order,
               status: mine.status,
             });
           }
 
-          // A swimmer anybody else already holds cannot be claimed here, not
-          // even up to the two-adult limit. The limit was never the thing being
-          // protected — a parent self-claiming a child another family has
-          // already registered is, and no check on the claimer's side can tell
-          // the household's second adult from a mistake. The second adult is
-          // added by a coordinator, who can.
-          const others = held.filter((h) => h.status !== "rejected" && h.parent_id !== s.parentId);
-          if (others.length > 0) {
+          // Somebody else already has this child, so the caller has to show
+          // they are a different person. The number is what does that: this is
+          // where a second parent gives theirs, and where it becomes the
+          // identity their account is known by from then on.
+          const others = held.filter((h) => h.status !== "rejected" && h.parent_id !== parentId);
+
+          // Two is the limit, and it is checked before anything else, because
+          // everything below has side effects.
+          if (others.length >= MAX_ADULTS) {
             return json(
               {
                 error:
-                  "That swimmer is already on another parent's account. If you are their " +
-                  "other parent or guardian, ask a club coordinator to add you.",
+                  "Two parents are already on that swimmer, which is the limit. " +
+                  "Ask the coordinator if one of them should be changed.",
               },
               409,
             );
+          }
+
+          if (others.length > 0) {
+            if (!givenPhone) {
+              return json(
+                {
+                  needsPhone: true,
+                  error:
+                    "Another parent is already on this swimmer. Confirm your own phone " +
+                    "number to be added as the second parent.",
+                },
+                409,
+              );
+            }
+
+            // Normalised and compared BEFORE the number is adopted. Adopting
+            // folds this account into whichever one owns the number, which is
+            // not something to do on the way to refusing the request — doing
+            // it in that order merged a second parent into the first and then
+            // told her no, leaving her signed in as him.
+            const normalized = normalizeKePhone(givenPhone);
+            if (!normalized) {
+              return json(
+                { needsPhone: true, error: "Enter a Kenyan mobile number, like 0712 345 678" },
+                400,
+              );
+            }
+
+            const taken = await otherAdultPhones(swimmerId, parentId);
+            if (taken.includes(normalized)) {
+              return json(
+                {
+                  error:
+                    "That number already belongs to the parent on this swimmer's record. " +
+                    "If that is you, sign in with the address you used before — you are " +
+                    "already on this child.",
+                },
+                409,
+              );
+            }
+
+            const adopted = await adoptPhone(parentId, normalized);
+            if (!adopted.ok) return json({ needsPhone: true, error: adopted.error }, 400);
+
+            // The account may have just been folded into an older one that
+            // owns this number, so the session has to follow it.
+            if (adopted.merged) {
+              parentId = adopted.parentId;
+              refreshed = createSession({ email: s.email, parentId, isAdmin: !!s.isAdmin });
+              const already = held.find((h) => h.parent_id === parentId);
+              if (already) {
+                return new Response(
+                  JSON.stringify({ swimmer_id: swimmerId, parent_id: parentId,
+                                   sort_order: already.sort_order, status: already.status }),
+                  { status: 200, headers: { "content-type": "application/json",
+                                            "set-cookie": cookieHeader(refreshed) } },
+                );
+              }
+            }
           }
 
           const slot = held.some((h) => h.sort_order === 1) ? 2 : 1;
@@ -124,11 +191,11 @@ export const Route = createFileRoute("/api/me/link")({
                (swimmer_id, parent_id, sort_order, status, decided_at, decided_note)
              values ($1, $2, $3, 'approved', now(), 'self-claimed at registration')
              returning *`,
-            [swimmerId, s.parentId, slot],
+            [swimmerId, parentId, slot],
           );
 
           await note("swimmer_claimed", {
-            email: s.email, parentId: s.parentId, detail: `swimmer ${swimmerId}`,
+            email: s.email, parentId, detail: `swimmer ${swimmerId}`,
           });
 
           // Tell the coordinators. A claim nobody looks at is a parent locked
@@ -149,7 +216,7 @@ export const Route = createFileRoute("/api/me/link")({
                  join public.parents p on p.id = $2
                  left join public.registrations r on r.swimmer_id = sw.id
                 where sw.id = $1`,
-              [swimmerId, s.parentId],
+              [swimmerId, parentId],
             );
             if (ctx) {
               const d = (x: string) => (normalizeKePhone(x) || x || "").replace(/\D/g, "").slice(-9);
@@ -165,6 +232,13 @@ export const Route = createFileRoute("/api/me/link")({
             /* the claim stands whether or not the notice went out */
           }
 
+          if (refreshed) {
+            return new Response(JSON.stringify(row), {
+              status: 200,
+              headers: { "content-type": "application/json",
+                         "set-cookie": cookieHeader(refreshed) },
+            });
+          }
           return json(row);
         } catch (err) {
           // The unique index fires when two adults claim the last slot at once.

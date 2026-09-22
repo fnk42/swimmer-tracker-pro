@@ -224,8 +224,9 @@ function Welcome() {
               <h1 className="text-[23px] font-semibold">Is there a second parent?</h1>
               <p className="mb-6 mt-1.5 text-[14px] leading-relaxed text-white/65">
                 Optional. We will email them an invitation to set up their own access — their own
-                sign-in, not a shared one, so the agreement they give is their own. Two adults can
-                be on a swimmer; a coordinator adds the second, so tell us about them here.
+                sign-in, not a shared one, so the agreement they give is their own. They add
+                themselves to your children with their own phone number, which is what tells us
+                they are a second parent and not a mistake.
               </p>
 
               <label className="ng-label" htmlFor="w-2name">
@@ -263,8 +264,9 @@ function Welcome() {
               <h1 className="text-[23px] font-semibold">Which swimmers are yours?</h1>
               <p className="mb-5 mt-1.5 text-[14px] leading-relaxed text-white/65">
                 Search their name. Once you add a swimmer you can see their results and enter
-                them for meets straight away. A swimmer another parent has already registered
-                will not appear — tell a coordinator and they will add you.
+                them for meets straight away. Only parents and guardians register swimmers. If
+                the other parent is already on a child, confirm your own phone number to join
+                them — a swimmer can have two.
               </p>
               <div className="rounded-xl bg-white/[.04] p-4">
                 <FindSwimmer

@@ -593,11 +593,11 @@ export function useClaimable(term: string) {
 export function useClaimSwimmer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (swimmerId: string) =>
+    mutationFn: ({ swimmerId, phone }: { swimmerId: string; phone?: string }) =>
       apiFetch("/api/me/link", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ swimmerId }),
+        body: JSON.stringify(phone ? { swimmerId, phone } : { swimmerId }),
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["me"] });
