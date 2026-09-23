@@ -194,8 +194,13 @@ export const Route = createFileRoute("/api/me/link")({
             [swimmerId, parentId, slot],
           );
 
+          // The child's name, not their row id. A log a coordinator has to
+          // paste UUIDs out of to read is a log nobody reads.
+          const claimed = await one<{ name: string }>(
+            `select name from public.swimmers where id = $1`, [swimmerId],
+          );
           await note("swimmer_claimed", {
-            email: s.email, parentId, detail: `swimmer ${swimmerId}`,
+            email: s.email, parentId, detail: claimed?.name ?? `swimmer ${swimmerId}`,
           });
 
           // Tell the coordinators. A claim nobody looks at is a parent locked

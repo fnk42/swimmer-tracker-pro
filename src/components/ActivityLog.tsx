@@ -80,8 +80,15 @@ export function ActivityLog() {
             <li key={r.id}
                 className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 px-4 py-2 text-[13px]">
               <span className={`min-w-0 flex-1 ${r.ok ? "" : "text-rose-700"}`}>
-                <b className="font-medium">{r.email ?? r.parent_name ?? "someone"}</b>{" "}
+                {/* The name a coordinator knows them by, not the address they
+                    happen to sign in with. The address still rides along,
+                    dimmed: chasing somebody who cannot get in needs it, and a
+                    stranger requesting a code has no name to show. */}
+                <b className="font-medium">{r.parent_name ?? r.email ?? "someone"}</b>{" "}
                 {LABEL[r.kind] ?? r.kind}
+                {r.parent_name && r.email ? (
+                  <span className="text-muted-foreground"> · {r.email}</span>
+                ) : null}
                 {r.detail ? <span className="text-muted-foreground"> · {r.detail}</span> : null}
               </span>
               <span className="font-mono text-[11px] text-muted-foreground">
