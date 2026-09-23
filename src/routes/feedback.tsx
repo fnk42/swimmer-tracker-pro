@@ -46,6 +46,8 @@ function FeedbackBoard() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isTester, setIsTester] = useState(false);
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
 
   const load = () =>
     fetch("/api/tester/feedback")
@@ -92,6 +94,21 @@ function FeedbackBoard() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ id: row.id, status }),
     });
+    await load();
+  }
+
+  // The same answer, written from the board rather than the admin page.
+  // A tester reading here should see it in place, under what they said.
+  async function sendReply(row: Row) {
+    const text = draft.trim();
+    if (!text) return;
+    await fetch("/api/tester/feedback", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: row.id, reply: text }),
+    });
+    setReplyTo(null);
+    setDraft("");
     await load();
   }
 
@@ -190,6 +207,30 @@ function FeedbackBoard() {
                   </div>
                 )}
 
+                {canModerate && replyTo === r.id && (
+                  <div className="mt-3">
+                    <label className="ng-label" htmlFor={`fb-rep-${r.id}`}>
+                      Your reply — every tester sees it
+                    </label>
+                    <textarea id={`fb-rep-${r.id}`} rows={3} autoFocus value={draft}
+                              onChange={(e) => setDraft(e.target.value)}
+                              className="ng-field resize-none" />
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button type="button" disabled={!draft.trim()}
+                              onClick={() => void sendReply(r)}
+                              className="rounded-lg bg-[var(--ng-electric)] px-3 py-1.5 text-[13px]
+                                         font-semibold text-white disabled:opacity-50">
+                        Post reply
+                      </button>
+                      <button type="button" onClick={() => { setReplyTo(null); setDraft(""); }}
+                              className="rounded-lg border border-white/18 px-3 py-1.5 text-[13px]
+                                         text-white/65 hover:text-white">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-3 flex flex-wrap items-center gap-3 text-[12.5px]">
                   {isTester && (
                     <button type="button" onClick={() => void toggleAgree(r)}
@@ -204,7 +245,13 @@ function FeedbackBoard() {
                   </span>
                   <span className="flex-1" />
                   {canModerate && (
-                    <span className="flex gap-1.5">
+                    <span className="flex flex-wrap gap-1.5">
+                      <button type="button"
+                              onClick={() => { setReplyTo(r.id); setDraft(r.reply ?? ""); }}
+                              className="rounded-md bg-[var(--ng-electric)] px-2.5 py-1 text-[11.5px]
+                                         font-medium text-white">
+                        {r.reply ? "Edit reply" : "Reply"}
+                      </button>
                       {["seen", "fixed", "wontfix"].map((st) => (
                         <button key={st} type="button" onClick={() => void setStatus(r, st)}
                                 className="rounded-md border border-white/18 px-2 py-1 text-[11.5px]

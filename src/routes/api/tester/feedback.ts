@@ -110,17 +110,46 @@ export const Route = createFileRoute("/api/tester/feedback")({
 
           if (!s.isAdmin) return json({ error: "Admins only" }, 403);
           const status = String(b?.status ?? "");
-          const reply = b?.reply === undefined ? null : String(b.reply).slice(0, 2000);
+          const raw = b?.reply === undefined ? null : String(b.reply).trim().slice(0, 2000);
+          // An empty string clears a reply; undefined leaves it alone.
+          const reply = raw === null ? null : raw;
           if (status && !STATUSES.includes(status)) return json({ error: "Unknown status" }, 400);
+
+          // Signed with the name the testers know, not the address. The reply
+          // is shown to every tester on the board, so it should read as a
+          // person answering rather than a mailbox.
+          const me = await one<{ full_name: string }>(
+            `select coalesce(nullif(p.full_name, ''), '') as full_name
+               from public.parent_emails pm
+               join public.parents p on p.id = pm.parent_id
+              where pm.email = lower($1)`,
+            [s.email],
+          );
+          const signedAs = me?.full_name || s.email;
+
           await q(
             `update public.tester_feedback
-                set status = coalesce(nullif($2,''), status),
-                    reply = coalesce($3, reply),
-                    replied_by = case when $3 is null then replied_by else $4 end,
-                    replied_at = case when $3 is null then replied_at else now() end
+                set status = coalesce(nullif($2::text,''), status),
+                    -- Cast explicitly: $3 appears only inside CASE branches
+                    -- beside NULL, so Postgres has nothing to infer a type
+                    -- from and refuses the statement outright.
+                    reply = case when $3::text is null then reply
+                                 when $3::text = '' then null else $3::text end,
+                    replied_by = case when $3::text is null then replied_by
+                                      when $3::text = '' then null else $4::text end,
+                    replied_at = case when $3::text is null then replied_at
+                                      when $3::text = '' then null else now() end
               where id = $1::uuid`,
-            [id, status, reply, s.email],
+            [id, status, reply, signedAs],
           );
+          // A reply without a status set is an answer, which is at least "seen".
+          if (reply && !status) {
+            await q(
+              `update public.tester_feedback set status = 'seen'
+                where id = $1::uuid and status = 'open'`,
+              [id],
+            );
+          }
           return json({ ok: true });
         } catch (err) {
           return fail("PATCH /api/tester/feedback", err, "Could not update that");
