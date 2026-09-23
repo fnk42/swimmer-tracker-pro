@@ -12,7 +12,7 @@ export const Route = createFileRoute("/feedback")({ component: FeedbackBoard });
 type Row = {
   id: string; author: string; kind: string; body: string; route: string;
   context: string; status: string; reply: string | null; replied_by: string | null;
-  created_at: string; agrees: number; mine: boolean;
+  created_at: string; agrees: number; mine: boolean; from_club: boolean;
 };
 
 const KINDS: { id: string; label: string; tone: string }[] = [
@@ -46,6 +46,9 @@ function FeedbackBoard() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isTester, setIsTester] = useState(false);
+  // Admins post too — raising a known issue before five people report it, and
+  // being able to try the board without borrowing somebody's account.
+  const canPost = isTester || canModerate;
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
 
@@ -132,12 +135,13 @@ function FeedbackBoard() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-[380px_1fr]">
-          {isTester ? (
+          {canPost ? (
             <div className="ng-panel h-fit p-5">
               <h2 className="text-[16px] font-semibold text-white">Tell us what you think</h2>
               <p className="mb-4 mt-1 text-[13px] leading-relaxed text-white/60">
-                Everyone testing sees everyone's feedback, with names. If someone has already said
-                it, agree with theirs instead of filing it twice.
+                {canModerate && !isTester
+                  ? "Everyone testing reads this board. Anything you post here is addressed to all of them, and shows as coming from the club."
+                  : "Everyone testing sees everyone's feedback, with names. If someone has already said it, agree with theirs instead of filing it twice."}
               </p>
 
               <p className="ng-label">What kind?</p>
@@ -167,7 +171,7 @@ function FeedbackBoard() {
             </div>
           ) : (
             <div className="ng-panel h-fit p-5 text-[13px] leading-relaxed text-white/60">
-              You are reading the testers' board. Only testers can post to it.
+              You are reading the testers' board. Sign in as a tester or an admin to post.
             </div>
           )}
 
@@ -185,6 +189,12 @@ function FeedbackBoard() {
                     {r.kind === "broken" ? "Broken" : r.kind === "confusing" ? "Confusing" : "Idea"}
                   </span>
                   <strong className="text-[13.5px] text-white">{r.author}</strong>
+                  {r.from_club && (
+                    <span className="rounded-full bg-[var(--ng-electric)]/20 px-2 py-0.5
+                                     text-[10px] font-bold uppercase tracking-wide text-[var(--ng-cyan)]">
+                      from the club
+                    </span>
+                  )}
                   <span className="text-[12px] text-white/40">
                     {r.route ? `${r.route} · ` : ""}{when(r.created_at)}
                   </span>

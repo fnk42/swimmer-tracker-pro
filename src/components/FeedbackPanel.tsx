@@ -10,7 +10,7 @@ import type React from "react";
 type Row = {
   id: string; author: string; kind: string; body: string; route: string;
   context: string; status: string; reply: string | null; replied_by: string | null;
-  created_at: string; agrees: number; mine: boolean;
+  created_at: string; agrees: number; mine: boolean; from_club: boolean;
 };
 
 const KIND: Record<string, { label: string; cls: string }> = {
@@ -150,6 +150,12 @@ export function FeedbackPanel() {
                     {k.label}
                   </span>
                   <b className="text-[13px] font-medium">{r.author}</b>
+                  {r.from_club && (
+                    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px]
+                                     font-bold uppercase tracking-wide text-primary">
+                      from the club
+                    </span>
+                  )}
                   <span className="text-[12px] text-muted-foreground">
                     {r.route ? `${r.route} · ` : ""}{when(r.created_at)}
                   </span>

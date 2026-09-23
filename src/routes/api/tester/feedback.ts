@@ -17,7 +17,7 @@ import { note } from "@/lib/activity";
 type Row = {
   id: string; author: string; kind: string; body: string; route: string;
   context: string; status: string; reply: string | null; replied_by: string | null;
-  created_at: string; agrees: number; mine: boolean;
+  created_at: string; agrees: number; mine: boolean; from_club: boolean;
 };
 
 const KINDS = ["broken", "confusing", "idea"];
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/tester/feedback")({
           if (!s?.testerId && !s?.isAdmin) return json({ error: "Not signed in" }, 401);
           const rows = await q<Row>(
             `select f.id::text, f.author, f.kind, f.body, f.route, f.context,
-                    f.status, f.reply, f.replied_by, f.created_at,
+                    f.status, f.reply, f.replied_by, f.created_at, f.from_club,
                     (select count(*)::int from public.tester_feedback_agrees a
                       where a.feedback_id = f.id) as agrees,
                     exists (select 1 from public.tester_feedback_agrees a
@@ -48,31 +48,43 @@ export const Route = createFileRoute("/api/tester/feedback")({
         }
       },
 
+      // Testers and admins both. An admin needs to be able to raise a known
+      // issue before five people report it, and to try the board themselves
+      // without borrowing somebody's account.
       POST: async ({ request }) => {
         try {
           const s = sessionFromRequest(request);
-          if (!s?.testerId) return json({ error: "Testers only" }, 403);
+          if (!s?.testerId && !s?.isAdmin) return json({ error: "Testers and admins only" }, 403);
           const b = await request.json().catch(() => ({}));
           const body = String(b?.body ?? "").trim();
           const kind = String(b?.kind ?? "broken");
           if (body.length < 4) return json({ error: "Tell us a little more" }, 400);
           if (!KINDS.includes(kind)) return json({ error: "Unknown kind" }, 400);
 
-          const who = await one<{ full_name: string }>(
-            `select full_name from public.testers where id = $1`,
-            [s.testerId],
-          );
+          // A tester is named from their own registration; an admin from the
+          // parent record their address resolves to, so the board reads in the
+          // names people know either way.
+          const who = s.testerId
+            ? await one<{ full_name: string }>(
+                `select full_name from public.testers where id = $1`, [s.testerId])
+            : await one<{ full_name: string }>(
+                `select coalesce(nullif(p.full_name, ''), '') as full_name
+                   from public.parent_emails pm
+                   join public.parents p on p.id = pm.parent_id
+                  where pm.email = lower($1)`, [s.email]);
+
           const row = await one<{ id: string }>(
             `insert into public.tester_feedback
-               (tester_id, author, kind, body, route, context)
-             values ($1, $2, $3, $4, $5, $6) returning id::text`,
+               (tester_id, author, kind, body, route, context, from_club)
+             values ($1, $2, $3, $4, $5, $6, $7) returning id::text`,
             [
-              s.testerId,
+              s.testerId ?? null,
               who?.full_name || s.email,
               kind,
               body.slice(0, 4000),
               String(b?.route ?? "").slice(0, 200),
               String(b?.context ?? "").slice(0, 500),
+              !s.testerId && !!s.isAdmin,
             ],
           );
           await note("tester_feedback", { email: s.email, detail: `${kind} — ${body.slice(0, 80)}` });
