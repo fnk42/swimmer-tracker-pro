@@ -203,7 +203,50 @@ function PortalLanding() {
         </div>
 
         <div className="ng-panel p-7 text-white">
-          {step === "email" ? (
+          {demoOn && showDemo ? (
+            /* Its own screen, not a drawer under the parent form.
+               It used to be rendered inside that form, below a filled-in email
+               box, which made one sign-in look like two halves of another. */
+            <div>
+              <h2 className="text-[20px] font-semibold">Coordinator sign-in</h2>
+              <p className="mb-6 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
+                For the club's coaches and coordinators. This is a shared password, not an
+                email code — parents do not need it.
+              </p>
+              <label className="ng-label" htmlFor="demopw">Coordinator password</label>
+              <input
+                id="demopw"
+                className="ng-field"
+                type="password"
+                autoComplete="off"
+                autoFocus
+                value={demoPw}
+                onChange={(e) => setDemoPw(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void onDemo(); } }}
+                placeholder="Password"
+              />
+              {error && <p className="mt-3 text-sm font-medium text-[#FFC24B]">{error}</p>}
+              <button
+                type="button"
+                onClick={() => void onDemo()}
+                disabled={demoBusy || !demoPw}
+                className="ng-btn ng-btn-primary mt-4 w-full"
+              >
+                {demoBusy ? "Signing in\u2026" : "Sign in"}
+              </button>
+              <p className="mt-4 text-xs leading-relaxed text-white/45">
+                Every use is recorded in the activity log.
+              </p>
+              <button
+                type="button"
+                onClick={() => { setShowDemo(false); setDemoPw(""); setError(null); }}
+                className="mt-5 w-full border-t border-white/10 pt-4 text-xs text-white/45
+                           underline-offset-4 hover:text-white hover:underline"
+              >
+                I am a parent — sign in with my email instead
+              </button>
+            </div>
+          ) : step === "email" ? (
             <form onSubmit={onSendCode}>
               <h2 className="text-[20px] font-semibold">Sign in</h2>
               <p className="mb-6 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
@@ -243,39 +286,21 @@ function PortalLanding() {
               {demoOn && !showDemo && (
                 <button
                   type="button"
-                  onClick={() => { setShowDemo(true); setError(null); }}
+                  onClick={() => {
+                    // Leave nothing of the parent form behind. An address still
+                    // sitting in the box above made the coordinator password
+                    // look like part of the same sign-in.
+                    setShowDemo(true);
+                    setError(null);
+                    setEmail("");
+                    setCode("");
+                    setStep("email");
+                  }}
                   className="mt-3 w-full text-xs text-white/45 underline-offset-4
                              hover:text-white hover:underline"
                 >
                   Coordinator sign-in
                 </button>
-              )}
-              {demoOn && showDemo && (
-                <div className="mt-4 rounded-xl border border-white/12 bg-white/[0.04] p-4">
-                  <label className="ng-label" htmlFor="demopw">Coordinator password</label>
-                  <input
-                    id="demopw"
-                    className="ng-field"
-                    type="password"
-                    autoComplete="current-password"
-                    value={demoPw}
-                    onChange={(e) => setDemoPw(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void onDemo(); } }}
-                    placeholder="Password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => void onDemo()}
-                    disabled={demoBusy || !demoPw}
-                    className="ng-btn ng-btn-primary mt-3 w-full"
-                  >
-                    {demoBusy ? "Signing in\u2026" : "Sign in"}
-                  </button>
-                  <p className="mt-2.5 text-[11px] leading-relaxed text-white/40">
-                    A shared account for the club's coordinators. Every use is recorded in the
-                    activity log.
-                  </p>
-                </div>
               )}
             </form>
           ) : (

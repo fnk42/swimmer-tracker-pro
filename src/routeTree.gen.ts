@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as TrackerRouteImport } from './routes/tracker'
+import { Route as TesterRouteImport } from './routes/tester'
 import { Route as RoadmapRouteImport } from './routes/roadmap'
 import { Route as ParentRouteImport } from './routes/parent'
+import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as DormantRouteImport } from './routes/dormant'
 import { Route as DatabaseRouteImport } from './routes/database'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -31,6 +33,10 @@ import { Route as ApiNotesRouteImport } from './routes/api/notes'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiTrackerSummaryRouteImport } from './routes/api/tracker/summary'
 import { Route as ApiTrackerDataRouteImport } from './routes/api/tracker/data'
+import { Route as ApiTesterRegisterRouteImport } from './routes/api/tester/register'
+import { Route as ApiTesterMeRouteImport } from './routes/api/tester/me'
+import { Route as ApiTesterFeedbackRouteImport } from './routes/api/tester/feedback'
+import { Route as ApiTesterAgreeRouteImport } from './routes/api/tester/agree'
 import { Route as ApiSwimmersIdRouteImport } from './routes/api/swimmers/$id'
 import { Route as ApiRoadmapCommentRouteImport } from './routes/api/roadmap/comment'
 import { Route as ApiParentsLinkRouteImport } from './routes/api/parents/link'
@@ -47,6 +53,7 @@ import { Route as ApiAuthRequestCodeRouteImport } from './routes/api/auth/reques
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthDemoRouteImport } from './routes/api/auth/demo'
 import { Route as ApiAthleteAssessmentRouteImport } from './routes/api/athlete/assessment'
+import { Route as ApiAdminTestersRouteImport } from './routes/api/admin/testers'
 import { Route as ApiAdminStatusRouteImport } from './routes/api/admin/status'
 import { Route as ApiAdminParentImportRouteImport } from './routes/api/admin/parent-import'
 import { Route as ApiAdminClaimsRouteImport } from './routes/api/admin/claims'
@@ -62,6 +69,11 @@ const TrackerRoute = TrackerRouteImport.update({
   path: '/tracker',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TesterRoute = TesterRouteImport.update({
+  id: '/tester',
+  path: '/tester',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RoadmapRoute = RoadmapRouteImport.update({
   id: '/roadmap',
   path: '/roadmap',
@@ -70,6 +82,11 @@ const RoadmapRoute = RoadmapRouteImport.update({
 const ParentRoute = ParentRouteImport.update({
   id: '/parent',
   path: '/parent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedbackRoute = FeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DormantRoute = DormantRouteImport.update({
@@ -162,6 +179,26 @@ const ApiTrackerDataRoute = ApiTrackerDataRouteImport.update({
   path: '/api/tracker/data',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTesterRegisterRoute = ApiTesterRegisterRouteImport.update({
+  id: '/api/tester/register',
+  path: '/api/tester/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTesterMeRoute = ApiTesterMeRouteImport.update({
+  id: '/api/tester/me',
+  path: '/api/tester/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTesterFeedbackRoute = ApiTesterFeedbackRouteImport.update({
+  id: '/api/tester/feedback',
+  path: '/api/tester/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTesterAgreeRoute = ApiTesterAgreeRouteImport.update({
+  id: '/api/tester/agree',
+  path: '/api/tester/agree',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSwimmersIdRoute = ApiSwimmersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -242,6 +279,11 @@ const ApiAthleteAssessmentRoute = ApiAthleteAssessmentRouteImport.update({
   path: '/api/athlete/assessment',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminTestersRoute = ApiAdminTestersRouteImport.update({
+  id: '/api/admin/testers',
+  path: '/api/admin/testers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminStatusRoute = ApiAdminStatusRouteImport.update({
   id: '/api/admin/status',
   path: '/api/admin/status',
@@ -268,8 +310,10 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/database': typeof DatabaseRoute
   '/dormant': typeof DormantRoute
+  '/feedback': typeof FeedbackRoute
   '/parent': typeof ParentRoute
   '/roadmap': typeof RoadmapRoute
+  '/tester': typeof TesterRoute
   '/tracker': typeof TrackerRoute
   '/welcome': typeof WelcomeRoute
   '/api/health': typeof ApiHealthRoute
@@ -288,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/claims': typeof ApiAdminClaimsRoute
   '/api/admin/parent-import': typeof ApiAdminParentImportRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
+  '/api/admin/testers': typeof ApiAdminTestersRoute
   '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
   '/api/auth/demo': typeof ApiAuthDemoRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -304,6 +349,10 @@ export interface FileRoutesByFullPath {
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/roadmap/comment': typeof ApiRoadmapCommentRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
+  '/api/tester/agree': typeof ApiTesterAgreeRoute
+  '/api/tester/feedback': typeof ApiTesterFeedbackRoute
+  '/api/tester/me': typeof ApiTesterMeRoute
+  '/api/tester/register': typeof ApiTesterRegisterRoute
   '/api/tracker/data': typeof ApiTrackerDataRoute
   '/api/tracker/summary': typeof ApiTrackerSummaryRoute
 }
@@ -312,8 +361,10 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/database': typeof DatabaseRoute
   '/dormant': typeof DormantRoute
+  '/feedback': typeof FeedbackRoute
   '/parent': typeof ParentRoute
   '/roadmap': typeof RoadmapRoute
+  '/tester': typeof TesterRoute
   '/tracker': typeof TrackerRoute
   '/welcome': typeof WelcomeRoute
   '/api/health': typeof ApiHealthRoute
@@ -332,6 +383,7 @@ export interface FileRoutesByTo {
   '/api/admin/claims': typeof ApiAdminClaimsRoute
   '/api/admin/parent-import': typeof ApiAdminParentImportRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
+  '/api/admin/testers': typeof ApiAdminTestersRoute
   '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
   '/api/auth/demo': typeof ApiAuthDemoRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -348,6 +400,10 @@ export interface FileRoutesByTo {
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/roadmap/comment': typeof ApiRoadmapCommentRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
+  '/api/tester/agree': typeof ApiTesterAgreeRoute
+  '/api/tester/feedback': typeof ApiTesterFeedbackRoute
+  '/api/tester/me': typeof ApiTesterMeRoute
+  '/api/tester/register': typeof ApiTesterRegisterRoute
   '/api/tracker/data': typeof ApiTrackerDataRoute
   '/api/tracker/summary': typeof ApiTrackerSummaryRoute
 }
@@ -357,8 +413,10 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/database': typeof DatabaseRoute
   '/dormant': typeof DormantRoute
+  '/feedback': typeof FeedbackRoute
   '/parent': typeof ParentRoute
   '/roadmap': typeof RoadmapRoute
+  '/tester': typeof TesterRoute
   '/tracker': typeof TrackerRoute
   '/welcome': typeof WelcomeRoute
   '/api/health': typeof ApiHealthRoute
@@ -377,6 +435,7 @@ export interface FileRoutesById {
   '/api/admin/claims': typeof ApiAdminClaimsRoute
   '/api/admin/parent-import': typeof ApiAdminParentImportRoute
   '/api/admin/status': typeof ApiAdminStatusRoute
+  '/api/admin/testers': typeof ApiAdminTestersRoute
   '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
   '/api/auth/demo': typeof ApiAuthDemoRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -393,6 +452,10 @@ export interface FileRoutesById {
   '/api/parents/link': typeof ApiParentsLinkRoute
   '/api/roadmap/comment': typeof ApiRoadmapCommentRoute
   '/api/swimmers/$id': typeof ApiSwimmersIdRoute
+  '/api/tester/agree': typeof ApiTesterAgreeRoute
+  '/api/tester/feedback': typeof ApiTesterFeedbackRoute
+  '/api/tester/me': typeof ApiTesterMeRoute
+  '/api/tester/register': typeof ApiTesterRegisterRoute
   '/api/tracker/data': typeof ApiTrackerDataRoute
   '/api/tracker/summary': typeof ApiTrackerSummaryRoute
 }
@@ -403,8 +466,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/database'
     | '/dormant'
+    | '/feedback'
     | '/parent'
     | '/roadmap'
+    | '/tester'
     | '/tracker'
     | '/welcome'
     | '/api/health'
@@ -423,6 +488,7 @@ export interface FileRouteTypes {
     | '/api/admin/claims'
     | '/api/admin/parent-import'
     | '/api/admin/status'
+    | '/api/admin/testers'
     | '/api/athlete/assessment'
     | '/api/auth/demo'
     | '/api/auth/me'
@@ -439,6 +505,10 @@ export interface FileRouteTypes {
     | '/api/parents/link'
     | '/api/roadmap/comment'
     | '/api/swimmers/$id'
+    | '/api/tester/agree'
+    | '/api/tester/feedback'
+    | '/api/tester/me'
+    | '/api/tester/register'
     | '/api/tracker/data'
     | '/api/tracker/summary'
   fileRoutesByTo: FileRoutesByTo
@@ -447,8 +517,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/database'
     | '/dormant'
+    | '/feedback'
     | '/parent'
     | '/roadmap'
+    | '/tester'
     | '/tracker'
     | '/welcome'
     | '/api/health'
@@ -467,6 +539,7 @@ export interface FileRouteTypes {
     | '/api/admin/claims'
     | '/api/admin/parent-import'
     | '/api/admin/status'
+    | '/api/admin/testers'
     | '/api/athlete/assessment'
     | '/api/auth/demo'
     | '/api/auth/me'
@@ -483,6 +556,10 @@ export interface FileRouteTypes {
     | '/api/parents/link'
     | '/api/roadmap/comment'
     | '/api/swimmers/$id'
+    | '/api/tester/agree'
+    | '/api/tester/feedback'
+    | '/api/tester/me'
+    | '/api/tester/register'
     | '/api/tracker/data'
     | '/api/tracker/summary'
   id:
@@ -491,8 +568,10 @@ export interface FileRouteTypes {
     | '/admin'
     | '/database'
     | '/dormant'
+    | '/feedback'
     | '/parent'
     | '/roadmap'
+    | '/tester'
     | '/tracker'
     | '/welcome'
     | '/api/health'
@@ -511,6 +590,7 @@ export interface FileRouteTypes {
     | '/api/admin/claims'
     | '/api/admin/parent-import'
     | '/api/admin/status'
+    | '/api/admin/testers'
     | '/api/athlete/assessment'
     | '/api/auth/demo'
     | '/api/auth/me'
@@ -527,6 +607,10 @@ export interface FileRouteTypes {
     | '/api/parents/link'
     | '/api/roadmap/comment'
     | '/api/swimmers/$id'
+    | '/api/tester/agree'
+    | '/api/tester/feedback'
+    | '/api/tester/me'
+    | '/api/tester/register'
     | '/api/tracker/data'
     | '/api/tracker/summary'
   fileRoutesById: FileRoutesById
@@ -536,8 +620,10 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   DatabaseRoute: typeof DatabaseRoute
   DormantRoute: typeof DormantRoute
+  FeedbackRoute: typeof FeedbackRoute
   ParentRoute: typeof ParentRoute
   RoadmapRoute: typeof RoadmapRoute
+  TesterRoute: typeof TesterRoute
   TrackerRoute: typeof TrackerRoute
   WelcomeRoute: typeof WelcomeRoute
   ApiHealthRoute: typeof ApiHealthRoute
@@ -556,6 +642,7 @@ export interface RootRouteChildren {
   ApiAdminClaimsRoute: typeof ApiAdminClaimsRoute
   ApiAdminParentImportRoute: typeof ApiAdminParentImportRoute
   ApiAdminStatusRoute: typeof ApiAdminStatusRoute
+  ApiAdminTestersRoute: typeof ApiAdminTestersRoute
   ApiAthleteAssessmentRoute: typeof ApiAthleteAssessmentRoute
   ApiAuthDemoRoute: typeof ApiAuthDemoRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
@@ -569,6 +656,10 @@ export interface RootRouteChildren {
   ApiMeRegisterRoute: typeof ApiMeRegisterRoute
   ApiMeRegistrationRoute: typeof ApiMeRegistrationRoute
   ApiMeetDetailRoute: typeof ApiMeetDetailRoute
+  ApiTesterAgreeRoute: typeof ApiTesterAgreeRoute
+  ApiTesterFeedbackRoute: typeof ApiTesterFeedbackRoute
+  ApiTesterMeRoute: typeof ApiTesterMeRoute
+  ApiTesterRegisterRoute: typeof ApiTesterRegisterRoute
   ApiTrackerDataRoute: typeof ApiTrackerDataRoute
   ApiTrackerSummaryRoute: typeof ApiTrackerSummaryRoute
 }
@@ -589,6 +680,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrackerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tester': {
+      id: '/tester'
+      path: '/tester'
+      fullPath: '/tester'
+      preLoaderRoute: typeof TesterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/roadmap': {
       id: '/roadmap'
       path: '/roadmap'
@@ -601,6 +699,13 @@ declare module '@tanstack/react-router' {
       path: '/parent'
       fullPath: '/parent'
       preLoaderRoute: typeof ParentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedback': {
+      id: '/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof FeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dormant': {
@@ -729,6 +834,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTrackerDataRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/tester/register': {
+      id: '/api/tester/register'
+      path: '/api/tester/register'
+      fullPath: '/api/tester/register'
+      preLoaderRoute: typeof ApiTesterRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tester/me': {
+      id: '/api/tester/me'
+      path: '/api/tester/me'
+      fullPath: '/api/tester/me'
+      preLoaderRoute: typeof ApiTesterMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tester/feedback': {
+      id: '/api/tester/feedback'
+      path: '/api/tester/feedback'
+      fullPath: '/api/tester/feedback'
+      preLoaderRoute: typeof ApiTesterFeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tester/agree': {
+      id: '/api/tester/agree'
+      path: '/api/tester/agree'
+      fullPath: '/api/tester/agree'
+      preLoaderRoute: typeof ApiTesterAgreeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/swimmers/$id': {
       id: '/api/swimmers/$id'
       path: '/$id'
@@ -841,6 +974,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAthleteAssessmentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/testers': {
+      id: '/api/admin/testers'
+      path: '/api/admin/testers'
+      fullPath: '/api/admin/testers'
+      preLoaderRoute: typeof ApiAdminTestersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/status': {
       id: '/api/admin/status'
       path: '/api/admin/status'
@@ -913,8 +1053,10 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   DatabaseRoute: DatabaseRoute,
   DormantRoute: DormantRoute,
+  FeedbackRoute: FeedbackRoute,
   ParentRoute: ParentRoute,
   RoadmapRoute: RoadmapRoute,
+  TesterRoute: TesterRoute,
   TrackerRoute: TrackerRoute,
   WelcomeRoute: WelcomeRoute,
   ApiHealthRoute: ApiHealthRoute,
@@ -933,6 +1075,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminClaimsRoute: ApiAdminClaimsRoute,
   ApiAdminParentImportRoute: ApiAdminParentImportRoute,
   ApiAdminStatusRoute: ApiAdminStatusRoute,
+  ApiAdminTestersRoute: ApiAdminTestersRoute,
   ApiAthleteAssessmentRoute: ApiAthleteAssessmentRoute,
   ApiAuthDemoRoute: ApiAuthDemoRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
@@ -946,6 +1089,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMeRegisterRoute: ApiMeRegisterRoute,
   ApiMeRegistrationRoute: ApiMeRegistrationRoute,
   ApiMeetDetailRoute: ApiMeetDetailRoute,
+  ApiTesterAgreeRoute: ApiTesterAgreeRoute,
+  ApiTesterFeedbackRoute: ApiTesterFeedbackRoute,
+  ApiTesterMeRoute: ApiTesterMeRoute,
+  ApiTesterRegisterRoute: ApiTesterRegisterRoute,
   ApiTrackerDataRoute: ApiTrackerDataRoute,
   ApiTrackerSummaryRoute: ApiTrackerSummaryRoute,
 }

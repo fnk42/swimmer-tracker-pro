@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { RosterManager } from "@/components/RosterManager";
 import { ClaimQueue } from "@/components/ClaimQueue";
 import { ActivityLog } from "@/components/ActivityLog";
+import { TesterPanel } from "@/components/TesterPanel";
 import { ParentImport } from "@/components/ParentImport";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -215,6 +216,10 @@ function AdminPage() {
                 was reported missing. */}
             <section className="mt-8">
               <ActivityLog />
+            </section>
+
+            <section className="mt-6">
+              <TesterPanel />
             </section>
 
             {/* The parent list is what unblocks every family. */}

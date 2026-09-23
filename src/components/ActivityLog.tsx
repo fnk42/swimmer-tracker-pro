@@ -24,6 +24,10 @@ const LABEL: Record<string, string> = {
   consent_given: "accepted the consent document",
   swimmer_claimed: "claimed a swimmer",
   swimmer_unlinked: "removed a swimmer from their account",
+  tester_registered: "registered as a tester",
+  tester_agreed: "signed the confidentiality agreement",
+  tester_refused: "tried the preview without agreeing",
+  tester_feedback: "posted feedback",
 };
 
 const when = (iso: string) =>

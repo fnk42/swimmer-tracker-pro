@@ -4468,6 +4468,16 @@ function portalBar(me){
   bar.hidden = false;
 
   const sections = me.sections || {performance:true, events:true};
+  // A tester lands on the ordinary dashboard, so the way to the feedback board
+  // has to travel with them rather than living on a screen of their own.
+  if (me.isTester) {
+    const fb = document.createElement('a');
+    fb.href = '/feedback';
+    fb.textContent = 'Give feedback';
+    fb.style.cssText = 'margin-left:auto;padding:7px 13px;border-radius:9px;'
+      + 'background:var(--electric);color:#fff;font-size:13px;font-weight:600;text-decoration:none';
+    bar.querySelector('.wrap, div').appendChild(fb);
+  }
   const evBtn = document.getElementById('pb-events');
   const menu  = document.getElementById('pb-menu');
   evBtn.hidden = !sections.events;
@@ -4639,7 +4649,7 @@ async function boot(){
   // whole thing; everyone else is told plainly that this is coming, with the
   // way back to the part that is finished. The server still enforces this
   // independently — /api/tracker/data answers to scope, not to this check.
-  if (me && me.signedIn && !me.isAdmin) {
+  if (me && me.signedIn && !me.isAdmin && !me.isTester) {
     document.getElementById('foot').textContent = '';
     app.innerHTML =
       '<section class="wrap" style="padding-block:56px 72px;max-width:640px">'

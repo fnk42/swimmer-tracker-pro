@@ -15,6 +15,7 @@ const MAX_AGE_S = 60 * 60 * 24 * 30; // 30 days — a term's worth of registrati
 export type Session = {
   email: string;
   parentId?: string;   // present if this address owns a parent row
+  testerId?: string;   // present if this address is an invited preview tester
   isAdmin: boolean;    // present if this address is on the ADMIN_EMAILS list
   exp: number;
 };

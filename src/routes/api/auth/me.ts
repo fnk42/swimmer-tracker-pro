@@ -17,6 +17,23 @@ export const Route = createFileRoute("/api/auth/me")({
                 [s.parentId],
               )
             : null;
+          // A tester has no parent row by design, so answer for them here
+          // before the parent check turns them away. They get Performance and
+          // nothing else: Events belongs to families.
+          if (s.testerId && !p && !s.isAdmin) {
+            const v = await viewer(request);
+            return json({
+              signedIn: !!v,
+              email: s.email,
+              isAdmin: false,
+              isTester: true,
+              sections: { performance: !!v, events: false },
+              scope: v?.scope,
+              needsRegistration: false,
+              parent: null,
+            });
+          }
+
           // Someone can be both — a coordinator who also has a child swimming.
           if (!p && !s.isAdmin) return json({ signedIn: false });
           return json({

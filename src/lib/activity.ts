@@ -16,7 +16,11 @@ export type Kind =
   | "registration_done"   // a parent finished the registration form
   | "consent_given"       // a guardian accepted the current consent document
   | "swimmer_claimed"     // a parent put a child on their account
-  | "swimmer_unlinked";   // a parent took a child back off their own account
+  | "swimmer_unlinked"    // a parent took a child back off their own account
+  | "tester_registered"   // somebody signed up for the analytics preview
+  | "tester_agreed"       // a tester signed the confidentiality agreement
+  | "tester_refused"      // a tester reached for the preview without agreeing
+  | "tester_feedback";    // a tester posted to the shared board
 
 export async function note(
   kind: Kind,

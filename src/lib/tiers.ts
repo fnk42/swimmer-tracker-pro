@@ -132,6 +132,7 @@ export const TOP_LEVEL = {
 export type Scope =
   | "coach" // coordinator or coach: everything
   | "community" // guardian of a confirmed NextGen swimmer: tier 1 for everyone
+  | "tester" // invited preview tester: tier 1, exactly what a guardian sees
   | "pending"; // signed in, no confirmed child yet: aggregates only, no names
 
 const set = (xs: readonly string[]) => new Set<string>(xs);
@@ -168,7 +169,13 @@ export function shapeAnalytics(data: Rec, scope: Scope): Rec {
   for (const [year, block] of Object.entries(years)) {
     const kept = pick(block, YR_TIER1);
 
-    if (scope === "community") {
+    // A tester sees exactly what a guardian sees, by design: they are here to
+    // judge the product parents will get, and a pseudonymised copy of it is a
+    // different product. Tier 1 is the competition record — names, ages, times,
+    // places — every field of which the meet organisers already publish. What
+    // is actually private, the coaching assessment, stays behind "coach" for
+    // them as much as for a parent.
+    if (scope === "community" || scope === "tester") {
       const swimmers = (block.swimmers as Rec[] | undefined) ?? [];
       kept.swimmers = swimmers.map((s) => pick(s, SW_TIER1));
     } else {

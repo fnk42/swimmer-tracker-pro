@@ -72,6 +72,36 @@ export async function viewer(request: Request): Promise<Viewer | null> {
     };
   }
 
+  // An invited tester: no child, no Events, tier 1 only, and only while the
+  // agreement is signed and the preview is still open. Checked here rather
+  // than at the door so an expiry takes effect on the next request, not at
+  // the next sign-in.
+  if (s.testerId && !s.parentId) {
+    const t = await one<{
+      id: string; full_name: string; agreed_at: string | null;
+      expired: boolean; revoked: boolean;
+    }>(
+      `select id, full_name, agreed_at,
+              (expires_at < now())    as expired,
+              (revoked_at is not null) as revoked
+         from public.testers where id = $1`,
+      [s.testerId],
+    );
+    if (!t || t.revoked || t.expired || !t.agreed_at) return null;
+    void q(`update public.testers set last_seen_at = now() where id = $1`, [s.testerId])
+      .catch(() => {});
+    return {
+      email: s.email,
+      parentId: null,
+      isAdmin: false,
+      scope: "tester",
+      needsProfile: false,
+      needsConsent: false,
+      myAthletes: [],
+      pendingClaims: 0,
+    };
+  }
+
   if (!s.parentId) return null;
   const pid = s.parentId;
 

@@ -54,6 +54,30 @@ export const Route = createFileRoute("/api/auth/verify-code")({
           );
           const admin = isAdminEmail(email);
 
+          // An invited tester. Looked up before the parent row is created,
+          // because a tester has no child and must not be handed an empty
+          // parent account — that is the Events side, which is not theirs.
+          const tester = await one<{ id: string }>(
+            `select id from public.testers
+              where lower(email) = $1 and revoked_at is null`,
+            [email],
+          );
+          if (tester && !parent && !admin) {
+            await q(`update public.auth_codes set consumed_at = now() where id = $1`, [row.id]);
+            const token = createSession({ email, testerId: tester.id, isAdmin: false });
+            await note("signed_in", { email, detail: "tester" });
+            return new Response(
+              JSON.stringify({ ok: true, isAdmin: false, isTester: true, parent: null }),
+              {
+                status: 200,
+                headers: {
+                  "content-type": "application/json",
+                  "set-cookie": cookieHeader(token),
+                },
+              },
+            );
+          }
+
           // First time this address has proved it owns its own inbox: open an
           // empty account for it rather than turning it away. Name and phone
           // are deliberately blank, which is precisely what viewer() reads as
@@ -62,7 +86,7 @@ export const Route = createFileRoute("/api/auth/verify-code")({
           //
           // The row is worth nothing on its own. It holds no claim on any
           // swimmer, and until a coordinator approves one it never will.
-          const firstTime = !parent && !admin;
+          const firstTime = !parent && !admin && !tester;
           if (firstTime) {
             parent = await one<{ id: string; full_name: string; email: string }>(
               `insert into public.parents (email, full_name, phone, profile_complete)
