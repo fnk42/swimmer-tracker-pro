@@ -5,6 +5,7 @@ import { RosterManager } from "@/components/RosterManager";
 import { ClaimQueue } from "@/components/ClaimQueue";
 import { ActivityLog } from "@/components/ActivityLog";
 import { TesterPanel } from "@/components/TesterPanel";
+import { FeedbackPanel } from "@/components/FeedbackPanel";
 import { ParentImport } from "@/components/ParentImport";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -220,6 +221,12 @@ function AdminPage() {
 
             <section className="mt-6">
               <TesterPanel />
+            </section>
+
+            {/* Right under the testers themselves: who is in, then what they
+                found. */}
+            <section className="mt-6">
+              <FeedbackPanel />
             </section>
 
             {/* The parent list is what unblocks every family. */}
