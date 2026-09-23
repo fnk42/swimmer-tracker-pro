@@ -2207,6 +2207,16 @@ let twBase = 'vsFirst';
 // The names the two pickers may offer, set by twoSection() on every render so
 // the list always matches whatever the filter bar has narrowed it to.
 let twNames = [];
+// Who the "Compare with" box may offer: only swimmers in the same age band as
+// the one already chosen.
+//
+// Two children of different ages are not comparable on anything this chart
+// draws. An 8-and-under improves about -23%/yr as a matter of course and a
+// 15-17 about -8%, so putting the two on one axis invites a parent to read the
+// steeper line as the better swimmer when it is mostly the younger one. Both
+// lines are already measured against their own baseline rather than each
+// other, but a caption does not undo what two lines on a chart imply.
+let twNamesB = [];
 const TW_BASE = {
   vsFirst: ['where they started',
             'Every race against that swimmer\u2019s own FIRST time in the same event. Zero is the day they debuted, so a falling line is genuinely a swimmer getting faster than they were. Nothing later can move the baseline.'],
@@ -2260,6 +2270,15 @@ function twoSection(){
   if (!all.length) return `<p class="nodata">No swimmer matches the filters above.</p>`;
   // A swimmer chosen before the filter narrowed may no longer be in it.
   const a = (twA && all.includes(twA)) ? twA : all[0];
+
+  // The band of the swimmer on the left decides who the right may offer.
+  const bandOf = new Map((DATA.years.all.swimmers || []).map(s => [s.name, s.band]));
+  const aBand = bandOf.get(a) || null;
+  twNamesB = aBand ? all.filter(n => n !== a && bandOf.get(n) === aBand) : [];
+  const bandNorm = ((DATA.years.all.bands || {}).norms || {})[aBand] ?? null;
+  // A comparison left over from a different band goes, rather than quietly
+  // drawing the thing this is meant to prevent.
+  if (twB && !twNamesB.includes(twB)) twB = '';
   const picked = [a, twB].filter(Boolean);
   if (!picked.length) return '';
 
@@ -2426,7 +2445,10 @@ function twoSection(){
       <label>Compare with<span class="twcb">
         <input class="twpick" id="twB" type="text" role="combobox" aria-expanded="false"
           aria-autocomplete="list" aria-controls="twBbox" autocomplete="off"
-          spellcheck="false" placeholder="\u2014 nobody \u2014"
+          spellcheck="false" ${twNamesB.length ? '' : 'disabled'}
+          placeholder="${twNamesB.length
+            ? esc(aBand ? aBand + ' only' : '\u2014 nobody \u2014')
+            : 'nobody else in this age group'}"
           value="${esc(twB)}" data-prev="${esc(twB)}">
         <ul class="twopts" id="twBbox" role="listbox" hidden></ul>
       </span></label>
@@ -2496,7 +2518,12 @@ function twoSection(){
         joining the races either side without claiming anything in between.
         ${series.length > 1 ? `Both lines are measured against their own baseline, never against
         each other — where they rise and fall together, that is usually the meet rather
-        than the swimmers.` : ''}</p>
+        than the swimmers.` : ''}
+        ${aBand ? `A comparison can only be made inside one age group: this box offers
+        <b>${esc(aBand)}</b> and nobody else. Children of different ages improve at very
+        different rates by nature${bandNorm != null
+          ? ` — the ${esc(aBand)} median is ${pct(bandNorm)} a year` : ''}, so two ages on one
+        axis would say more about the ages than the swimmers.` : ''}</p>
     </div></div>
   </section>`;
 }
@@ -4199,7 +4226,8 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
   // The datalist this replaces was no better than the select it replaced:
   // Chrome does not narrow a datalist as you type, so it was the same scroll
   // behind a different control.
-  const pickName = (id, set, allowEmpty) => {
+  const pickName = (id, set, allowEmpty, listOf) => {
+    const pool = () => (listOf ? listOf() : twNames);
     const el = document.getElementById(id);
     if (!el) return;
     const box = document.getElementById(el.getAttribute('aria-controls'));
@@ -4229,7 +4257,8 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
     };
     const search = () => {
       const v = el.value.trim().toLowerCase();
-      matches = !v ? twNames.slice() : twNames.filter(n => n.toLowerCase().includes(v));
+      const src = pool();
+      matches = !v ? src.slice() : src.filter(n => n.toLowerCase().includes(v));
       active = matches.length ? 0 : -1;
       draw();
     };
@@ -4245,8 +4274,8 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
     // — the swimmer you were trying to move away from.
     el.onfocus = () => {
       el.select();
-      matches = twNames.slice();
-      active = twNames.indexOf(el.value.trim());
+      matches = pool().slice();
+      active = matches.indexOf(el.value.trim());
       if (active < 0) active = matches.length ? 0 : -1;
       draw();
     };
@@ -4288,7 +4317,7 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
   // chosen on the bar above and on every other page.
   bind('twStroke', e => { fStroke = e.target.value; render(); });
   pickName('twA', v => { twA = v; if (twB === twA) twB = ''; }, false);
-  pickName('twB', v => { twB = v; }, true);   // empty means nobody
+  pickName('twB', v => { twB = v; }, true, () => twNamesB);  // empty means nobody
   bind('twBy',   e => { twBy = e.target.value; render(); });
   bind('twBase', e => { twBase = e.target.value; render(); });
 
