@@ -262,6 +262,10 @@ details[open] .chev{transform:rotate(45deg)}
 .offclub{margin-top:14px;font-size:12.5px;color:var(--muted);padding:10px 13px;
   background:var(--sunken);border-radius:10px;border-left:3px solid var(--cyan)}
 .nodata{margin-top:14px;font-size:12.8px;color:var(--muted);font-style:italic}
+/* The named events under an unrated swimmer's reason. Its own line, dimmer
+   than the sentence above it: it is a list to act on, not prose to read. */
+.once{display:block;margin-top:6px;font-size:12.6px;color:var(--muted)}
+.once b{color:var(--ink);font-weight:600}
 
 /* ---------------------------------------------------------------------------
    View tabs, underlined, inside the navy.
@@ -1410,6 +1414,14 @@ const GROUPS = [
  *  Four cases, in the order they bite: no second swim, no second day, no event
  *  raced twice, and raced twice but too close together to annualise.
  */
+/** The events this swimmer has raced exactly once, named.
+ *  Empty when the pipeline sent none, so nothing is claimed that is not known. */
+function evList(s, label){
+  const ev = s.onceEvents || [];
+  if (!ev.length) return '';
+  return `<span class="once"><b>${esc(label)}:</b> ${ev.map(esc).join(' &middot; ')}</span>`;
+}
+
 function whyUnrated(s){
   if (!s.nocompare && s.trend !== null && s.trend !== undefined) return '';
   const n = s.swims || 0, m = s.meets || 0, reps = (s.events || []).length;
@@ -1421,17 +1433,23 @@ function whyUnrated(s){
     // "all at one meet" was true of these swimmers but sounded like the meet
     // was the problem; the problem is that every event was swum once, so no
     // event has a second time to measure the first against.
+    //
+    // The events are named, because that turns a rule into a next step: a coach
+    // reading "50 Fly SCM, 50 Free SCM …, each once" knows what to enter them
+    // for, where "repeat an event" leaves them to work it out.
     why = `${n} races, but each event only once${m < 2 ? `, all at the same meet` : ``} —
       so there is no second 50 Fly to measure the first 50 Fly against, and the same for
       every other event. Every event is tracked on its own, never against a different
-      distance or stroke, so a trend needs one of them raced twice.`;
+      distance or stroke, so a trend needs one of them raced twice.
+      ${evList(s, 'Raced once each')}`;
   } else if (m < 2) {
     why = `All ${n} races were at one meet. The same event was swum more than once, but on
       the same day, so no time has passed for a trend to be measured over.`;
   } else {
     why = `${n} races across ${m} meets, and an event has been repeated — but the repeats
       fall less than ${MIN_SPAN_DAYS} days apart. A few weeks is too short a window to turn
-      into a yearly figure honestly.`;
+      into a yearly figure honestly.
+      ${evList(s, 'Also raced once each')}`;
   }
   return `<p class="nodata">${why}</p>`;
 }
@@ -1486,7 +1504,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':
 //
 // rateJS MIRRORS rate_per_year() in tools/analytics.py. If one changes the
 // other must too, or a season view and the career view stop agreeing.
-const MIN_SPAN_DAYS = 60;   // mirrors tools/analytics.py
+const MIN_SPAN_DAYS = 56;   // mirrors tools/analytics.py
 // Mirrors MIN_RACES in tools/analytics.py — see the note there for why two.
 const MIN_RACES = 2;
 const MAX_EXTRAP = 1.5;   // never stretch a short span by more than half again
