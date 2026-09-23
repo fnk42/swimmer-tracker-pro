@@ -42,6 +42,13 @@ function PortalLanding() {
     // for itself that it is not ready. Coordinators are never held behind
     // registration.
     if (me.data.isAdmin) { window.location.href = "/tracker"; return; }
+    // A tester has no child and no Events. Unsigned, they go to the agreement;
+    // signed, straight to the analytics they are here to look at.
+    if (me.data.isTester) {
+      if (me.data.needsAgreement) navigate({ to: "/tester" });
+      else window.location.href = "/tracker";
+      return;
+    }
     if (me.data.needsRegistration) { navigate({ to: "/welcome" }); return; }
     navigate({ to: "/parent" });
   }, [me.isLoading, me.data, navigate]);
@@ -102,6 +109,11 @@ function PortalLanding() {
       const r = await verifyCode.mutateAsync({ email: email.trim(), code: code.trim() });
       if (r.isAdmin) { window.location.href = "/tracker"; return; }
       const who = await fetch("/api/auth/me").then((x) => x.json()).catch(() => null);
+      if (who?.isTester) {
+        if (who.needsAgreement) navigate({ to: "/tester" });
+        else window.location.href = "/tracker";
+        return;
+      }
       if (who?.needsRegistration) { navigate({ to: "/welcome" }); return; }
       navigate({ to: "/parent" });
     } catch {

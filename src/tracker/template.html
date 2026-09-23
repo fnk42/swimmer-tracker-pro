@@ -4736,6 +4736,10 @@ async function boot(){
   // whole thing; everyone else is told plainly that this is coming, with the
   // way back to the part that is finished. The server still enforces this
   // independently — /api/tracker/data answers to scope, not to this check.
+  // A tester who has not signed the agreement gets sent to it, rather than
+  // bouncing off the 401 and out through the front door.
+  if (me && me.isTester && me.needsAgreement) { location.replace('/tester'); return; }
+
   if (me && me.signedIn && !me.isAdmin && !me.isTester) {
     document.getElementById('foot').textContent = '';
     app.innerHTML =

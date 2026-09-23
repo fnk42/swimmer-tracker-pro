@@ -21,12 +21,25 @@ export const Route = createFileRoute("/api/auth/me")({
           // before the parent check turns them away. They get Performance and
           // nothing else: Events belongs to families.
           if (s.testerId && !p && !s.isAdmin) {
+            // viewer() is null until the agreement is signed and while the
+            // preview is open, which is the access answer. It is NOT the
+            // answer to "are you signed in": a tester who has not signed yet
+            // very much is, and needs to be sent to the agreement rather than
+            // treated as a stranger. Reporting them signed out sent them to
+            // the Events page with an empty account.
             const v = await viewer(request);
+            const t = await one<{ agreed_at: string | null; expires_at: string;
+                                  revoked_at: string | null }>(
+              `select agreed_at, expires_at, revoked_at from public.testers where id = $1`,
+              [s.testerId],
+            );
             return json({
-              signedIn: !!v,
+              signedIn: true,
               email: s.email,
               isAdmin: false,
               isTester: true,
+              needsAgreement: !!t && !t.agreed_at && !t.revoked_at,
+              testerClosed: !!t && (!!t.revoked_at || new Date(t.expires_at) < new Date()),
               sections: { performance: !!v, events: false },
               scope: v?.scope,
               needsRegistration: false,

@@ -353,6 +353,10 @@ export type Me = {
   needsRegistration?: boolean;
   /** Account opened by signing in, never filled in. Greet them as new. */
   firstTime?: boolean;
+  /** Invited preview tester rather than a parent. */
+  isTester?: boolean;
+  /** Signed in as a tester, but the confidentiality agreement is outstanding. */
+  needsAgreement?: boolean;
   needsProfile?: boolean;
   needsConsent?: boolean;
   pendingClaims?: number;
@@ -384,6 +388,8 @@ export function useMe() {
         scope: d.scope,
         needsRegistration: !!d.needsRegistration,
         firstTime: !!d.firstTime,
+        isTester: !!d.isTester,
+        needsAgreement: !!d.needsAgreement,
         needsProfile: !!d.needsProfile,
         needsConsent: !!d.needsConsent,
         pendingClaims: d.pendingClaims ?? 0,
