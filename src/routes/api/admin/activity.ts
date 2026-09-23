@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { q, json } from "@/lib/db";
 import { sessionFromRequest } from "@/lib/session";
 
-// Who is getting in, and who is not. Coordinators only.
+// Who is getting in, and who is not. Admins only.
 //
 // This is a list of parents' email addresses and what they tried to do, so it
 // is gated on isAdmin rather than on scope — a guardian has no business
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/api/admin/activity")({
         try {
           const s = sessionFromRequest(request);
           if (!s?.email) return json({ error: "Not signed in" }, 401);
-          if (!s.isAdmin) return json({ error: "Coordinators only" }, 403);
+          if (!s.isAdmin) return json({ error: "Admins only" }, 403);
 
           // Resolve a name three ways, best first.
           //

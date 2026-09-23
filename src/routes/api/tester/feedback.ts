@@ -108,7 +108,7 @@ export const Route = createFileRoute("/api/tester/feedback")({
             return json({ ok: true });
           }
 
-          if (!s.isAdmin) return json({ error: "Coordinators only" }, 403);
+          if (!s.isAdmin) return json({ error: "Admins only" }, 403);
           const status = String(b?.status ?? "");
           const reply = b?.reply === undefined ? null : String(b.reply).slice(0, 2000);
           if (status && !STATUSES.includes(status)) return json({ error: "Unknown status" }, 400);

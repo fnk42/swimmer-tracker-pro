@@ -33,7 +33,7 @@ export const Route = createFileRoute("/api/notes")({
       PATCH: async ({ request }) => {
         try {
           const v = await viewer(request);
-          if (!v || v.scope !== "coach") return json({ error: "Coordinators only" }, 403);
+          if (!v || v.scope !== "coach") return json({ error: "Admins only" }, 403);
           const b = (await request.json().catch(() => ({}))) as Record<string, unknown>;
           const id = String(b.id ?? "");
           if (!id) return json({ error: "id required" }, 400);

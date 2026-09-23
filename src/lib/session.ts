@@ -118,7 +118,7 @@ export function isAdminEmail(email: string): boolean {
 export function requireAdmin(request: Request): Response | null {
   const s = sessionFromRequest(request);
   if (!s) return deny("Not signed in", 401);
-  if (!s.isAdmin) return deny("Coordinator access only", 403);
+  if (!s.isAdmin) return deny("Admin access only", 403);
   return null;
 }
 

@@ -122,7 +122,7 @@ export const Route = createFileRoute("/api/auth/verify-code")({
           });
           await note("signed_in", {
             email, parentId: parent?.id ?? null,
-            detail: admin ? "coordinator" : firstTime ? "parent — first time" : "parent",
+            detail: admin ? "admin" : firstTime ? "parent — first time" : "parent",
           });
           return new Response(
             JSON.stringify({

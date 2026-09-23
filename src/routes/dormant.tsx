@@ -60,7 +60,7 @@ function Dormant() {
 
   if (denied) {
     return <main className="mx-auto max-w-2xl px-5 py-16">
-      <p className="text-muted-foreground">Coordinators only.</p>
+      <p className="text-muted-foreground">Admins only.</p>
     </main>;
   }
   if (!data) {

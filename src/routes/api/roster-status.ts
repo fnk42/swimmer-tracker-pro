@@ -16,7 +16,7 @@ import dormant from "@/tracker/dormant.json";
 // deleted: re-archiving someone leaves both rows, because the record of who
 // decided what is the point.
 //
-// Coordinators only. This is a list of children who have stopped turning up,
+// Admins only. This is a list of children who have stopped turning up,
 // which is not something to publish to other families.
 
 type Decision = {
@@ -30,7 +30,7 @@ export const Route = createFileRoute("/api/roster-status")({
       GET: async ({ request }) => {
         const v = await viewer(request);
         if (!v) return json({ error: "Not signed in" }, 401);
-        if (v.scope !== "coach") return json({ error: "Coordinators only" }, 403);
+        if (v.scope !== "coach") return json({ error: "Admins only" }, 403);
 
         const decisions = await q<Decision>(
           `select swimmer, decision, reason, decided_by, created_at
@@ -49,7 +49,7 @@ export const Route = createFileRoute("/api/roster-status")({
       POST: async ({ request }) => {
         const v = await viewer(request);
         if (!v) return json({ error: "Not signed in" }, 401);
-        if (v.scope !== "coach") return json({ error: "Coordinators only" }, 403);
+        if (v.scope !== "coach") return json({ error: "Admins only" }, 403);
 
         const body = (await request.json()) as {
           swimmer?: string; decision?: string; reason?: string;

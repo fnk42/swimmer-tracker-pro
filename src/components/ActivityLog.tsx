@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 // getting in. A failed attempt is red, so the one case that needs acting on
 // still stands out without a panel to announce it.
 //
-// Coordinators only, and it holds email addresses, so it is gated on isAdmin.
+// Admins only, and it holds email addresses, so it is gated on isAdmin.
 
 type Row = {
   id: string; kind: string; email: string | null; detail: string | null;
@@ -54,8 +54,8 @@ export function ActivityLog() {
     return (
       <div className="rounded-xl border border-border bg-card px-4 py-3 text-[13px]
                       text-muted-foreground">
-        <b className="font-semibold text-foreground">Sign-in log</b> — coordinators only. This
-        account is not on the coordinator list, so there is nothing to show here.
+        <b className="font-semibold text-foreground">Sign-in log</b> — admins only. This
+        account is not on the admin list, so there is nothing to show here.
       </div>
     );
   if (!rows) return <p className="text-sm text-muted-foreground">Loading…</p>;

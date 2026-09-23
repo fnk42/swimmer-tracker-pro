@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 // What has shipped, what is being built, and everything Boit has asked for.
 //
-// Coordinators only. A shipped row carries the commit it went out in, so the
+// Admins only. A shipped row carries the commit it went out in, so the
 // board is checkable against the repository rather than being a claim.
 
 export const Route = createFileRoute("/roadmap")({ component: Roadmap });
@@ -148,7 +148,7 @@ function Roadmap() {
   if (denied) {
     return (
       <main className="mx-auto max-w-2xl px-5 py-16">
-        <h1 className="text-xl font-semibold">Coordinators only</h1>
+        <h1 className="text-xl font-semibold">Admins only</h1>
         <p className="mt-2 text-muted-foreground">
           The roadmap is for the people running the club. If you have something to say about
           the app, use the <strong>Note</strong> button on any page — it reaches us directly.

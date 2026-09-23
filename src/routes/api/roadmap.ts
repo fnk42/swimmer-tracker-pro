@@ -28,7 +28,7 @@ export const Route = createFileRoute("/api/roadmap")({
         try {
           const v = await viewer(request);
           if (!v) return json({ error: "Not signed in" }, 401);
-          if (v.scope !== "coach") return json({ error: "Coordinators only" }, 403);
+          if (v.scope !== "coach") return json({ error: "Admins only" }, 403);
 
           const items = await q<Item>(
             `select i.id::text, i.title, i.detail, i.status::text, i.raised_by,
@@ -80,7 +80,7 @@ export const Route = createFileRoute("/api/roadmap")({
       POST: async ({ request }) => {
         try {
           const v = await viewer(request);
-          if (!v || v.scope !== "coach") return json({ error: "Coordinators only" }, 403);
+          if (!v || v.scope !== "coach") return json({ error: "Admins only" }, 403);
           const b = (await request.json().catch(() => ({}))) as Record<string, unknown>;
           const title = String(b.title ?? "").trim();
           if (!title) return json({ error: "An idea needs a title" }, 400);
@@ -103,7 +103,7 @@ export const Route = createFileRoute("/api/roadmap")({
       PATCH: async ({ request }) => {
         try {
           const v = await viewer(request);
-          if (!v || v.scope !== "coach") return json({ error: "Coordinators only" }, 403);
+          if (!v || v.scope !== "coach") return json({ error: "Admins only" }, 403);
           const b = (await request.json().catch(() => ({}))) as Record<string, unknown>;
           const id = String(b.id ?? "");
           const status = String(b.status ?? "");

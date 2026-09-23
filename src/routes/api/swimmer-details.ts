@@ -16,7 +16,7 @@ import db from "@/tracker/swimmers_db.json";
 // each into data/dob_overrides.csv, which already beats both the export field
 // and the ID.
 //
-// Coordinators only. This is children's dates of birth.
+// Admins only. This is children's dates of birth.
 
 type Row = {
   swimmer: string; dob: string | null; sex: string | null;
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/api/swimmer-details")({
       GET: async ({ request }) => {
         const v = await viewer(request);
         if (!v) return json({ error: "Not signed in" }, 401);
-        if (v.scope !== "coach") return json({ error: "Coordinators only" }, 403);
+        if (v.scope !== "coach") return json({ error: "Admins only" }, 403);
 
         const edits = await q<Row>(
           `select swimmer, dob::text, sex, note, edited_by, created_at
@@ -49,7 +49,7 @@ export const Route = createFileRoute("/api/swimmer-details")({
       POST: async ({ request }) => {
         const v = await viewer(request);
         if (!v) return json({ error: "Not signed in" }, 401);
-        if (v.scope !== "coach") return json({ error: "Coordinators only" }, 403);
+        if (v.scope !== "coach") return json({ error: "Admins only" }, 403);
 
         const b = (await request.json()) as {
           swimmer?: string; dob?: string; sex?: string; note?: string;

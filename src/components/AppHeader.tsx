@@ -123,7 +123,7 @@ export function AppHeader() {
                       className={itemCls}
                     >
                       <span className="block text-sm font-medium text-foreground">
-                        Coordinator view
+                        Admin view
                       </span>
                       <span className="block text-xs text-muted-foreground">
                         Every registration and payment

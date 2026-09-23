@@ -208,12 +208,12 @@ function PortalLanding() {
                It used to be rendered inside that form, below a filled-in email
                box, which made one sign-in look like two halves of another. */
             <div>
-              <h2 className="text-[20px] font-semibold">Coordinator sign-in</h2>
+              <h2 className="text-[20px] font-semibold">Admin sign-in</h2>
               <p className="mb-6 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
-                For the club's coaches and coordinators. This is a shared password, not an
-                email code — parents do not need it.
+                For the club's admins. This is a shared password, not an email code —
+                parents do not need it.
               </p>
-              <label className="ng-label" htmlFor="demopw">Coordinator password</label>
+              <label className="ng-label" htmlFor="demopw">Admin password</label>
               <input
                 id="demopw"
                 className="ng-field"
@@ -299,7 +299,7 @@ function PortalLanding() {
                   className="mt-3 w-full text-xs text-white/45 underline-offset-4
                              hover:text-white hover:underline"
                 >
-                  Coordinator sign-in
+                  Admin sign-in
                 </button>
               )}
             </form>

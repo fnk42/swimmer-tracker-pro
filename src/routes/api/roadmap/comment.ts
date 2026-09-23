@@ -2,14 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { q, json, fail } from "@/lib/db";
 import { viewer } from "@/lib/scope";
 
-// A comment on a roadmap item. Coordinators only, same as the board itself.
+// A comment on a roadmap item. Admins only, same as the board itself.
 export const Route = createFileRoute("/api/roadmap/comment")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         try {
           const v = await viewer(request);
-          if (!v || v.scope !== "coach") return json({ error: "Coordinators only" }, 403);
+          if (!v || v.scope !== "coach") return json({ error: "Admins only" }, 403);
           const b = (await request.json().catch(() => ({}))) as Record<string, unknown>;
           const itemId = String(b.itemId ?? "");
           const body = String(b.body ?? "").trim();
@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/roadmap/comment")({
       GET: async ({ request }) => {
         try {
           const v = await viewer(request);
-          if (!v || v.scope !== "coach") return json({ error: "Coordinators only" }, 403);
+          if (!v || v.scope !== "coach") return json({ error: "Admins only" }, 403);
           const id = new URL(request.url).searchParams.get("itemId") ?? "";
           if (!id) return json({ error: "itemId required" }, 400);
           const rows = await q(
