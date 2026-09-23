@@ -37,3 +37,7 @@ dist-ssr
 migration/02_data.sql
 migration/*.backup
 .vercel
+# vercel link writes this; it holds the project's OIDC token.
+# Narrower than the ".env*" the CLI adds, which would also ignore
+# .env.example — the one env file that is meant to be committed.
+.env.local
