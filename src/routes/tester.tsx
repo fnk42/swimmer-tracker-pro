@@ -147,15 +147,19 @@ function TesterGate() {
             </p>
 
             <div className="ng-panel mt-8 w-full max-w-[440px] p-6">
+              {/* Log in leads. Everybody invited so far is already registered,
+                  and being shown "Register as a tester" first asks them to do
+                  again the thing they have already done. Registering is the
+                  first-timer's path, and it sits underneath. */}
               <button type="button" className="ng-btn ng-btn-primary w-full"
-                      onClick={() => { setStep("register"); setReturning(false); setError(null); }}>
-                Register as a tester
+                      onClick={() => { setStep("register"); setReturning(true); setError(null); }}>
+                Log in
               </button>
               <button type="button"
                       className="mt-3.5 w-full border-t border-white/10 pt-3.5 text-[12.5px] text-white/50
                                  underline-offset-4 hover:text-white hover:underline"
-                      onClick={() => { setStep("register"); setReturning(true); setError(null); }}>
-                Already registered? Sign in as a tester
+                      onClick={() => { setStep("register"); setReturning(false); setError(null); }}>
+                First time here? Register as a tester
               </button>
             </div>
 
@@ -182,11 +186,11 @@ function TesterGate() {
         {step === "register" && (
           <div className="ng-panel mt-7 w-full p-6">
             <h1 className="text-[22px] font-semibold text-white">
-              {returning ? "Sign in as a tester" : "Thanks for helping us test"}
+              {returning ? "Log in" : "Thanks for helping us test"}
             </h1>
             <p className="mb-5 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
               {returning
-                ? "The email address you registered with. We send a six-digit code — there is no password."
+                ? "The email address you registered with. We send a six-digit code — there is no password, and nothing to fill in again."
                 : "Just your name and an email address. Your name sits next to your feedback so we know who to thank — and who to ask when something needs a second look. Parents never see it."}
             </p>
 
@@ -220,6 +224,16 @@ function TesterGate() {
                     onClick={() => void sendCode(returning)}>
               {busy ? "Sending…" : "Send me a code"}
             </button>
+            {!returning && (
+              <p className="mt-3 text-center text-[12.5px] text-white/45">
+                Registered already?{" "}
+                <button type="button" onClick={() => { setReturning(true); setError(null); }}
+                        className="font-semibold text-[var(--ng-cyan)] underline-offset-4 hover:underline">
+                  Log in instead
+                </button>
+                .
+              </p>
+            )}
             <button type="button" onClick={() => { setStep("landing"); setError(null); }}
                     className="mt-3 w-full text-xs text-white/45 underline-offset-4 hover:text-white hover:underline">
               Back

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type React from "react";
 
 // What the testers have said, on the admin page.
 //
@@ -32,6 +33,7 @@ const when = (iso: string) =>
 export function FeedbackPanel() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [denied, setDenied] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   // The item being answered, and what is being written. A reply is public to
   // every tester on the board, so it is composed deliberately rather than
@@ -41,9 +43,13 @@ export function FeedbackPanel() {
 
   const load = () =>
     fetch("/api/tester/feedback")
-      .then((r) => (r.status === 401 || r.status === 403 ? (setDenied(true), null) : r.json()))
-      .then((j) => j && setRows(j.rows ?? []))
-      .catch(() => undefined);
+      .then(async (r) => {
+        if (r.status === 401 || r.status === 403) { setDenied(true); return null; }
+        if (!r.ok) throw new Error(`the server answered ${r.status}`);
+        return r.json();
+      })
+      .then((j) => { if (j) { setRows(j.rows ?? []); setFailed(null); } })
+      .catch((e) => setFailed(e instanceof Error ? e.message : "could not reach the server"));
 
   useEffect(() => { void load(); }, []);
 
@@ -71,7 +77,41 @@ export function FeedbackPanel() {
     setDraft("");
   }
 
-  if (denied || !rows) return null;
+  // Never render nothing.
+  //
+  // This used to return null unless the rows had arrived, so a failed request
+  // — or a slow one — left no panel on the page at all, and the only way to
+  // tell "there is no feedback" from "this is broken" was to open the network
+  // tab. A panel that is meant to be on a page should say why it is empty.
+  const shell = (body: React.ReactNode) => (
+    <div className="rounded-xl border border-border bg-card">
+      <div className="flex items-baseline justify-between gap-3 border-b border-border px-4 py-2.5">
+        <span className="text-[13.5px] font-semibold">Tester feedback</span>
+        <button onClick={() => { setFailed(null); void load(); }}
+                className="text-[12.5px] text-muted-foreground underline-offset-4 hover:underline">
+          Refresh
+        </button>
+      </div>
+      {body}
+    </div>
+  );
+
+  if (denied)
+    return shell(
+      <p className="px-4 py-3 text-[13px] text-muted-foreground">
+        Admins only. This account is not on the admin list.
+      </p>,
+    );
+
+  if (failed)
+    return shell(
+      <p className="px-4 py-3 text-[13px] text-destructive">
+        Could not load the feedback — {failed}. Try Refresh; if it keeps happening, tell Felix.
+      </p>,
+    );
+
+  if (!rows)
+    return shell(<p className="px-4 py-3 text-[13px] text-muted-foreground">Loading…</p>);
 
   const open = rows.filter((r) => r.status === "open").length;
 
