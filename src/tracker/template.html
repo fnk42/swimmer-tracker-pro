@@ -1415,18 +1415,23 @@ function whyUnrated(s){
   const n = s.swims || 0, m = s.meets || 0, reps = (s.events || []).length;
   let why;
   if (n < 2) {
-    why = `Only one timed swim on record. A trend needs at least two races, on different days.`;
-  } else if (m < 2) {
-    why = `All ${n} swims were at one meet, so no time has passed between them.
-      Improvement is measured across days, not across strokes — one more meet is what
-      this needs.`;
+    why = `Only one timed swim on record. A trend needs the same event swum at least twice.`;
   } else if (!reps) {
-    why = `${n} swims across ${m} meets, but no single event has been raced twice in the
-      same course, so there is no like-for-like pair to measure.`;
+    // The precise cause, and the one that tells them what would fix it. Saying
+    // "all at one meet" was true of these swimmers but sounded like the meet
+    // was the problem; the problem is that every event was swum once, so no
+    // event has a second time to measure the first against.
+    why = `${n} races, but each event only once${m < 2 ? `, all at the same meet` : ``} —
+      so there is no second 50 Fly to measure the first 50 Fly against, and the same for
+      every other event. Every event is tracked on its own, never against a different
+      distance or stroke, so a trend needs one of them raced twice.`;
+  } else if (m < 2) {
+    why = `All ${n} races were at one meet. The same event was swum more than once, but on
+      the same day, so no time has passed for a trend to be measured over.`;
   } else {
-    why = `${n} swims across ${m} meets, but the repeated races fall less than
-      ${MIN_SPAN_DAYS} days apart. A few weeks is too short a window to turn into a
-      yearly figure honestly.`;
+    why = `${n} races across ${m} meets, and an event has been repeated — but the repeats
+      fall less than ${MIN_SPAN_DAYS} days apart. A few weeks is too short a window to turn
+      into a yearly figure honestly.`;
   }
   return `<p class="nodata">${why}</p>`;
 }
