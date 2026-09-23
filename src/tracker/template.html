@@ -1504,7 +1504,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':
 //
 // rateJS MIRRORS rate_per_year() in tools/analytics.py. If one changes the
 // other must too, or a season view and the career view stop agreeing.
-const MIN_SPAN_DAYS = 56;   // mirrors tools/analytics.py
+const MIN_SPAN_DAYS = 60;   // mirrors tools/analytics.py
 // Mirrors MIN_RACES in tools/analytics.py — see the note there for why two.
 const MIN_RACES = 2;
 const MAX_EXTRAP = 1.5;   // never stretch a short span by more than half again
