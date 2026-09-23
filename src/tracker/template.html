@@ -1403,8 +1403,34 @@ const GROUPS = [
   {k:'review',    slug:'review',    t:'🟠 Slowest improvement',
    d:'still getting faster in most cases, by less than their age group — worth a look'},
   {k:'unrated',   slug:'unrated',   t:'Not enough data',
-   d:'no repeat swim in the same event and course yet'},
+   d:'not enough racing yet to measure a trend — each swimmer says why'},
 ];
+/** Why this swimmer has no rate, in the words that are actually true of them.
+ *
+ *  Four cases, in the order they bite: no second swim, no second day, no event
+ *  raced twice, and raced twice but too close together to annualise.
+ */
+function whyUnrated(s){
+  if (!s.nocompare && s.trend !== null && s.trend !== undefined) return '';
+  const n = s.swims || 0, m = s.meets || 0, reps = (s.events || []).length;
+  let why;
+  if (n < 2) {
+    why = `Only one timed swim on record. A trend needs at least two races, on different days.`;
+  } else if (m < 2) {
+    why = `All ${n} swims were at one meet, so no time has passed between them.
+      Improvement is measured across days, not across strokes — one more meet is what
+      this needs.`;
+  } else if (!reps) {
+    why = `${n} swims across ${m} meets, but no single event has been raced twice in the
+      same course, so there is no like-for-like pair to measure.`;
+  } else {
+    why = `${n} swims across ${m} meets, but the repeated races fall less than
+      ${MIN_SPAN_DAYS} days apart. A few weeks is too short a window to turn into a
+      yearly figure honestly.`;
+  }
+  return `<p class="nodata">${why}</p>`;
+}
+
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 // A swimmer who took 22.7% off their time is 22.7% FASTER. Showing that as
 // "-22.7%" made every good result look like a loss, which is exactly backwards
@@ -3142,9 +3168,15 @@ function swimmerCard(s){
   const off = offclub.length
     ? `<div class="offclub"><strong>Also raced for:</strong> ${offclub.map(esc).join(', ')}.
        Those swims count toward this athlete's development, never toward NextGen team totals.</div>` : '';
-  const none = s.nocompare
-    ? `<p class="nodata">No repeat swims in the same event and course, so no trend can be
-       calculated. ${s.swims} swim${s.swims===1?'':'s'} recorded.</p>` : '';
+  // Say the true reason, per swimmer.
+  //
+  // Every unrated swimmer used to be told "no repeat swims in the same event
+  // and course". For most of them that is simply false: 37 of the 60 have a
+  // single timed swim, and 20 raced everything at one meet. A swimmer with six
+  // races across four strokes reading that he needs to repeat an event is being
+  // sent to do the one thing that would not help him — what he needs is a
+  // second meet, because a trend is measured over time, not over strokes.
+  const none = whyUnrated(s);
   return `
   <details class="sw" data-band="${esc(s.band)}" data-age="${s.age===null?'':s.age}"
     data-cls="${esc(s.cls || '')}" data-name="${esc(s.name.toLowerCase())}"
