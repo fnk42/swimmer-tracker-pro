@@ -357,6 +357,8 @@ export type Me = {
   isTester?: boolean;
   /** Signed in as a tester, but the confidentiality agreement is outstanding. */
   needsAgreement?: boolean;
+  /** Holds live preview access: agreed, not revoked, not expired. */
+  previewAccess?: boolean;
   needsProfile?: boolean;
   needsConsent?: boolean;
   pendingClaims?: number;
@@ -390,6 +392,7 @@ export function useMe() {
         firstTime: !!d.firstTime,
         isTester: !!d.isTester,
         needsAgreement: !!d.needsAgreement,
+        previewAccess: !!d.previewAccess,
         needsProfile: !!d.needsProfile,
         needsConsent: !!d.needsConsent,
         pendingClaims: d.pendingClaims ?? 0,

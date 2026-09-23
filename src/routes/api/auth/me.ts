@@ -17,6 +17,20 @@ export const Route = createFileRoute("/api/auth/me")({
                 [s.parentId],
               )
             : null;
+          // Does this session hold live preview access? Its own question,
+          // separate from being a parent: a parent-tester keeps Events either
+          // way, and only the analytics wait on the agreement.
+          const preview = s.testerId
+            ? await one<{ ok: boolean }>(
+                `select (agreed_at is not null
+                         and revoked_at is null
+                         and expires_at > now()) as ok
+                   from public.testers where id = $1`,
+                [s.testerId],
+              )
+            : null;
+          const previewAccess = !!preview?.ok;
+
           // A tester has no parent row by design, so answer for them here
           // before the parent check turns them away. They get Performance and
           // nothing else: Events belongs to families.
@@ -38,6 +52,7 @@ export const Route = createFileRoute("/api/auth/me")({
               email: s.email,
               isAdmin: false,
               isTester: true,
+              previewAccess,
               needsAgreement: !!t && !t.agreed_at && !t.revoked_at,
               testerClosed: !!t && (!!t.revoked_at || new Date(t.expires_at) < new Date()),
               sections: { performance: !!v, events: false },
@@ -53,6 +68,10 @@ export const Route = createFileRoute("/api/auth/me")({
             signedIn: true,
             email: s.email,
             isAdmin: s.isAdmin,
+            // A parent who also tests. Events is theirs as a parent; the
+            // analytics open only once the agreement is signed.
+            isTester: !!s.testerId,
+            previewAccess,
             // Which sections of the portal this person gets. Everyone signed in
             // sees Performance; Events is for the people actually involved in
             // the meet. Today the database only holds Machakos registrants, so

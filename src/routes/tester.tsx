@@ -186,11 +186,11 @@ function TesterGate() {
         {step === "register" && (
           <div className="ng-panel mt-7 w-full p-6">
             <h1 className="text-[22px] font-semibold text-white">
-              {returning ? "Log in" : "Thanks for helping us test"}
+              {returning ? "Welcome back" : "Thanks for helping us test"}
             </h1>
             <p className="mb-5 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
               {returning
-                ? "The email address you registered with. We send a six-digit code — there is no password, and nothing to fill in again."
+                ? "Use the email you registered with. We will send you a code."
                 : "Just your name and an email address. Your name sits next to your feedback so we know who to thank — and who to ask when something needs a second look. Parents never see it."}
             </p>
 

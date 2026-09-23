@@ -44,7 +44,10 @@ function PortalLanding() {
     if (me.data.isAdmin) { window.location.href = "/tracker"; return; }
     // A tester has no child and no Events. Unsigned, they go to the agreement;
     // signed, straight to the analytics they are here to look at.
-    if (me.data.isTester) {
+    // Only a pure tester is routed to the agreement. A parent who also tests
+    // goes to Events like any other parent; the preview is something they can
+    // choose to open, not a gate across their own child's registration.
+    if (me.data.isTester && !me.data.parent) {
       if (me.data.needsAgreement) navigate({ to: "/tester" });
       else window.location.href = "/tracker";
       return;
@@ -109,7 +112,7 @@ function PortalLanding() {
       const r = await verifyCode.mutateAsync({ email: email.trim(), code: code.trim() });
       if (r.isAdmin) { window.location.href = "/tracker"; return; }
       const who = await fetch("/api/auth/me").then((x) => x.json()).catch(() => null);
-      if (who?.isTester) {
+      if (who?.isTester && !who.parent) {
         if (who.needsAgreement) navigate({ to: "/tester" });
         else window.location.href = "/tracker";
         return;

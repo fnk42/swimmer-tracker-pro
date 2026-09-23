@@ -62,6 +62,27 @@ export const Route = createFileRoute("/api/auth/verify-code")({
               where lower(email) = $1 and revoked_at is null`,
             [email],
           );
+          // Someone can be both. Gladys is a parent with a child on the
+          // roster AND registered for the preview; the parent branch won
+          // every time, so her tester registration could never take effect —
+          // she signed in four times and the panel still read "no access".
+          // The session now carries both ids, and each side is decided on its
+          // own: Events because she is a parent, the preview because she
+          // signed the agreement.
+          if (tester && parent && !admin) {
+            await q(`update public.auth_codes set consumed_at = now() where id = $1`, [row.id]);
+            const token = createSession({
+              email, parentId: parent.id, testerId: tester.id, isAdmin: false,
+            });
+            await note("signed_in", { email, parentId: parent.id, detail: "parent · tester" });
+            return new Response(
+              JSON.stringify({ ok: true, isAdmin: false, isTester: true,
+                               parent: { id: parent.id, fullName: parent.full_name } }),
+              { status: 200, headers: { "content-type": "application/json",
+                                        "set-cookie": cookieHeader(token) } },
+            );
+          }
+
           if (tester && !parent && !admin) {
             await q(`update public.auth_codes set consumed_at = now() where id = $1`, [row.id]);
             const token = createSession({ email, testerId: tester.id, isAdmin: false });

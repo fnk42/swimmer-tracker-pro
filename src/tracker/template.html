@@ -4738,9 +4738,12 @@ async function boot(){
   // independently — /api/tracker/data answers to scope, not to this check.
   // A tester who has not signed the agreement gets sent to it, rather than
   // bouncing off the 401 and out through the front door.
-  if (me && me.isTester && me.needsAgreement) { location.replace('/tester'); return; }
+  // A pure tester with the agreement outstanding is sent to it. A parent who
+  // also tests is NOT: Events is theirs regardless, and being marched to an
+  // agreement they never asked for would hijack the journey they came for.
+  if (me && me.isTester && me.needsAgreement && !me.parent) { location.replace('/tester'); return; }
 
-  if (me && me.signedIn && !me.isAdmin && !me.isTester) {
+  if (me && me.signedIn && !me.isAdmin && !me.previewAccess) {
     document.getElementById('foot').textContent = '';
     app.innerHTML =
       '<section class="wrap" style="padding-block:56px 72px;max-width:640px">'

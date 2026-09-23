@@ -109,8 +109,9 @@ export function TesterPanel() {
 
       <p className="border-t border-border px-4 py-2.5 text-[12px] leading-relaxed text-muted-foreground">
         Access needs a signed agreement and ends 30 September 2026. Revoking takes effect on their
-        next click. Their sign-ins appear in the log above; what they said is on the{" "}
-        <a href="/feedback" className="underline underline-offset-2">feedback board</a>.
+        next click. Somebody who is also a parent keeps their own Events either way — only the
+        analytics wait on the agreement. Their sign-ins appear in the log above; what they said is
+        on the <a href="/feedback" className="underline underline-offset-2">feedback board</a>.
       </p>
     </div>
   );
