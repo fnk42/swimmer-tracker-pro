@@ -147,9 +147,6 @@ function FeedbackBoard() {
                       disabled={busy || body.trim().length < 4} onClick={() => void post()}>
                 {busy ? "Posting…" : "Post to the board"}
               </button>
-              <p className="mt-3 text-[11.5px] leading-relaxed text-white/40">
-                Never paste a child's name into feedback. Say "the 11–12 chart", not who is on it.
-              </p>
             </div>
           ) : (
             <div className="ng-panel h-fit p-5 text-[13px] leading-relaxed text-white/60">

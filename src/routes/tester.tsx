@@ -125,55 +125,62 @@ function TesterGate() {
       <div className="ng-water" aria-hidden />
       <div className="ng-caustics" aria-hidden />
 
-      <main className="mx-auto w-full max-w-lg flex-1 px-5 pb-12 pt-10">
+      {/* One centred column at every width. The pitch, the way in and the
+          caveat read top to bottom in that order, so the phone layout is the
+          same page narrower rather than a second layout to keep in step. */}
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center px-5 pb-12 pt-12 text-white lg:pt-16">
         <img src="/nextgen-logo.png" alt="NextGen Multi Sport Academy"
-             className="mb-6 h-12 w-auto" width={395} height={265} />
+             className="w-auto object-contain" width={395} height={265}
+             style={{ height: step === "landing" ? "clamp(96px, 11vw, 168px)" : "clamp(60px, 6.5vw, 92px)" }} />
 
         {step === "landing" && (
           <>
-            <p className="ng-eyebrow mb-4"><span className="dot" aria-hidden />Closed preview</p>
-            <h1 className="text-[30px] font-semibold leading-tight text-white">
+            <p className="ng-eyebrow mt-6"><span className="dot" aria-hidden />Closed preview</p>
+            <h1 className="ng-display mt-3.5 text-center text-[clamp(30px,5.2vw,52px)]">
               NextGen Analytics
+              <span className="block" style={{ color: "var(--ng-electric)" }}>closed preview</span>
             </h1>
-            <p className="mb-6 mt-2 text-[14.5px] leading-relaxed text-white/65">
+            <p className="mt-5 max-w-[56ch] text-center text-[16px] leading-relaxed text-white/70">
               You have been invited to look at how the club measures swimmer development before it
               is shown to parents. It is a working preview — expect rough edges, and tell us about
               them.
             </p>
 
-            <div className="mb-6 rounded-xl border border-[#FFC24B]/35 bg-[#FFC24B]/10 p-4">
-              <p className="text-[12.5px] font-bold uppercase tracking-wide text-[#FFC24B]">
+            <div className="ng-panel mt-8 w-full max-w-[440px] p-6">
+              <button type="button" className="ng-btn ng-btn-primary w-full"
+                      onClick={() => { setStep("register"); setReturning(false); setError(null); }}>
+                Register as a tester
+              </button>
+              <button type="button"
+                      className="mt-3.5 w-full border-t border-white/10 pt-3.5 text-[12.5px] text-white/50
+                                 underline-offset-4 hover:text-white hover:underline"
+                      onClick={() => { setStep("register"); setReturning(true); setError(null); }}>
+                Already registered? Sign in as a tester
+              </button>
+            </div>
+
+            {/* Below the way in, and wider than it, so the eye reads
+                register-then-caveat rather than taking the two as a pair. The
+                body stays left-aligned: four lines of centred prose is harder
+                work than the three above it. */}
+            <div className="mt-5 w-full max-w-[640px] rounded-xl border border-[#FFC24B]/35
+                            bg-[#FFC24B]/10 p-4 text-left">
+              <p className="text-[12px] font-bold uppercase tracking-wide text-[#FFC24B]">
                 This is real data about real children
               </p>
-              <p className="mt-1.5 text-[13.5px] leading-relaxed text-white/78">
+              <p className="mt-1.5 text-[13.4px] leading-relaxed text-white/78">
                 Nothing you see here may leave the preview — no screenshots, no forwarding, no
                 discussing a named child outside the club. You will be asked to agree to this in
                 writing before anything is shown.
               </p>
             </div>
 
-            <div className="ng-panel p-6">
-              <h2 className="text-[19px] font-semibold text-white">Register as a tester</h2>
-              <p className="mb-4 mt-1 text-[13.5px] leading-relaxed text-white/65">
-                Your name, your email, and the agreement. About a minute.
-              </p>
-              <button type="button" className="ng-btn ng-btn-primary w-full"
-                      onClick={() => { setStep("register"); setError(null); }}>
-                Register as a tester
-              </button>
-              <button type="button"
-                      className="mt-3 w-full border-t border-white/10 pt-4 text-xs text-white/50
-                                 underline-offset-4 hover:text-white hover:underline"
-                      onClick={() => { setStep("register"); setReturning(true); setError(null); }}>
-                Already registered? Sign in as a tester
-              </button>
-            </div>
             {error && <p className="mt-4 text-sm font-medium text-[#FFC24B]">{error}</p>}
           </>
         )}
 
         {step === "register" && (
-          <div className="ng-panel p-6">
+          <div className="ng-panel mt-7 w-full p-6">
             <h1 className="text-[22px] font-semibold text-white">
               {returning ? "Sign in as a tester" : "Thanks for helping us test"}
             </h1>
@@ -221,7 +228,7 @@ function TesterGate() {
         )}
 
         {step === "code" && (
-          <div className="ng-panel p-6">
+          <div className="ng-panel mt-7 w-full p-6">
             <h1 className="text-[22px] font-semibold text-white">Check your email</h1>
             <p className="mb-5 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
               A six-digit code is on its way to <span className="font-semibold text-white">{email}</span>.
@@ -250,7 +257,7 @@ function TesterGate() {
         )}
 
         {step === "agree" && (
-          <div className="ng-panel p-6">
+          <div className="ng-panel mt-7 w-full p-6 sm:p-7">
             <h1 className="text-[22px] font-semibold text-white">Before you see anything</h1>
             <p className="mb-4 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
               Both boxes must be ticked. Your agreement is stored with your name and the date.
@@ -302,15 +309,16 @@ function TesterGate() {
           </div>
         )}
 
-        <footer className="mt-10 text-center text-xs text-white/40">
+      </main>
+
+      <footer className="relative mx-auto w-full max-w-5xl px-5 pb-10 text-center text-xs text-white/40">
           A product of{" "}
           <a href={GOLDEN_PIPIT_URL} target="_blank" rel="noopener noreferrer"
              className="font-semibold text-white/55 underline-offset-4 hover:text-white hover:underline">
             Golden Pipit Solutions
           </a>
-          <span className="mt-2 block text-white/35">{GOLDEN_PIPIT_EMAIL}</span>
-        </footer>
-      </main>
+        <span className="mt-2 block text-white/35">{GOLDEN_PIPIT_EMAIL}</span>
+      </footer>
     </div>
   );
 }

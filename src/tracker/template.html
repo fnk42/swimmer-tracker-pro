@@ -757,7 +757,10 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
      the season chips — they are the last thing in the wrap, so they were the
      thing that got cut. Keep it short by making it short, never by clipping. */
   .hero{padding-block:var(--sp-xl) 0}
-  .hero .logo{height:30px}
+  /* Width, not height. The base rule is width:112px/height:auto, so setting a
+     height here left the width at 112 and flattened the logo to 112x30 on
+     every phone. */
+  .hero .logo{width:88px;height:auto}
   .hero .display{font-size:clamp(24px,7.6vw,var(--ds-sm))}
   .hero p{font-size:var(--fs-sm);line-height:var(--lh-sm);margin-top:var(--sp-md)}
   /* Same breathing room as desktop, just less of it: the chips must not sit on
