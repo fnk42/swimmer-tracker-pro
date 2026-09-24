@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   useMe,
@@ -6,6 +6,7 @@ import {
   useMySwimmers,
   useMyRegistrations,
   useMyPayments,
+  useSignOut,
   useSaveMyParent,
   useSaveMyRegistration,
   useAddMyPayment,
@@ -62,7 +63,6 @@ function emptyEntry(): EntryForm {
 }
 
 function MachakosFlow() {
-  const navigate = useNavigate();
   const me = useMe();
   const myParent = useMyParent();
   const mine = useMySwimmers();
@@ -95,39 +95,43 @@ function MachakosFlow() {
   const [agreed, setAgreed] = useState(false);
   const [receipt, setReceipt] = useState<{ amount: number; reference: string } | null>(null);
 
-  // A page that throws you somewhere else without saying why is a page nobody
-  // can report a fault on — you cannot tell a bug from a rule. So the only
-  // silent redirect left is the signed-out one, where there is nothing to
-  // read anyway. Everything else stops here and says what it is waiting for.
-  useEffect(() => {
-    if (me.isLoading) return;
-    if (!me.data?.signedIn) navigate({ to: "/" });
-  }, [me.isLoading, me.data, navigate]);
-
-  const held: { reason: string; body: string; to: string; cta: string } | null =
-    me.isLoading || !me.data?.signedIn || me.data.isAdmin
-      ? null
-      : me.data.needsRegistration
-        ? {
-            reason: "needsRegistration",
-            body: "Your account is not finished yet. The entry form needs your name and number first — it takes a minute.",
-            to: "/welcome",
-            cta: "Finish registering",
-          }
-        : me.data.sections && me.data.sections.events === false
+  // Nothing here redirects. A page that throws you somewhere else without
+  // saying why is a page nobody can report a fault on — you cannot tell a bug
+  // from a rule — and doing it after the first paint shows a signed-out
+  // visitor a form, then snatches it away. So the wizard is not drawn until
+  // the session is known, and every other answer is a sentence and a button.
+  const held: { reason: string; body: string; to?: string; cta?: string } | null = me.isLoading
+    ? { reason: "loading", body: "Checking your sign-in…" }
+    : !me.data?.signedIn
+      ? {
+          reason: "signedOut",
+          body: "You are not signed in. Entering a swimmer for Machakos needs an account, so that the entry is attached to somebody.",
+          to: "/",
+          cta: "Sign in",
+        }
+      : me.data.isAdmin
+        ? null
+        : me.data.needsRegistration
           ? {
-              reason: "sections.events === false",
-              body: "Machakos entries are open to swimmers in the travelling team. If your child should be on it, tell Boit and he will add them.",
-              to: "/tracker",
-              cta: "Go to Analytics",
+              reason: "needsRegistration",
+              body: "Your account is not finished yet. The entry form needs your name and number first — it takes a minute.",
+              to: "/welcome",
+              cta: "Finish registering",
             }
-          : null;
+          : me.data.sections && me.data.sections.events === false
+            ? {
+                reason: "sections.events === false",
+                body: "Machakos entries are open to swimmers in the travelling team. If your child should be on it, tell Boit and he will add them.",
+                to: "/tracker",
+                cta: "Go to Analytics",
+              }
+            : null;
 
   // Named in the console so the next person who reports "it bounced me" can be
   // answered from the page rather than guessed at.
   const heldReason = held?.reason;
   useEffect(() => {
-    if (heldReason) console.info(`[register] held: ${heldReason}`);
+    if (heldReason && heldReason !== "loading") console.info(`[register] held: ${heldReason}`);
   }, [heldReason]);
 
   const swimmers = useMemo(() => mine.data ?? [], [mine.data]);
@@ -304,11 +308,15 @@ function MachakosFlow() {
     <Shell>
       {held ? (
         <div className="ng-panel mt-4 p-6 sm:p-7">
-          <h2 className="text-[21px] font-semibold">Not yet</h2>
+          <h2 className="text-[21px] font-semibold">
+            {held.reason === "loading" ? "One moment" : "Not yet"}
+          </h2>
           <p className="mt-2 text-[14.5px] leading-relaxed text-white/70">{held.body}</p>
-          <a href={held.to} className="ng-btn ng-btn-primary mt-6">
-            {held.cta}
-          </a>
+          {held.to && (
+            <a href={held.to} className="ng-btn ng-btn-primary mt-6">
+              {held.cta}
+            </a>
+          )}
         </div>
       ) : (
         <>
@@ -773,20 +781,52 @@ function MachakosFlow() {
 
 // The water, the logo and the dates, which every screen of this wears.
 function Shell({ children }: { children: ReactNode }) {
+  const me = useMe();
+  const signOut = useSignOut();
+
+  // Signing out has to work even if the request fails, or a shared laptop
+  // keeps the session it was told to drop.
+  async function logout() {
+    try {
+      await signOut.mutateAsync();
+    } finally {
+      window.location.href = "/";
+    }
+  }
+
   return (
     <div className="ng-sora relative flex min-h-screen flex-col">
       <div className="ng-water" aria-hidden />
       <div className="ng-caustics" aria-hidden />
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-5 pb-12 pt-10 text-white">
-        <img
-          src="/nextgen-logo.png"
-          alt="NextGen Multi Sport Academy"
-          className="w-auto object-contain"
-          width={395}
-          height={265}
-          style={{ height: "clamp(56px, 6vw, 84px)" }}
-        />
+        <div className="flex items-start justify-between gap-4">
+          <img
+            src="/nextgen-logo.png"
+            alt="NextGen Multi Sport Academy"
+            className="w-auto object-contain"
+            width={395}
+            height={265}
+            style={{ height: "clamp(56px, 6vw, 84px)" }}
+          />
+          {me.data?.signedIn && (
+            <nav className="flex items-center gap-4 pt-2 text-[13px]">
+              <a
+                href="/tracker"
+                className="text-white/55 underline-offset-4 hover:text-white hover:underline"
+              >
+                Analytics
+              </a>
+              <button
+                type="button"
+                onClick={logout}
+                className="text-white/55 underline-offset-4 hover:text-white hover:underline"
+              >
+                Log out
+              </button>
+            </nav>
+          )}
+        </div>
 
         <h1 className="ng-display mt-6 text-[clamp(26px,4.4vw,40px)]">
           {EVENT.name}
