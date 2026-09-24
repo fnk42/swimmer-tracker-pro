@@ -188,10 +188,9 @@ function PortalLanding() {
     }
   }
 
-  // Both are live now. The analytics were coach-only while the consent drive
-  // ran, and this list still said "coming soon" for a fortnight after that
-  // stopped being true — telling every parent who read it that the thing they
-  // were about to be shown did not exist yet.
+  // Only Events is live. The analytics are in preview with the testers until
+  // the coaches have been through them, and saying otherwise here would
+  // announce to every parent a thing they have not agreed to release.
   const features = [
     {
       title: "Events",
@@ -201,9 +200,9 @@ function PortalLanding() {
     },
     {
       title: "NextGen Analytics",
-      body: "How swimming at the club is developing — season by season, stroke by stroke, and against a swimmer's own age group.",
+      body: "How swimming at the club is developing — season by season, stroke by stroke, by age group. Opening to families once the coaches have been through it.",
       path: "M4 19V10m5 9V5m5 14v-6m5 6V8",
-      soon: false,
+      soon: true,
     },
   ];
 
@@ -232,8 +231,8 @@ function PortalLanding() {
             </span>
           </h1>
           <p className="mt-5 max-w-[48ch] text-[16.5px] leading-relaxed text-white/70">
-            Sign in to enter your swimmer for Machakos, see what is still owed, and follow how their
-            times are moving season by season.
+            Sign in to see the events your child is entered for, and to enter them for Machakos. The
+            performance pages are coming next.
           </p>
 
           <ul className="ng-panel mt-9 max-w-[520px] px-6 py-1">

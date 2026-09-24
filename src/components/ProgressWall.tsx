@@ -115,7 +115,7 @@ export function ProgressWall() {
                          bg-[color:var(--ng-electric)]/12 px-2.5 py-0.5 text-[11px]
                          font-semibold uppercase tracking-wide
                          text-[color:var(--ng-electric)]">
-          NextGen Analytics · live
+          NextGen Analytics · coming soon
         </span>
         <span className="font-mono text-[11px] uppercase tracking-[.14em] text-[var(--ng-cyan)]">
           Real athletes · real times
