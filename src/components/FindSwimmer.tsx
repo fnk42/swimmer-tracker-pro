@@ -17,6 +17,15 @@ import { useClaimable, useClaimSwimmer } from "@/lib/api";
 // `dark` renders it on the navy registration screens; the default light form is
 // for the parent dashboard.
 //
+// `squadOnly` marks a child the club has not put in the Nationals team. It used
+// to DISABLE them, which turned this search into a dead end: a parent could see
+// her daughter and not add her, with nothing on the screen to do next. Claiming
+// a child is about whose account they are on, not which meet they are in — two
+// different questions, and conflating them locked a real parent out on the
+// morning of a registration. The row now says where they stand and still adds
+// them; whether they can be ENTERED for Machakos is decided further down the
+// page, where the club's squad is what counts.
+//
 // `confirmBeforeAdd` puts one deliberate step between the search result and the
 // link. Registration does not need it — that flow ends on a screen listing
 // every swimmer being added, which is a better place to catch a mistake than a
@@ -119,14 +128,14 @@ export function FindSwimmer({ onClaimed, dark = false, confirmBeforeAdd = false,
             const offSquad = squadOnly && !s.inSquad;
             return (
             <li key={s.id} className={dark ? "bg-white/[.03]" : "bg-card"}>
-              <div className={"flex items-center gap-3 px-3.5 py-2.5 " + (offSquad ? "opacity-50" : "")}>
+              <div className="flex items-center gap-3 px-3.5 py-2.5">
                 <span className="min-w-0 flex-1">
                   <span className={"block truncate text-sm font-medium " + (dark ? "text-white" : "")}>
                     {s.name}
                   </span>
                   <span className={"block text-xs " + (dark ? "text-white/50" : "text-muted-foreground")}>
                     {offSquad
-                      ? "Not in the Nationals team"
+                      ? "Not in the Nationals team — you can still add them to your account"
                       : s.mine
                         ? "On your record"
                         : s.adults === 0
@@ -136,11 +145,11 @@ export function FindSwimmer({ onClaimed, dark = false, confirmBeforeAdd = false,
                 </span>
                 <Button
                   size="sm"
-                  variant={s.mine || offSquad ? "outline" : "default"}
-                  disabled={s.mine || offSquad || claim.isPending}
+                  variant={s.mine ? "outline" : "default"}
+                  disabled={s.mine || claim.isPending}
                   onClick={() => attempt(s.id, s.name, s.adults)}
                 >
-                  {offSquad ? "Not entered" : s.mine ? "Added" : "This is my child"}
+                  {s.mine ? "Added" : "This is my child"}
                 </Button>
               </div>
 

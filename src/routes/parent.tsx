@@ -21,6 +21,7 @@ import {
 import { normalizeKePhone } from "@/lib/phone";
 import {
   useSwimmers,
+  useMySwimmers,
   useUnlinkSwimmer,
   useMyRegistrations,
   useMyPayments,
@@ -108,6 +109,11 @@ function ParentPage() {
   ]);
 
   const swimmers = swimmersQ.data ?? [];
+  // Every child on this account, squad or not. useSwimmers() returns the
+  // Machakos squad, so a child the club has not entered was invisible here —
+  // a parent could add her and then find no trace of her on the page.
+  const mineQ = useMySwimmers();
+  const squadIds = useMemo(() => new Set(swimmers.map((x) => x.id)), [swimmers]);
   const registrations = registrationsQ.data ?? [];
   const payments = paymentsQ.data ?? [];
 
@@ -140,11 +146,12 @@ function ParentPage() {
   // the group being registered.
   const myAccountSwimmers = useMemo(
     () =>
-      swimmers
-        .filter((s) => myLinkedIds.has(s.id) || linkedSwimmerIds.has(s.id))
+      (mineQ.data ?? [])
+        .slice()
         .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
-    [swimmers, myLinkedIds, linkedSwimmerIds],
+    [mineQ.data],
   );
+  const offSquad = myAccountSwimmers.filter((s) => !squadIds.has(s.id));
 
   const available = useMemo(
     () =>
@@ -416,6 +423,23 @@ function ParentPage() {
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       On your account
                     </p>
+                    {/* Say it here, once, rather than leaving a parent to
+                        work out why a child she has just added cannot be
+                        entered. */}
+                    {offSquad.length > 0 && (
+                      <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5">
+                        <p className="text-[12.5px] leading-relaxed text-amber-900">
+                          <b>
+                            {offSquad.map((s) => s.name).join(", ")}
+                          </b>{" "}
+                          {offSquad.length === 1 ? "is" : "are"} on your account but not in the
+                          Nationals team, so {offSquad.length === 1 ? "they cannot" : "they cannot"}{" "}
+                          be entered for Machakos. If that is wrong, speak to the coach — they can
+                          add {offSquad.length === 1 ? "them" : "them"} to the team and{" "}
+                          {offSquad.length === 1 ? "they" : "they"} will appear here.
+                        </p>
+                      </div>
+                    )}
                     <ul className="divide-y divide-border rounded-lg border border-border">
                       {myAccountSwimmers.map((s) => (
                         <li key={s.id}>
