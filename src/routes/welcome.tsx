@@ -84,11 +84,14 @@ function Welcome() {
     if (step === "you") {
       // The same rule the server applies, so nobody is waved through here and
       // refused at the end for a number that was never going to be accepted.
-      return fullName.trim().length > 1 && !!canonicalPhone(phone)
+      return (
+        fullName.trim().length > 1 &&
+        !!canonicalPhone(phone) &&
         // One of the two must be yes, or there is nothing to register.
-        && (isParent === true || isSwimmer === true)
+        (isParent === true || isSwimmer === true) &&
         // Only a parent is asked which they are.
-        && (isParent !== true || !!relationship);
+        (isParent !== true || !!relationship)
+      );
     }
     // Compulsory, and answerable two ways: pick your child off the roster, or
     // tell us who is missing from it. What cannot happen is carrying on with
@@ -99,8 +102,17 @@ function Welcome() {
     if (step === "children") return true;
     if (step === "consent") return consentData && consentCommunity;
     return true;
-  }, [step, fullName, phone, relationship, consentData, consentCommunity,
-      addedNames.length, isParent, isSwimmer]);
+  }, [
+    step,
+    fullName,
+    phone,
+    relationship,
+    consentData,
+    consentCommunity,
+    addedNames.length,
+    isParent,
+    isSwimmer,
+  ]);
 
   async function finish() {
     setBusy(true);
@@ -129,10 +141,14 @@ function Welcome() {
         setError(d.error ?? "Could not finish setting up your account.");
         return;
       }
-      await me.refetch();
-      // Straight into Events, same as a returning sign-in: it is what they
-      // just registered for, and the analytics are not ready for parents yet.
-      navigate({ to: "/parent" });
+      const who = await me.refetch();
+      // They have just finished four screens. Landing them on another screen
+      // that says STEP 1 OF 4 reads as being sent back to the beginning — it
+      // was reported as "very weird", by somebody who had just done the work.
+      // So say what happened on arrival, and only send them to Machakos if
+      // there is actually something there for them.
+      const inTeam = who.data?.sections?.events !== false;
+      window.location.href = inTeam ? "/register?from=welcome" : "/tracker";
     } catch {
       setError("Could not reach the server. Please try again.");
     } finally {
@@ -180,13 +196,13 @@ function Welcome() {
               {firstTime ? (
                 <>
                   <p className="mb-2 mt-1.5 text-[14px] leading-relaxed text-white/65">
-                    We don't have this email address on the club's list yet, so you are
-                    registering for the first time. Nothing is wrong — it takes a minute.
+                    We don't have this email address on the club's list yet, so you are registering
+                    for the first time. Nothing is wrong — it takes a minute.
                   </p>
                   <p className="mb-6 text-[14px] leading-relaxed text-white/65">
-                    Tell us who you are, then search for your swimmer. You can enter them for
-                    the Nationals and pay straight away; a coordinator confirms the link
-                    afterwards before you see their results.
+                    Tell us who you are, then search for your swimmer. You can enter them for the
+                    Nationals and pay straight away; a coordinator confirms the link afterwards
+                    before you see their results.
                   </p>
                 </>
               ) : (
@@ -228,14 +244,23 @@ function Welcome() {
                 Are you a parent or guardian of a NextGen swimmer?
               </span>
               <div className="mt-1.5 flex gap-2">
-                {([["Yes", true], ["No", false]] as const).map(([lbl, val]) => (
-                  <button key={lbl} type="button" onClick={() => setIsParent(val)}
+                {(
+                  [
+                    ["Yes", true],
+                    ["No", false],
+                  ] as const
+                ).map(([lbl, val]) => (
+                  <button
+                    key={lbl}
+                    type="button"
+                    onClick={() => setIsParent(val)}
                     className={
                       "min-h-[44px] flex-1 rounded-xl px-4 text-[14.5px] font-medium transition-colors " +
                       (isParent === val
                         ? "bg-[var(--ng-electric)] text-white"
                         : "border border-white/25 bg-white/5 text-white/80 hover:bg-white/10")
-                    }>
+                    }
+                  >
                     {lbl}
                   </button>
                 ))}
@@ -243,14 +268,23 @@ function Welcome() {
 
               <span className="ng-label mt-4 block">Do you swim for NextGen yourself?</span>
               <div className="mt-1.5 flex gap-2">
-                {([["Yes", true], ["No", false]] as const).map(([lbl, val]) => (
-                  <button key={lbl} type="button" onClick={() => setIsSwimmer(val)}
+                {(
+                  [
+                    ["Yes", true],
+                    ["No", false],
+                  ] as const
+                ).map(([lbl, val]) => (
+                  <button
+                    key={lbl}
+                    type="button"
+                    onClick={() => setIsSwimmer(val)}
                     className={
                       "min-h-[44px] flex-1 rounded-xl px-4 text-[14.5px] font-medium transition-colors " +
                       (isSwimmer === val
                         ? "bg-[var(--ng-electric)] text-white"
                         : "border border-white/25 bg-white/5 text-white/80 hover:bg-white/10")
-                    }>
+                    }
+                  >
                     {lbl}
                   </button>
                 ))}
@@ -263,25 +297,25 @@ function Welcome() {
 
               {isParent === true && (
                 <>
-              <span className="ng-label mt-4 block">You are the</span>
-              <div className="flex flex-wrap gap-2">
-                {["mother", "father", "guardian"].map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => setRelationship(r)}
-                    aria-pressed={relationship === r}
-                    className={
-                      "min-h-[44px] rounded-xl px-4 text-[14.5px] font-medium capitalize transition-colors " +
-                      (relationship === r
-                        ? "bg-[var(--ng-electric)] text-white"
-                        : "border border-white/25 bg-white/5 text-white/80 hover:bg-white/10")
-                    }
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
+                  <span className="ng-label mt-4 block">You are the</span>
+                  <div className="flex flex-wrap gap-2">
+                    {["mother", "father", "guardian"].map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setRelationship(r)}
+                        aria-pressed={relationship === r}
+                        className={
+                          "min-h-[44px] rounded-xl px-4 text-[14.5px] font-medium capitalize transition-colors " +
+                          (relationship === r
+                            ? "bg-[var(--ng-electric)] text-white"
+                            : "border border-white/25 bg-white/5 text-white/80 hover:bg-white/10")
+                        }
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
                 </>
               )}
             </>
@@ -293,8 +327,8 @@ function Welcome() {
               <p className="mb-6 mt-1.5 text-[14px] leading-relaxed text-white/65">
                 Optional. We will email them an invitation to set up their own access — their own
                 sign-in, not a shared one, so the agreement they give is their own. They add
-                themselves to your children with their own phone number, which is what tells us
-                they are a second parent and not a mistake.
+                themselves to your children with their own phone number, which is what tells us they
+                are a second parent and not a mistake.
               </p>
 
               <label className="ng-label" htmlFor="w-2name">
@@ -331,10 +365,10 @@ function Welcome() {
             <>
               <h1 className="text-[23px] font-semibold">Which swimmers are yours?</h1>
               <p className="mb-5 mt-1.5 text-[14px] leading-relaxed text-white/65">
-                Search their name. Once you add a swimmer you can see their results and enter
-                them for meets straight away. If you swim for NextGen yourself, add your own
-                name here too. If another parent is already on a child, confirm your own phone
-                number to join them — a swimmer can have two.
+                Search their name. Once you add a swimmer you can see their results and enter them
+                for meets straight away. If you swim for NextGen yourself, add your own name here
+                too. If another parent is already on a child, confirm your own phone number to join
+                them — a swimmer can have two.
               </p>
               <div className="rounded-xl bg-white/[.04] p-4">
                 <FindSwimmer
@@ -347,14 +381,14 @@ function Welcome() {
               </div>
               {claimed.length > 0 && (
                 <p className="mt-4 text-[13.5px] font-medium text-[var(--ng-cyan)]">
-                  {claimed.length} swimmer{claimed.length === 1 ? "" : "s"} added. You can add
-                  more, or carry on.
+                  {claimed.length} swimmer{claimed.length === 1 ? "" : "s"} added. You can add more,
+                  or carry on.
                 </p>
               )}
               <p className="mt-3 text-xs text-white/45">
-                Search the club roster — every swimmer NextGen has a record for is in it, not
-                only the Machakos team. If you cannot find your child, carry on: a coordinator
-                will link them for you, and nothing else waits on it.
+                Search the club roster — every swimmer NextGen has a record for is in it, not only
+                the Machakos team. If you cannot find your child, carry on: a coordinator will link
+                them for you, and nothing else waits on it.
               </p>
             </>
           )}
@@ -376,8 +410,11 @@ function Welcome() {
                 {addedNames.length === 0 ? (
                   <p className="text-[13.5px] text-white/60">
                     None yet.{" "}
-                    <button type="button" onClick={() => setStep("children")}
-                            className="font-semibold text-[var(--ng-cyan)] underline-offset-4 hover:underline">
+                    <button
+                      type="button"
+                      onClick={() => setStep("children")}
+                      className="font-semibold text-[var(--ng-cyan)] underline-offset-4 hover:underline"
+                    >
                       Go back and add your swimmer
                     </button>
                     .
@@ -386,11 +423,16 @@ function Welcome() {
                   <>
                     <ul className="space-y-1">
                       {addedNames.map((n) => (
-                        <li key={n} className="text-[14.5px] font-medium text-white">{n}</li>
+                        <li key={n} className="text-[14.5px] font-medium text-white">
+                          {n}
+                        </li>
                       ))}
                     </ul>
-                    <button type="button" onClick={() => setStep("children")}
-                            className="mt-2.5 text-[13px] text-white/55 underline-offset-4 hover:text-white hover:underline">
+                    <button
+                      type="button"
+                      onClick={() => setStep("children")}
+                      className="mt-2.5 text-[13px] text-white/55 underline-offset-4 hover:text-white hover:underline"
+                    >
                       Not right? Change this
                     </button>
                   </>
@@ -422,9 +464,9 @@ function Welcome() {
                   onChange={(e) => setConsentCommunity(e.target.checked)}
                 />
                 <span className="text-[13.8px] leading-relaxed text-white/85">
-                  I understand this data belongs to the NextGen community. These are other
-                  people's children. I will not screenshot, share or republish it outside the
-                  club, and I understand my access can be withdrawn.
+                  I understand this data belongs to the NextGen community. These are other people's
+                  children. I will not screenshot, share or republish it outside the club, and I
+                  understand my access can be withdrawn.
                 </span>
               </label>
             </>
@@ -468,17 +510,27 @@ function Welcome() {
           height={256}
           className="mr-2 inline-block h-[17px] w-auto align-[-3px] opacity-70"
         />
-        A product of <a href={GOLDEN_PIPIT_URL} target="_blank" rel="noopener noreferrer"
+        A product of{" "}
+        <a
+          href={GOLDEN_PIPIT_URL}
+          target="_blank"
+          rel="noopener noreferrer"
           className="font-semibold text-white/55 underline-offset-4 hover:text-white hover:underline"
-        >Golden Pipit Solutions</a>
+        >
+          Golden Pipit Solutions
+        </a>
         <span className="mt-2 block text-white/40">
-          <a href={`mailto:${GOLDEN_PIPIT_EMAIL}`}
-             className="underline-offset-4 hover:text-white/70 hover:underline">
+          <a
+            href={`mailto:${GOLDEN_PIPIT_EMAIL}`}
+            className="underline-offset-4 hover:text-white/70 hover:underline"
+          >
             {GOLDEN_PIPIT_EMAIL}
           </a>
           <span className="px-2 text-white/25">·</span>
-          <a href={`tel:${GOLDEN_PIPIT_PHONE}`}
-             className="underline-offset-4 hover:text-white/70 hover:underline">
+          <a
+            href={`tel:${GOLDEN_PIPIT_PHONE}`}
+            className="underline-offset-4 hover:text-white/70 hover:underline"
+          >
             {GOLDEN_PIPIT_PHONE_DISPLAY}
           </a>
         </span>

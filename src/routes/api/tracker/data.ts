@@ -26,23 +26,17 @@ export const Route = createFileRoute("/api/tracker/data")({
         const v = await viewer(request);
         if (!v) return json({ error: "Not signed in" }, 401);
 
-        // Registration is not finished; the client sends them back to finish it
-        // rather than showing a half-entitled dashboard.
-        if (v.needsProfile || v.needsConsent) {
-          return json(
-            {
-              error: "Registration incomplete",
-              needsProfile: v.needsProfile,
-              needsConsent: v.needsConsent,
-            },
-            428, // Precondition Required
-          );
-        }
-
         // The page checks this too, but a check in a page is a suggestion.
         if (!(await maySeeAnalytics(request))) {
           return json({ error: "The analytics are in preview", preview: true }, 403);
         }
+
+        // What used to stand here was a 428 for anyone whose Machakos profile
+        // was unfinished. Wycliffe signed the confidentiality agreement, was
+        // shown the analytics, and then met "Could not load the data" — because
+        // he had not filled in a form about a swimming trip. The preview turns
+        // on the agreement; the trip is a different question, asked in a
+        // different place.
 
         const body = shapeAnalytics(data as unknown as Record<string, unknown>, v.scope);
         return new Response(JSON.stringify({ ...body, myAthletes: v.myAthletes }), {

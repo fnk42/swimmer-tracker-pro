@@ -77,6 +77,11 @@ function MachakosFlow() {
   const [step, setStep] = useState<Step>("who");
   const [picked, setPicked] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // Arrived straight from finishing registration. Worth saying out loud, or
+  // the next screen looks like the same work starting over.
+  const [justRegistered] = useState(
+    () => typeof window !== "undefined" && window.location.search.includes("from=welcome"),
+  );
 
   // Step 2 — the one contact on the account.
   const [pName, setPName] = useState("");
@@ -343,6 +348,15 @@ function MachakosFlow() {
               />
             ))}
           </div>
+          {justRegistered && (
+            <p
+              className="mt-6 rounded-xl border border-[color:var(--ng-electric)]/40
+                       bg-[color:var(--ng-electric)]/10 p-4 text-[14.5px] leading-relaxed"
+            >
+              <b>You are registered.</b> That part is done and saved. What follows is the Machakos
+              entry itself — four short screens, and nothing is charged until the last.
+            </p>
+          )}
           <p className="ng-eyebrow mt-4">
             <span className="dot" aria-hidden />
             Step {idx + 1} of {STEPS.length}

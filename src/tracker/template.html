@@ -4784,6 +4784,9 @@ async function boot(){
   try {
     const res = await fetch('/api/tracker/data');
     if (res.status === 401 || res.status === 403) { gate(); return; }
+    // Something the account has not done yet, rather than something
+    // broken. Send them to it instead of calling it a failure.
+    if (res.status === 428) { location.replace('/welcome'); return; }
     if (!res.ok) throw new Error(String(res.status));
     DATA = await res.json();
   } catch (e) {
