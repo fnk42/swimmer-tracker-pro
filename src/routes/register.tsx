@@ -334,16 +334,40 @@ function MachakosFlow() {
                   Entering more than one child lets you pay for all of them with a single M-Pesa
                   transaction.
                 </p>
-                {swimmers.length === 0 ? (
+                {mine.isLoading ? (
+                  <p className="rounded-xl bg-white/[.06] p-4 text-[13.5px] text-white/60">
+                    Fetching your swimmers…
+                  </p>
+                ) : swimmers.length === 0 ? (
+                  // Where "add a swimmer" actually lives depends on who is
+                  // asking. A coordinator sign-in has no family of its own, and
+                  // /welcome turns coordinators away at the door — sending them
+                  // there is a dead end, which is how this was found.
                   <p className="rounded-xl bg-white/[.06] p-4 text-[13.5px] leading-relaxed text-white/70">
-                    No swimmers on your account yet. Add them on the{" "}
-                    <a
-                      href="/welcome"
-                      className="font-semibold text-[var(--ng-cyan)] underline-offset-4 hover:underline"
-                    >
-                      registration page
-                    </a>{" "}
-                    first.
+                    {me.data?.isAdmin ? (
+                      <>
+                        This is a coordinator sign-in, so there are no swimmers on it. Entries for
+                        the whole squad are in the{" "}
+                        <a
+                          href="/admin"
+                          className="font-semibold text-[var(--ng-cyan)] underline-offset-4 hover:underline"
+                        >
+                          admin view
+                        </a>
+                        .
+                      </>
+                    ) : (
+                      <>
+                        No swimmers on your account yet. Add them on the{" "}
+                        <a
+                          href="/welcome"
+                          className="font-semibold text-[var(--ng-cyan)] underline-offset-4 hover:underline"
+                        >
+                          registration page
+                        </a>{" "}
+                        first.
+                      </>
+                    )}
                   </p>
                 ) : (
                   <ul className="space-y-2">
