@@ -13,6 +13,7 @@ import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as TrackerRouteImport } from './routes/tracker'
 import { Route as TesterRouteImport } from './routes/tester'
 import { Route as RoadmapRouteImport } from './routes/roadmap'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ParentRouteImport } from './routes/parent'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as DormantRouteImport } from './routes/dormant'
@@ -77,6 +78,11 @@ const TesterRoute = TesterRouteImport.update({
 const RoadmapRoute = RoadmapRouteImport.update({
   id: '/roadmap',
   path: '/roadmap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ParentRoute = ParentRouteImport.update({
@@ -312,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/dormant': typeof DormantRoute
   '/feedback': typeof FeedbackRoute
   '/parent': typeof ParentRoute
+  '/register': typeof RegisterRoute
   '/roadmap': typeof RoadmapRoute
   '/tester': typeof TesterRoute
   '/tracker': typeof TrackerRoute
@@ -363,6 +370,7 @@ export interface FileRoutesByTo {
   '/dormant': typeof DormantRoute
   '/feedback': typeof FeedbackRoute
   '/parent': typeof ParentRoute
+  '/register': typeof RegisterRoute
   '/roadmap': typeof RoadmapRoute
   '/tester': typeof TesterRoute
   '/tracker': typeof TrackerRoute
@@ -415,6 +423,7 @@ export interface FileRoutesById {
   '/dormant': typeof DormantRoute
   '/feedback': typeof FeedbackRoute
   '/parent': typeof ParentRoute
+  '/register': typeof RegisterRoute
   '/roadmap': typeof RoadmapRoute
   '/tester': typeof TesterRoute
   '/tracker': typeof TrackerRoute
@@ -468,6 +477,7 @@ export interface FileRouteTypes {
     | '/dormant'
     | '/feedback'
     | '/parent'
+    | '/register'
     | '/roadmap'
     | '/tester'
     | '/tracker'
@@ -519,6 +529,7 @@ export interface FileRouteTypes {
     | '/dormant'
     | '/feedback'
     | '/parent'
+    | '/register'
     | '/roadmap'
     | '/tester'
     | '/tracker'
@@ -570,6 +581,7 @@ export interface FileRouteTypes {
     | '/dormant'
     | '/feedback'
     | '/parent'
+    | '/register'
     | '/roadmap'
     | '/tester'
     | '/tracker'
@@ -622,6 +634,7 @@ export interface RootRouteChildren {
   DormantRoute: typeof DormantRoute
   FeedbackRoute: typeof FeedbackRoute
   ParentRoute: typeof ParentRoute
+  RegisterRoute: typeof RegisterRoute
   RoadmapRoute: typeof RoadmapRoute
   TesterRoute: typeof TesterRoute
   TrackerRoute: typeof TrackerRoute
@@ -692,6 +705,13 @@ declare module '@tanstack/react-router' {
       path: '/roadmap'
       fullPath: '/roadmap'
       preLoaderRoute: typeof RoadmapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/parent': {
@@ -1055,6 +1075,7 @@ const rootRouteChildren: RootRouteChildren = {
   DormantRoute: DormantRoute,
   FeedbackRoute: FeedbackRoute,
   ParentRoute: ParentRoute,
+  RegisterRoute: RegisterRoute,
   RoadmapRoute: RoadmapRoute,
   TesterRoute: TesterRoute,
   TrackerRoute: TrackerRoute,
