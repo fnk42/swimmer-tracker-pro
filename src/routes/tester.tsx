@@ -90,7 +90,16 @@ function TesterGate() {
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setError("That code is wrong or has expired."); return; }
-      if (!d.isTester) { window.location.href = "/tracker"; return; }
+      // Signed in, but no tester registration — Nyawira's case: she was sent
+      // this link and came through the parent door, so there was nothing to
+      // find. Bouncing her to /tracker showed a parent "coming soon", which is
+      // the fifth dead end in a row. Offer her the registration instead.
+      if (!d.isTester) {
+        setReturning(false);
+        setStep("register");
+        setError("That address is not registered for the preview yet — add your name below and it will be.");
+        return;
+      }
       const me = await fetch("/api/tester/me").then((x) => x.json()).catch(() => null);
       if (me?.agreed) window.location.href = "/tracker";
       else setStep("agree");

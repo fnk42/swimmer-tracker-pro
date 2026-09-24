@@ -209,7 +209,7 @@ export function ClaimQueue() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button size="sm" disabled={busy === u.id}
                           onClick={() => void actUnlisted(u.id, false)}>
-                    {busy === u.id ? "Adding…" : "Add to the roster and link them"}
+                    {busy === u.id ? "Adding…" : "Add to the Nationals team"}
                   </Button>
                   <Button size="sm" variant="outline" disabled={busy === u.id}
                           onClick={() => void actUnlisted(u.id, true)}>
@@ -217,8 +217,8 @@ export function ClaimQueue() {
                   </Button>
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Adding puts them on the roster and on this parent's account. They are not in
-                  the Nationals team until the club puts them there.
+                  Adding puts them on the roster, on this parent's account, and in the
+                  Machakos team — so the parent can enter and pay for them straight away.
                 </p>
               </div>
             ))}

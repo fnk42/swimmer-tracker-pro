@@ -42,6 +42,7 @@ import { Route as ApiRoadmapCommentRouteImport } from './routes/api/roadmap/comm
 import { Route as ApiParentsLinkRouteImport } from './routes/api/parents/link'
 import { Route as ApiMeetDetailRouteImport } from './routes/api/meet/detail'
 import { Route as ApiMeUnlistedRouteImport } from './routes/api/me/unlisted'
+import { Route as ApiMeSquadRequestRouteImport } from './routes/api/me/squad-request'
 import { Route as ApiMeRegistrationRouteImport } from './routes/api/me/registration'
 import { Route as ApiMeRegisterRouteImport } from './routes/api/me/register'
 import { Route as ApiMePaymentRouteImport } from './routes/api/me/payment'
@@ -225,6 +226,11 @@ const ApiMeUnlistedRoute = ApiMeUnlistedRouteImport.update({
   path: '/api/me/unlisted',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMeSquadRequestRoute = ApiMeSquadRequestRouteImport.update({
+  id: '/api/me/squad-request',
+  path: '/api/me/squad-request',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMeRegistrationRoute = ApiMeRegistrationRouteImport.update({
   id: '/api/me/registration',
   path: '/api/me/registration',
@@ -351,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/api/me/payment': typeof ApiMePaymentRoute
   '/api/me/register': typeof ApiMeRegisterRoute
   '/api/me/registration': typeof ApiMeRegistrationRoute
+  '/api/me/squad-request': typeof ApiMeSquadRequestRoute
   '/api/me/unlisted': typeof ApiMeUnlistedRoute
   '/api/meet/detail': typeof ApiMeetDetailRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
@@ -403,6 +410,7 @@ export interface FileRoutesByTo {
   '/api/me/payment': typeof ApiMePaymentRoute
   '/api/me/register': typeof ApiMeRegisterRoute
   '/api/me/registration': typeof ApiMeRegistrationRoute
+  '/api/me/squad-request': typeof ApiMeSquadRequestRoute
   '/api/me/unlisted': typeof ApiMeUnlistedRoute
   '/api/meet/detail': typeof ApiMeetDetailRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
@@ -456,6 +464,7 @@ export interface FileRoutesById {
   '/api/me/payment': typeof ApiMePaymentRoute
   '/api/me/register': typeof ApiMeRegisterRoute
   '/api/me/registration': typeof ApiMeRegistrationRoute
+  '/api/me/squad-request': typeof ApiMeSquadRequestRoute
   '/api/me/unlisted': typeof ApiMeUnlistedRoute
   '/api/meet/detail': typeof ApiMeetDetailRoute
   '/api/parents/link': typeof ApiParentsLinkRoute
@@ -510,6 +519,7 @@ export interface FileRouteTypes {
     | '/api/me/payment'
     | '/api/me/register'
     | '/api/me/registration'
+    | '/api/me/squad-request'
     | '/api/me/unlisted'
     | '/api/meet/detail'
     | '/api/parents/link'
@@ -562,6 +572,7 @@ export interface FileRouteTypes {
     | '/api/me/payment'
     | '/api/me/register'
     | '/api/me/registration'
+    | '/api/me/squad-request'
     | '/api/me/unlisted'
     | '/api/meet/detail'
     | '/api/parents/link'
@@ -614,6 +625,7 @@ export interface FileRouteTypes {
     | '/api/me/payment'
     | '/api/me/register'
     | '/api/me/registration'
+    | '/api/me/squad-request'
     | '/api/me/unlisted'
     | '/api/meet/detail'
     | '/api/parents/link'
@@ -667,6 +679,7 @@ export interface RootRouteChildren {
   ApiMePaymentRoute: typeof ApiMePaymentRoute
   ApiMeRegisterRoute: typeof ApiMeRegisterRoute
   ApiMeRegistrationRoute: typeof ApiMeRegistrationRoute
+  ApiMeSquadRequestRoute: typeof ApiMeSquadRequestRoute
   ApiMeUnlistedRoute: typeof ApiMeUnlistedRoute
   ApiMeetDetailRoute: typeof ApiMeetDetailRoute
   ApiTesterAgreeRoute: typeof ApiTesterAgreeRoute
@@ -910,6 +923,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMeUnlistedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/me/squad-request': {
+      id: '/api/me/squad-request'
+      path: '/api/me/squad-request'
+      fullPath: '/api/me/squad-request'
+      preLoaderRoute: typeof ApiMeSquadRequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/me/registration': {
       id: '/api/me/registration'
       path: '/api/me/registration'
@@ -1108,6 +1128,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiMePaymentRoute: ApiMePaymentRoute,
   ApiMeRegisterRoute: ApiMeRegisterRoute,
   ApiMeRegistrationRoute: ApiMeRegistrationRoute,
+  ApiMeSquadRequestRoute: ApiMeSquadRequestRoute,
   ApiMeUnlistedRoute: ApiMeUnlistedRoute,
   ApiMeetDetailRoute: ApiMeetDetailRoute,
   ApiTesterAgreeRoute: ApiTesterAgreeRoute,

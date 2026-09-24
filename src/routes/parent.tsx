@@ -161,6 +161,26 @@ function ParentPage() {
     [mineQ.data],
   );
   const offSquad = myAccountSwimmers.filter((s) => !squadIds.has(s.id));
+  // Children the parent has asked the club to add to the team.
+  const [asked, setAsked] = useState<Record<string, boolean>>({});
+  const [asking, setAsking] = useState<string | null>(null);
+
+  async function askForSquad(id: string, name: string) {
+    setAsking(id);
+    try {
+      const r = await fetch("/api/me/squad-request", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ swimmerId: id }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { toast.error(d.error ?? "Could not send that."); return; }
+      setAsked((a) => ({ ...a, [id]: true }));
+      toast.success(`${name} added. The club will link them.`);
+    } finally {
+      setAsking(null);
+    }
+  }
 
   const available = useMemo(
     () =>
@@ -435,18 +455,48 @@ function ParentPage() {
                     {/* Say it here, once, rather than leaving a parent to
                         work out why a child she has just added cannot be
                         entered. */}
+                    {/* Not a refusal any more. The club still picks the team,
+                        but a parent can hand the question to them from here
+                        instead of being told no with nowhere to go. */}
                     {offSquad.length > 0 && (
-                      <div className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5">
-                        <p className="text-[12.5px] leading-relaxed text-amber-900">
-                          <b>
-                            {offSquad.map((s) => s.name).join(", ")}
-                          </b>{" "}
-                          {offSquad.length === 1 ? "is" : "are"} on your account but not in the
-                          Nationals team, so {offSquad.length === 1 ? "they cannot" : "they cannot"}{" "}
-                          be entered for Machakos. If that is wrong, speak to the coach — they can
-                          add {offSquad.length === 1 ? "them" : "them"} to the team and{" "}
-                          {offSquad.length === 1 ? "they" : "they"} will appear here.
+                      <div
+                        className="mb-3 rounded-xl p-4 text-white"
+                        style={{ background: "linear-gradient(135deg,var(--ng-electric),var(--ng-electric-deep))" }}
+                      >
+                        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/75">
+                          Not in the Nationals team yet
                         </p>
+                        <p className="mt-1.5 text-[13.5px] leading-relaxed text-white/90">
+                          {offSquad.length === 1 ? "This swimmer is" : "These swimmers are"} on your
+                          account, but the club has not put{" "}
+                          {offSquad.length === 1 ? "them" : "them"} in the Machakos team. Ask and a
+                          coordinator will add {offSquad.length === 1 ? "them" : "them"}.
+                        </p>
+                        <ul className="mt-3 space-y-2">
+                          {offSquad.map((sw) => (
+                            <li key={sw.id}
+                                className="flex flex-wrap items-center gap-2 rounded-lg bg-white/15 px-3 py-2">
+                              <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">
+                                {sw.name}
+                              </span>
+                              {asked[sw.id] ? (
+                                <span className="text-[12.5px] font-medium text-white/90">
+                                  ✓ Child added. The club will link them.
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  disabled={asking === sw.id}
+                                  onClick={() => void askForSquad(sw.id, sw.name)}
+                                  className="rounded-lg bg-white px-3 py-1.5 text-[12.5px] font-semibold
+                                             text-[var(--ng-electric-deep)] disabled:opacity-60"
+                                >
+                                  {asking === sw.id ? "Sending…" : "Add to the Nationals"}
+                                </button>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     )}
                     <ul className="divide-y divide-border rounded-lg border border-border">

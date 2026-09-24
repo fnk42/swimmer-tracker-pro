@@ -197,3 +197,72 @@ export async function sendClaimNotice(
     return { delivered: false, via: "resend", error: String(err) };
   }
 }
+
+/**
+ * A parent has asked for their child to be put in the Nationals team.
+ *
+ * The same shape as sendClaimNotice and for the same reason: the parent has
+ * done everything they can, and what happens next is a person deciding. A
+ * request nobody is told about is a parent waiting for silence.
+ */
+export async function sendSquadRequest(
+  to: string[],
+  req: { parentName: string; parentEmail: string; parentPhone: string;
+         swimmer: string; note: string },
+): Promise<SendResult> {
+  const key = process.env.RESEND_API_KEY;
+  const url = "https://events.nextgenkenya.com/admin";
+  if (!to.length) return { delivered: false, via: "console" };
+
+  if (!key) {
+    console.warn(
+      `\n[mailer] RESEND_API_KEY not set — not emailing.\n` +
+        `[mailer] Squad request: ${req.parentName} -> ${req.swimmer}\n`,
+    );
+    return { delivered: false, via: "console" };
+  }
+
+  const body =
+    `${req.parentName} has asked for a child to be added to the Nationals team.\n\n` +
+    `Swimmer: ${req.swimmer}\n` +
+    `Parent:  ${req.parentName} (${req.parentEmail})\n` +
+    `Phone:   ${req.parentPhone || "not given"}\n` +
+    (req.note ? `Note:    ${req.note}\n` : "") +
+    `\nThey are already on the parent's account. What is left is the club's ` +
+    `decision about the team. Add or decline here:\n${url}\n\n` +
+    `NextGen Multi Sport Academy`;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        from: FROM, to,
+        subject: `Nationals request — ${req.swimmer} (${req.parentName})`,
+        text: body,
+        html:
+          `<p><strong>${req.parentName}</strong> has asked for a child to be added to the ` +
+          `Nationals team.</p>` +
+          `<table style="font:14px system-ui;border-collapse:collapse">` +
+          `<tr><td style="padding:2px 12px 2px 0;color:#666">Swimmer</td><td><strong>${req.swimmer}</strong></td></tr>` +
+          `<tr><td style="padding:2px 12px 2px 0;color:#666">Parent</td><td>${req.parentName} (${req.parentEmail})</td></tr>` +
+          `<tr><td style="padding:2px 12px 2px 0;color:#666">Phone</td><td>${req.parentPhone || "not given"}</td></tr>` +
+          (req.note ? `<tr><td style="padding:2px 12px 2px 0;color:#666">Note</td><td>${req.note}</td></tr>` : "") +
+          `</table>` +
+          `<p>They are already on the parent's account. What is left is the club's decision ` +
+          `about the team.</p>` +
+          `<p><a href="${url}">Add or decline</a></p>` +
+          `<p style="color:#666;font-size:13px">NextGen Multi Sport Academy</p>`,
+      }),
+    });
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      console.error("[mailer] resend REJECTED the squad request:", res.status, t);
+      return { delivered: false, via: "resend", error: String(res.status) };
+    }
+    return { delivered: true, via: "resend" };
+  } catch (err) {
+    console.error("[mailer] resend threw on squad request:", err);
+    return { delivered: false, via: "resend", error: String(err) };
+  }
+}

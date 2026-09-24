@@ -176,6 +176,10 @@ export const Route = createFileRoute("/api/admin/claims")({
              on conflict do nothing`,
             [sw.id, req.parent_id, s?.email ?? ""],
           );
+          // Approving is what puts them in the Machakos team. A request that
+          // only linked them left the parent exactly where they started: on
+          // the account, out of the squad, unable to enter or pay.
+          await q(`update public.swimmers set event_squad = true where id = $1`, [sw.id]);
           await q(
             `update public.athlete_claim_requests
                 set status = 'approved', decided_at = now(), decided_by = $2, swimmer_id = $3
