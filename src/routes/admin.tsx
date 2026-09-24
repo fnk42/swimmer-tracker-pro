@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { RosterManager } from "@/components/RosterManager";
 import { ClaimQueue } from "@/components/ClaimQueue";
 import { ActivityLog } from "@/components/ActivityLog";
+import { ProgressPanel } from "@/components/ProgressPanel";
 import { TesterPanel } from "@/components/TesterPanel";
 import { FeedbackPanel } from "@/components/FeedbackPanel";
 import { ParentImport } from "@/components/ParentImport";
@@ -47,13 +48,7 @@ import {
 } from "@/lib/api";
 import { EVENT, formatKes } from "@/lib/event-config";
 import { exportAllData, downloadCsv } from "@/lib/csv";
-import type {
-  Swimmer,
-  Registration,
-  Payment,
-  Parent,
-  SwimmerParentLink,
-} from "@/lib/schemas";
+import type { Swimmer, Registration, Payment, Parent, SwimmerParentLink } from "@/lib/schemas";
 import { toast } from "sonner";
 import { ChevronDown, ChevronRight, Trash2, FileDown, Pencil, Check, X } from "lucide-react";
 
@@ -174,9 +169,21 @@ function AdminPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { label: "Collected", value: formatKes(totals.collected), tone: "text-emerald-700" },
-              { label: "Outstanding", value: formatKes(totals.outstanding), tone: "text-amber-700" },
-              { label: "Registered", value: `${totals.registered} of ${swimmers.length}`, tone: "" },
-              { label: "Paid in full", value: `${totals.paidInFull} of ${swimmers.length}`, tone: "" },
+              {
+                label: "Outstanding",
+                value: formatKes(totals.outstanding),
+                tone: "text-amber-700",
+              },
+              {
+                label: "Registered",
+                value: `${totals.registered} of ${swimmers.length}`,
+                tone: "",
+              },
+              {
+                label: "Paid in full",
+                value: `${totals.paidInFull} of ${swimmers.length}`,
+                tone: "",
+              },
             ].map((s) => (
               <Card key={s.label}>
                 <CardContent className="py-4">
@@ -215,7 +222,14 @@ function AdminPage() {
                 check on a registration weekend: is anybody stuck at the door?
                 It used to sit below the roster tools, far enough down that it
                 was reported missing. */}
+            {/* Before the log, because the log says what happened and this
+                says what has not. A family that never reached the app is
+                invisible in everything else on this page. */}
             <section className="mt-8">
+              <ProgressPanel />
+            </section>
+
+            <section className="mt-6">
               <ActivityLog />
             </section>
 
@@ -273,10 +287,7 @@ function AdminPage() {
                     <TableBody>
                       {swimmers.length === 0 && (
                         <TableRow>
-                          <TableCell
-                            colSpan={9}
-                            className="text-center text-muted-foreground py-8"
-                          >
+                          <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                             No swimmers yet. Add one above.
                           </TableCell>
                         </TableRow>
@@ -441,14 +452,19 @@ function SwimmerRow({
                 <Pencil className="h-3.5 w-3.5" />
               </button>
               {hasFlag && (
-                <Badge variant="outline" className="bg-amber-50/70 text-amber-700 border-amber-200 text-[10px]">
+                <Badge
+                  variant="outline"
+                  className="bg-amber-50/70 text-amber-700 border-amber-200 text-[10px]"
+                >
                   Health note
                 </Badge>
               )}
             </div>
           )}
         </TableCell>
-        <TableCell className="hidden sm:table-cell text-sm">{reg?.age ?? swimmer.age ?? "—"}</TableCell>
+        <TableCell className="hidden sm:table-cell text-sm">
+          {reg?.age ?? swimmer.age ?? "—"}
+        </TableCell>
         <TableCell className="hidden md:table-cell text-sm">{sleepoverAggregate ?? "—"}</TableCell>
         <TableCell className="hidden md:table-cell text-sm">{primaryPhone ?? "—"}</TableCell>
         <TableCell className="text-right text-sm">{formatKes(paid)}</TableCell>
@@ -473,7 +489,11 @@ function SwimmerRow({
                     <Info label="Swimmer gender" value={reg.gender} />
                     <Info label="Owns cellphone" value={reg.ownsCellphone} />
                     <Info label="Dietary" value={reg.dietary || "—"} highlight={!!reg.dietary} />
-                    <Info label="Allergies" value={reg.allergies || "—"} highlight={!!reg.allergies} />
+                    <Info
+                      label="Allergies"
+                      value={reg.allergies || "—"}
+                      highlight={!!reg.allergies}
+                    />
                     <Info
                       label="Health conditions"
                       value={reg.healthConditions || "—"}
@@ -500,7 +520,10 @@ function SwimmerRow({
                     {payments.map((p) => {
                       const n = p.childCount && p.childCount > 0 ? p.childCount : 1;
                       return (
-                        <li key={p.id} className="p-3 flex items-start justify-between gap-3 text-sm">
+                        <li
+                          key={p.id}
+                          className="p-3 flex items-start justify-between gap-3 text-sm"
+                        >
                           <div className="min-w-0 space-y-1">
                             <div className="flex items-baseline gap-2 flex-wrap">
                               <span className="font-semibold">{formatKes(p.amount)}</span>
@@ -669,23 +692,14 @@ function HeadcountSummary({
           primary={swimmers.length}
           sub={`${boys} boys · ${girls} girls`}
         />
-        <SummaryCard
-          title="Parents/guardians staying"
-          primary={stayingCount}
-          sub={summarySub}
-        />
+        <SummaryCard title="Parents/guardians staying" primary={stayingCount} sub={summarySub} />
       </div>
       <p className="text-sm text-muted-foreground">
         {female} female {female === 1 ? "parent/guardian" : "parents/guardians"} for {girls}{" "}
         {girls === 1 ? "girl" : "girls"} · {male} male{" "}
         {male === 1 ? "parent/guardian" : "parents/guardians"} for {boys}{" "}
         {boys === 1 ? "boy" : "boys"}
-        {unspecified > 0 && (
-          <>
-            {" "}
-            · {unspecified} unspecified
-          </>
-        )}
+        {unspecified > 0 && <> · {unspecified} unspecified</>}
       </p>
       <div>
         <Button
@@ -694,11 +708,7 @@ function HeadcountSummary({
           onClick={() => setShowList((v) => !v)}
           className="gap-1"
         >
-          {showList ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
-          )}
+          {showList ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
           Parents/guardians staying overnight ({stayingCount})
         </Button>
         {showList && (
@@ -730,15 +740,7 @@ function HeadcountSummary({
   );
 }
 
-function SummaryCard({
-  title,
-  primary,
-  sub,
-}: {
-  title: string;
-  primary: number;
-  sub: string;
-}) {
+function SummaryCard({ title, primary, sub }: { title: string; primary: number; sub: string }) {
   return (
     <div className="rounded-lg border bg-white p-4">
       <div className="text-xs uppercase tracking-wide text-muted-foreground">{title}</div>
