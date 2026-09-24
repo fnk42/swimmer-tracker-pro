@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { q, one, json, fail } from "@/lib/db";
-import { newCode, hashCode, isAdminEmail } from "@/lib/session";
+import { newCode, hashCode, isAdminEmail, sessionFromRequest } from "@/lib/session";
 import { note } from "@/lib/activity";
 import { sendLoginCode } from "@/lib/mailer";
 
@@ -14,7 +14,9 @@ export const Route = createFileRoute("/api/auth/request-code")({
       POST: async ({ request }) => {
         try {
           const body = await request.json().catch(() => ({}));
-          const email = String(body?.email ?? "").trim().toLowerCase();
+          const email = String(body?.email ?? "")
+            .trim()
+            .toLowerCase();
           if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
             return json({ error: "Enter a valid email address" }, 400);
           }
@@ -50,6 +52,15 @@ export const Route = createFileRoute("/api/auth/request-code")({
           // result is served before that approval (lib/scope). What they can do
           // is identify themselves and claim their own child, which is the
           // point.
+          // Nobody needs two codes in one sitting. If this session already
+          // belongs to the address being asked about, they proved it minutes
+          // ago — sending another only invalidates the one they are holding,
+          // which is how a working sign-in turns into "that code is wrong".
+          const live = sessionFromRequest(request);
+          if (live && live.email.toLowerCase() === email) {
+            return json({ ok: true, signedIn: true });
+          }
+
           const code = newCode();
           await q(
             `insert into public.auth_codes (email, code_hash, expires_at)
@@ -70,7 +81,9 @@ export const Route = createFileRoute("/api/auth/request-code")({
           // is written to the server log so nobody is stranded.
           if (!sent.delivered) {
             await note("code_undelivered", {
-              email, parentId: parent?.id ?? null, ok: false,
+              email,
+              parentId: parent?.id ?? null,
+              ok: false,
               detail: `via ${sent.via}${sent.error ? `: ${sent.error}` : ""}`,
             });
             console.error(

@@ -10,6 +10,20 @@ import { useEffect, useState } from "react";
 import { useMe, useRequestCode, useVerifyCode } from "@/lib/api";
 import { ProgressWall } from "@/components/ProgressWall";
 
+// Which door this is, read off the hostname.
+//
+// The links families already hold say what they are for — machakosnationals2026
+// and events are the entry and the money, performance is the swimming. A
+// tester arriving on the performance address has identified themselves by the
+// link they were sent, without a second account or a second sign-in, and a
+// parent arriving on the Machakos one is not asked to choose between two
+// things when they came for one.
+function doorFromHost(): "tester" | null {
+  if (typeof window === "undefined") return null;
+  const h = window.location.hostname.toLowerCase();
+  return h.startsWith("performance.") || h.startsWith("analytics.") ? "tester" : null;
+}
+
 // Where to go once they are in, when they were already on their way somewhere.
 //
 // Arriving here from a page that needed an account is a detour, and a detour
@@ -101,7 +115,11 @@ function PortalLanding() {
     // the families who have somebody in the Machakos team.
     //
     // A pure tester who has not signed the agreement is the one detour.
-    if (me.data.isTester && !me.data.parent && me.data.needsAgreement) {
+    if (
+      me.data.isTester &&
+      me.data.needsAgreement &&
+      (me.data.via === "tester" || !me.data.parent)
+    ) {
       navigate({ to: "/tester" });
       return;
     }
@@ -112,6 +130,10 @@ function PortalLanding() {
     const wanted = nextFromUrl();
     if (wanted) {
       window.location.href = wanted;
+      return;
+    }
+    if (doorFromHost() === "tester") {
+      window.location.href = "/tracker";
       return;
     }
     let gone = false;
@@ -165,6 +187,14 @@ function PortalLanding() {
     setError(null);
     try {
       const r = await requestCode.mutateAsync(email.trim());
+      // Already signed in as this address: no second code, straight on.
+      if (r.signedIn) {
+        const who = await fetch("/api/auth/me")
+          .then((x) => x.json())
+          .catch(() => null);
+        window.location.href = nextFromUrl() ?? (await landingFor(who ?? {}));
+        return;
+      }
       setDevNote(!!r.devMode);
       setStep("code");
     } catch {
@@ -176,11 +206,15 @@ function PortalLanding() {
     e.preventDefault();
     setError(null);
     try {
-      const r = await verifyCode.mutateAsync({ email: email.trim(), code: code.trim() });
+      const r = await verifyCode.mutateAsync({
+        email: email.trim(),
+        code: code.trim(),
+        via: doorFromHost() ?? undefined,
+      });
       const who = await fetch("/api/auth/me")
         .then((x) => x.json())
         .catch(() => null);
-      if (who?.isTester && !who.parent && who.needsAgreement) {
+      if (who?.isTester && who.needsAgreement && (who.via === "tester" || !who.parent)) {
         navigate({ to: "/tester" });
         return;
       }

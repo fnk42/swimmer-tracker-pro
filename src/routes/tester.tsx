@@ -81,6 +81,8 @@ function TesterGate() {
         return;
       }
       if (d.signedIn) {
+        // Either branch can answer this now: registering while signed in, or
+        // asking for a code we are not going to send twice.
         // Registered, and the session is already theirs: on to the agreement.
         setStep("agree");
         return;

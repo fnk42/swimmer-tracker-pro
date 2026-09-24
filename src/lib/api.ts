@@ -480,7 +480,9 @@ export function useAddMyPayment() {
 
 export function useRequestCode() {
   return useMutation({
-    mutationFn: async (email: string): Promise<{ ok: boolean; devMode?: boolean }> =>
+    mutationFn: async (
+      email: string,
+    ): Promise<{ ok: boolean; devMode?: boolean; signedIn?: boolean }> =>
       apiFetch("/api/auth/request-code", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -492,7 +494,7 @@ export function useRequestCode() {
 export function useVerifyCode() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { email: string; code: string }) =>
+    mutationFn: async (input: { email: string; code: string; via?: "tester" }) =>
       apiFetch<{ ok: boolean; isAdmin: boolean; parent: { id: string; fullName: string } | null }>(
         "/api/auth/verify-code",
         {

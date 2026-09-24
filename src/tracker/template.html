@@ -4750,7 +4750,13 @@ async function boot(){
   // A pure tester with the agreement outstanding is sent to it. A parent who
   // also tests is NOT: Events is theirs regardless, and being marched to an
   // agreement they never asked for would hijack the journey they came for.
-  if (me && me.isTester && me.needsAgreement && !me.parent) { location.replace('/tester'); return; }
+  // Gladys is a Machakos parent as well as a tester. Judging her by the
+  // absence of a parent row left her on the holding page with no way to
+  // sign the thing that would open it; arriving by the tester door is the
+  // answer, and now the session says so.
+  if (me && me.isTester && me.needsAgreement && (me.via === 'tester' || !me.parent)) {
+    location.replace('/tester'); return;
+  }
 
   const canSeeAnalytics = me && (me.isAdmin || me.previewAccess
     || (me.sections && me.sections.analytics));
