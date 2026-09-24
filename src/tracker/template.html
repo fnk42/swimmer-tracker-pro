@@ -674,7 +674,12 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
   border:0;background:none;color:#C8D8EA;cursor:pointer;text-decoration:none;
   display:flex;align-items:center;gap:6px;transition:background .15s,color .15s}
 .pbar a.t:hover,.pbar button.t:hover{background:rgba(255,255,255,.09);color:#fff}
-.pbar .t[aria-current="true"]{background:rgba(255,255,255,.14);color:#fff;font-weight:600}
+/* The tab you are on, in the club's electric blue — the same fill the chosen
+   swimmers wear on the Nationals page, so "where am I" and "what is selected"
+   read as one idea. Grey-on-grey at 14% white was almost invisible on a phone. */
+.pbar .t[aria-current="true"]{background:var(--electric);color:#fff;font-weight:600;
+  box-shadow:0 2px 10px rgba(22,166,232,.38)}
+.pbar .t[aria-current="true"]:hover{background:var(--electric-deep);color:#fff}
 .pbar .menu{position:absolute;right:0;top:46px;width:264px;background:var(--surface);
   border:1px solid var(--line);border-radius:12px;padding:6px;box-shadow:0 18px 44px rgba(4,14,28,.4)}
 .pbar .menu .cap{padding:7px 11px 6px;font-size:10px;font-weight:700;letter-spacing:1.4px;
@@ -1309,7 +1314,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
     <span class="club">NextGen Multi Sport Academy</span>
     <span class="club abbr" aria-hidden="true">NextGen</span>
     <nav aria-label="Portal sections">
-      <a class="t" href="/tracker" aria-current="true">Performance</a>
+      <a class="t" href="/tracker" aria-current="true">Analytics</a>
       <button class="t" id="pb-events" type="button" aria-haspopup="menu" aria-expanded="false"
               hidden>Events <span aria-hidden style="font-size:10px">&#9662;</span></button>
       <div class="menu" id="pb-menu" hidden>

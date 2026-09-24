@@ -7,7 +7,7 @@ import { LogOut } from "lucide-react";
 
 // One sign-in, so one bar to move between what that sign-in gives you.
 //
-// Two top-level sections rather than a flat row of pages: Performance is the
+// Two top-level sections rather than a flat row of pages: Analytics is the
 // club's whole competitive record and stands on its own, while Events is a
 // list that will grow — Machakos is simply the one that is open now, so it sits
 // in a menu from the start rather than being promoted to a tab that has to be
@@ -48,8 +48,13 @@ export function AppHeader() {
     navigate({ to: "/" });
   }
 
+  // The tab you are on wears the club's electric blue — the same fill the
+  // chosen swimmers get on the Nationals page. At 15% white it was nearly
+  // invisible on a phone, which is where most parents read this.
   const tabBase = "text-sm px-3 py-1.5 rounded-md transition-colors";
-  const tabActive = "bg-white/15 text-white font-medium";
+  const tabActive =
+    "bg-[var(--ng-electric)] text-white font-semibold shadow-[0_2px_10px_rgba(22,166,232,.38)] " +
+    "hover:bg-[var(--ng-electric-deep)]";
   const tabIdle = "text-white/70 hover:bg-white/10 hover:text-white";
   const itemCls = "block rounded-md px-3 py-2 hover:bg-secondary";
 
@@ -77,7 +82,7 @@ export function AppHeader() {
             // Plain anchor, not a router Link: /tracker is served as its own
             // HTML document by the server, not a React route.
             <a href="/tracker" className={`${tabBase} ${tabIdle}`}>
-              Performance
+              Analytics
             </a>
           )}
 

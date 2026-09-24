@@ -64,8 +64,17 @@ function ParentPage() {
 
   useEffect(() => {
     if (sessionLoading) return;
-    if (!session) navigate({ to: "/" });
-  }, [sessionLoading, session, navigate]);
+    if (!session) { navigate({ to: "/" }); return; }
+    // Registration first, and not only from the front door.
+    //
+    // The landing page sends an unregistered parent to /welcome, but the
+    // Events menu links straight here, so Nyawira arrived with no name, no
+    // phone and no consent and sat on "Register & pay" — a page she could not
+    // finish. She signed in four times. A coordinator is never held here.
+    if (me.data?.signedIn && !me.data.isAdmin && me.data.needsRegistration) {
+      navigate({ to: "/welcome" });
+    }
+  }, [sessionLoading, session, navigate, me.data]);
 
   // Keep linkedParents in sync with the DB record so the RegistrationSection
   // gate (parentsLinked = parents.length > 0) reflects DB truth, not just
