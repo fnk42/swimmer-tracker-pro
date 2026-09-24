@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMe, useClaimable, useClaimSwimmer, useMySwimmers } from "@/lib/api";
 import { FindSwimmer } from "@/components/FindSwimmer";
 import { ConsentText } from "@/components/ConsentText";
+import { normalizeKePhone } from "@/lib/phone";
 
 export const Route = createFileRoute("/welcome")({
   component: Welcome,
@@ -44,6 +45,12 @@ function Welcome() {
   const [secondEmail, setSecondEmail] = useState("");
   const [claimed, setClaimed] = useState<string[]>([]);
   const [consentData, setConsentData] = useState(false);
+  // A child the roster does not have. The step is compulsory, so it needs a
+  // second way to answer it — see api/me/unlisted.
+  const [unlistedName, setUnlistedName] = useState("");
+  const [unlistedAge, setUnlistedAge] = useState("");
+  const [unlisted, setUnlisted] = useState<string[]>([]);
+  const [askUnlisted, setAskUnlisted] = useState(false);
   const [consentCommunity, setConsentCommunity] = useState(false);
 
   // Prefill from the Machakos record where we have it, so a returning family is
@@ -75,11 +82,40 @@ function Welcome() {
   const idx = STEPS.indexOf(step);
   const canAdvance = useMemo(() => {
     if (step === "you") {
-      return fullName.trim().length > 1 && phone.replace(/\D/g, "").length >= 9 && !!relationship;
+      // The same rule the server applies, so nobody is waved through here and
+      // refused at the end for a number that was never going to be accepted.
+      return fullName.trim().length > 1 && !!normalizeKePhone(phone) && !!relationship;
     }
+    // Compulsory, and answerable two ways: pick your child off the roster, or
+    // tell us who is missing from it. What cannot happen is carrying on with
+    // neither — that is the empty registration this exists to prevent.
+    if (step === "children") return addedNames.length > 0 || unlisted.length > 0;
     if (step === "consent") return consentData && consentCommunity;
     return true;
-  }, [step, fullName, phone, relationship, consentData, consentCommunity]);
+  }, [step, fullName, phone, relationship, consentData, consentCommunity,
+      addedNames.length, unlisted.length]);
+
+  async function saveUnlisted() {
+    const nm = unlistedName.trim();
+    if (nm.length < 2) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/me/unlisted", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ childName: nm, childAge: Number(unlistedAge) || undefined }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { setError(d.error ?? "Could not record that."); return; }
+      setUnlisted((all) => [...all, nm]);
+      setUnlistedName("");
+      setUnlistedAge("");
+      setAskUnlisted(false);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function finish() {
     setBusy(true);
@@ -283,8 +319,49 @@ function Welcome() {
                   more, or carry on.
                 </p>
               )}
+              {unlisted.length > 0 && (
+                <p className="mt-4 text-[13.5px] font-medium text-[var(--ng-cyan)]">
+                  {unlisted.join(", ")} — passed to the coordinator to add to the roster.
+                </p>
+              )}
+
+              {/* The step cannot be skipped, so the way out of "my child is not
+                  there" has to be on the screen. It records the name rather
+                  than waving them through with nothing. */}
+              {askUnlisted ? (
+                <div className="mt-4 rounded-xl border border-white/15 bg-white/[.04] p-4">
+                  <label className="ng-label" htmlFor="u-name">Your child's full name</label>
+                  <input id="u-name" className="ng-field" value={unlistedName}
+                         onChange={(e) => setUnlistedName(e.target.value)}
+                         placeholder="As the club would write it" />
+                  <label className="ng-label mt-3" htmlFor="u-age">
+                    Their age <span className="font-normal normal-case tracking-normal text-white/40">optional</span>
+                  </label>
+                  <input id="u-age" className="ng-field" inputMode="numeric" value={unlistedAge}
+                         onChange={(e) => setUnlistedAge(e.target.value.replace(/\D/g, ""))} />
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button type="button" className="ng-btn ng-btn-primary flex-1"
+                            disabled={busy || unlistedName.trim().length < 2}
+                            onClick={() => void saveUnlisted()}>
+                      {busy ? "Saving…" : "Tell the coordinator"}
+                    </button>
+                    <button type="button" onClick={() => setAskUnlisted(false)}
+                            className="rounded-lg border border-white/18 px-4 text-[13px] text-white/65
+                                       hover:text-white">
+                      Back to search
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setAskUnlisted(true)}
+                        className="mt-3 text-xs text-white/50 underline-offset-4 hover:text-white hover:underline">
+                  My child is not on the list
+                </button>
+              )}
+
               <p className="mt-3 text-xs text-white/45">
-                Not listed? Carry on and tell the coordinator — we will add them.
+                One of the two is needed before you can carry on — this is the whole point of
+                registering.
               </p>
             </>
           )}
