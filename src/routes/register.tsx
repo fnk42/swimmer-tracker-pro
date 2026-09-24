@@ -15,6 +15,7 @@ import {
 import type { Registration } from "@/lib/schemas";
 import { EVENT, PAYMENT, TERMS_TEXT, formatKes } from "@/lib/event-config";
 import { canonicalPhone } from "@/lib/phone";
+import { FindSwimmer } from "@/components/FindSwimmer";
 import { GOLDEN_PIPIT_URL, GOLDEN_PIPIT_EMAIL } from "@/lib/links";
 
 export const Route = createFileRoute("/register")({ component: MachakosFlow });
@@ -192,6 +193,16 @@ function MachakosFlow() {
     [picked, pays.data],
   );
   const balance = Math.max(0, groupTotal - groupPaid);
+  const history = useMemo(
+    () =>
+      (pays.data ?? [])
+        .filter(
+          (p) =>
+            picked.includes(p.swimmerId) || (p.swimmerIds ?? []).some((x) => picked.includes(x)),
+        )
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    [pays.data, picked],
+  );
   const idx = STEPS.indexOf(step);
   const busy = saveParent.isPending || saveReg.isPending || addPayment.isPending;
 
@@ -429,6 +440,15 @@ function MachakosFlow() {
                     {formatKes(groupTotal)} total
                   </p>
                 )}
+
+                {/* The page this replaces let a parent find a child here rather
+                    than sending them back to registration to do it. A second
+                    child turning up mid-entry is ordinary, and a dead end at
+                    that moment is a parent who pays for one and gives up. */}
+                <div className="mt-6 border-t border-white/10 pt-5">
+                  <p className="ng-label">Add another child</p>
+                  <FindSwimmer dark confirmBeforeAdd squadOnly />
+                </div>
               </>
             )}
 
@@ -659,6 +679,31 @@ function MachakosFlow() {
                     <Figure label="Paid" value={formatKes(groupPaid)} tone="var(--ng-cyan)" />
                     <Figure label="Balance" value={formatKes(balance)} />
                   </div>
+
+                  {/* A parent who paid a deposit in July wants to see it named
+                      back to them, with the reference their M-Pesa message
+                      carries, before they are asked for more. */}
+                  {history.length > 0 && (
+                    <ul className="mt-3 space-y-1.5">
+                      {history.map((h) => (
+                        <li
+                          key={h.id}
+                          className="flex flex-wrap items-baseline justify-between gap-x-3
+                                     rounded-lg bg-white/[.04] px-3 py-2 text-[13px]"
+                        >
+                          <span className="font-semibold">{formatKes(Number(h.amount))}</span>
+                          <span className="font-mono text-[12px] text-white/55">{h.reference}</span>
+                          <span className="text-[12px] text-white/45">
+                            {new Date(h.createdAt).toLocaleDateString("en-GB", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
 
                   {balance > 0 ? (
                     <>

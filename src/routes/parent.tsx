@@ -47,6 +47,14 @@ export const Route = createFileRoute("/parent")({
 });
 
 function ParentPage() {
+  // Machakos moved to the four-screen flow. This page stays as a route so the
+  // links families already have keep working — bookmarks, the WhatsApp thread,
+  // machakosnationals2026 — and sends them on rather than 404ing. It is the
+  // first thing to delete once nobody is landing here.
+  useEffect(() => {
+    window.location.replace("/register");
+  }, []);
+
   const navigate = useNavigate();
   const me = useMe();
   const session = me.data?.signedIn ? me.data : null;

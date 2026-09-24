@@ -27,7 +27,7 @@ export function AppHeader() {
   // alongside the parent one rather than replacing it.
   const admin = !!me.data?.isAdmin;
   const sections = me.data?.sections ?? { performance: true, events: true };
-  const onEvents = path === "/parent" || path === "/admin";
+  const onEvents = path === "/register" || path === "/parent" || path === "/admin";
 
   useEffect(() => {
     if (!open) return;
@@ -71,7 +71,7 @@ export function AppHeader() {
       style={{ background: "rgba(7,20,39,.82)" }}
     >
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-4 ng-sora">
-        <Link to="/parent" className="flex items-center gap-3 min-w-0">
+        <Link to="/register" className="flex items-center gap-3 min-w-0">
           <img
             src="/nextgen-logo.png"
             alt="NextGen Swim Club"
@@ -118,7 +118,7 @@ export function AppHeader() {
                   </div>
                   <Link
                     role="menuitem"
-                    to="/parent"
+                    to="/register"
                     onClick={() => setOpen(false)}
                     className={itemCls}
                   >

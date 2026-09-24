@@ -43,7 +43,7 @@ async function landingFor(me: {
   if (me.via === "tester") return "/tracker";
   // While the analytics are in preview, a parent sent there meets a holding
   // page. Events is the page that is theirs.
-  const analytics = me.sections?.analytics ? "/tracker" : "/parent";
+  const analytics = me.sections?.analytics ? "/tracker" : "/register";
   if (!me.sections?.events) return "/tracker";
   try {
     const d = await fetch("/api/me/data").then((r) => (r.ok ? r.json() : null));
@@ -61,7 +61,7 @@ async function landingFor(me: {
     );
     const owed = EVENT.totalKes * squad.length - paid;
     const missingForm = squad.some((x) => !entered.has(x.id));
-    return missingForm || owed > 0 ? "/parent" : analytics;
+    return missingForm || owed > 0 ? "/register" : analytics;
   } catch {
     return analytics;
   }
