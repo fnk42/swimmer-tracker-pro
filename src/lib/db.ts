@@ -14,10 +14,7 @@ import { report } from "@/lib/sentry";
 let pool: pg.Pool | null = null;
 
 function connectionString(): string {
-  const url =
-    process.env.DATABASE_URL ??
-    process.env.POSTGRES_URL ??
-    process.env.NEON_DATABASE_URL;
+  const url = process.env.DATABASE_URL ?? process.env.POSTGRES_URL ?? process.env.NEON_DATABASE_URL;
   if (!url) {
     throw new Error(
       "DATABASE_URL is not set. Add it to .env locally and to the Vercel " +
@@ -29,10 +26,23 @@ function connectionString(): string {
 
 export function getPool(): pg.Pool {
   if (!pool) {
+    const url = connectionString();
+    // A Postgres in a container on this machine serves no certificate, and
+    // demanding one would make the local copy unusable — which is the whole
+    // point of having it, so that testing the entry form does not rewrite a
+    // real family's record. Anything not on this machine is still verified.
+    const isLocal = /@(localhost|127\.0\.0\.1)[:/]/.test(url);
+    if (isLocal) console.info("[db] local copy — production is not being touched");
+    // And the other way round, which is the dangerous one: a dev server
+    // quietly wired to the live database, where filling in a test entry form
+    // rewrites a real family's record.
+    else if (process.env.NODE_ENV !== "production") {
+      console.warn("[db] this dev server is on the PRODUCTION database — writes are real");
+    }
     pool = new pg.Pool({
-      connectionString: connectionString(),
+      connectionString: url,
       // Neon serves a publicly trusted certificate, so verify it properly.
-      ssl: { rejectUnauthorized: true },
+      ssl: isLocal ? false : { rejectUnauthorized: true },
       // Serverless functions are short-lived and Neon's pooler does the real
       // pooling, so keep very few sockets per instance and retire them fast.
       max: 3,
