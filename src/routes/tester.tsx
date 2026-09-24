@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { DevNotice } from "@/components/DevNotice";
 import { useEffect, useState } from "react";
 import { GOLDEN_PIPIT_URL, GOLDEN_PIPIT_EMAIL } from "@/lib/links";
 import { ConsentText } from "@/components/ConsentText";
@@ -199,7 +200,11 @@ function TesterGate() {
               them.
             </p>
 
-            <div className="ng-panel mt-8 w-full max-w-[440px] p-6">
+            <div className="mt-8 w-full max-w-[440px]">
+              <DevNotice />
+            </div>
+
+            <div className="ng-panel mt-4 w-full max-w-[440px] p-6">
               {/* Log in leads. Everybody invited so far is already registered,
                   and being shown "Register as a tester" first asks them to do
                   again the thing they have already done. Registering is the

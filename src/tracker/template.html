@@ -1282,6 +1282,19 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .gpcontact a{color:var(--muted);text-decoration:none}
 .gpcontact a:hover{color:var(--electric-deep);text-decoration:underline}
 @media (max-width:560px){ .gpcontact{margin-left:0;gap:8px} }
+
+  .devnotice {
+    max-width: 1120px;
+    margin: 18px auto 0;
+    padding: 11px 15px;
+    border: 1px solid rgba(214, 158, 46, .45);
+    background: rgba(255, 194, 75, .12);
+    border-radius: 11px;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: #7a5b16;
+  }
+  .devnotice a { color: #7a5b16; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -1358,6 +1371,14 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 </header>
 
 <div class="shell" id="shell">
+  <!-- Same words as the Machakos side. Testers are being asked to judge
+       something half-built; saying so is what makes a bump a bump rather than
+       a reason to stop looking. -->
+  <p class="devnotice">
+    This is a new web app undergoing development. Expect some bumps along the road until it is
+    done. Reach out to F. Njenga (<a href="tel:+254726178216">0726&nbsp;178&nbsp;216</a>) for
+    troubleshooting queries.
+  </p>
   <main id="app"></main>
 </div>
 

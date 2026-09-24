@@ -16,6 +16,7 @@ import type { Registration } from "@/lib/schemas";
 import { EVENT, PAYMENT, TERMS_TEXT, formatKes } from "@/lib/event-config";
 import { canonicalPhone } from "@/lib/phone";
 import { FindSwimmer } from "@/components/FindSwimmer";
+import { DevNotice } from "@/components/DevNotice";
 import { GOLDEN_PIPIT_URL, GOLDEN_PIPIT_EMAIL } from "@/lib/links";
 
 export const Route = createFileRoute("/register")({ component: MachakosFlow });
@@ -900,6 +901,10 @@ function Shell({ children }: { children: ReactNode }) {
           {formatKes(EVENT.totalKes)} per swimmer. One screen at a time — nothing is charged until
           the last one.
         </p>
+
+        <div className="mt-7">
+          <DevNotice />
+        </div>
 
         {children}
 

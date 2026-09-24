@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMe, useClaimable, useClaimSwimmer, useMySwimmers } from "@/lib/api";
 import { FindSwimmer } from "@/components/FindSwimmer";
 import { ConsentText } from "@/components/ConsentText";
+import { DevNotice } from "@/components/DevNotice";
 import { canonicalPhone } from "@/lib/phone";
 
 export const Route = createFileRoute("/welcome")({
@@ -186,6 +187,10 @@ function Welcome() {
           <span className="dot" aria-hidden />
           Step {idx + 1} of {STEPS.length}
         </p>
+
+        <div className="mb-5">
+          <DevNotice />
+        </div>
 
         <div className="ng-panel p-6 text-white sm:p-7">
           {step === "you" && (
