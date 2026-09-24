@@ -83,7 +83,10 @@ function Welcome() {
     // Compulsory, and answerable two ways: pick your child off the roster, or
     // tell us who is missing from it. What cannot happen is carrying on with
     // neither — that is the empty registration this exists to prevent.
-    if (step === "children") return addedNames.length > 0;
+    // Optional again. Getting every parent registered matters more than
+    // getting every child matched on the way through — the club can link them
+    // afterwards, and a parent stuck at this step is a parent not registered.
+    if (step === "children") return true;
     if (step === "consent") return consentData && consentCommunity;
     return true;
   }, [step, fullName, phone, relationship, consentData, consentCommunity, addedNames.length]);
@@ -292,8 +295,8 @@ function Welcome() {
               )}
               <p className="mt-3 text-xs text-white/45">
                 Search the club roster — every swimmer NextGen has a record for is in it, not
-                only the Machakos team. If you cannot find your child, tell a coordinator and
-                they will add them.
+                only the Machakos team. If you cannot find your child, carry on: a coordinator
+                will link them for you, and nothing else waits on it.
               </p>
             </>
           )}

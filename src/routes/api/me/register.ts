@@ -65,21 +65,6 @@ export const Route = createFileRoute("/api/me/register")({
             );
           }
 
-          // A parent must have told us about at least one child. Either they
-          // picked one off the roster, or they said who is missing from it —
-          // an account with neither is a registration that registers nobody,
-          // and that is how four sign-ins produced an empty record.
-          const hasChild = await one<{ n: number }>(
-            `select count(*)::int as n from public.swimmer_parents where parent_id = $1`,
-            [pid],
-          );
-          if ((hasChild?.n ?? 0) === 0) {
-            return json(
-              { error: "Choose your swimmer from the club roster before finishing" },
-              400,
-            );
-          }
-
           // The number decides which account this is. Signing in from a second
           // address opened a second, empty one — nothing at the door could have
           // known it was the same person — and this is where they say so. If

@@ -134,7 +134,18 @@ export async function viewer(request: Request): Promise<Viewer | null> {
   ]);
 
   const myAthletes = mine.map((r) => r.analytics_name);
-  const approved = myAthletes.length > 0;
+  // A guardian who has registered — name, phone and the current consent —
+  // reaches the club's results whether or not a child is linked to them yet.
+  //
+  // Linking used to be the proof of belonging, and it is still what decides
+  // whose ASSESSMENT you may read. But it was also gating the ordinary
+  // results, which meant a parent could complete every step the club asked of
+  // them and be shown an empty page until somebody matched them to a swimmer.
+  // Registration is the thing to get right first; the link can follow.
+  const registered =
+    !!profile?.profile_complete && !!profile.full_name && !!profile.phone
+    && (consent?.n ?? 0) > 0;
+  const approved = myAthletes.length > 0 || registered;
 
   return {
     email: s.email,
