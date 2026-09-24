@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { one, q, json, fail } from "@/lib/db";
-import { newCode, hashCode } from "@/lib/session";
+import { newCode, hashCode, sessionFromRequest } from "@/lib/session";
 import { sendLoginCode } from "@/lib/mailer";
 import { note } from "@/lib/activity";
 
@@ -17,9 +17,13 @@ export const Route = createFileRoute("/api/tester/register")({
       POST: async ({ request }) => {
         try {
           const b = await request.json().catch(() => ({}));
-          const email = String(b?.email ?? "").trim().toLowerCase();
+          const email = String(b?.email ?? "")
+            .trim()
+            .toLowerCase();
           const fullName = String(b?.fullName ?? "").trim();
-          const howKnown = String(b?.howKnown ?? "").trim().slice(0, 200);
+          const howKnown = String(b?.howKnown ?? "")
+            .trim()
+            .slice(0, 200);
 
           if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
             return json({ error: "Enter a valid email address" }, 400);
@@ -39,6 +43,16 @@ export const Route = createFileRoute("/api/tester/register")({
             [email, fullName, howKnown],
           );
 
+          // They may already be signed in — they gave us a code a moment ago
+          // and it turned out there was no tester row to find. Sending a
+          // second one to the address they are reading this on is asking them
+          // to prove again what they just proved.
+          const s = sessionFromRequest(request);
+          if (s && s.email.toLowerCase() === email) {
+            await note("tester_registered", { email, detail: fullName });
+            return json({ ok: true, testerId: tester?.id, signedIn: true });
+          }
+
           const code = newCode();
           await q(
             `insert into public.auth_codes (email, code_hash, expires_at)
@@ -50,7 +64,9 @@ export const Route = createFileRoute("/api/tester/register")({
           await note("tester_registered", { email, detail: fullName });
           if (!sent.delivered) {
             await note("code_undelivered", {
-              email, ok: false, detail: `tester, via ${sent.via}`,
+              email,
+              ok: false,
+              detail: `tester, via ${sent.via}`,
             });
             console.error(`[tester] code for ${email} NOT delivered (${sent.via})`);
           }

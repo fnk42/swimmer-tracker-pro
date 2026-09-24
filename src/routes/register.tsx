@@ -878,7 +878,7 @@ function Shell({ children }: { children: ReactNode }) {
 
         <h1 className="ng-display mt-6 text-[clamp(26px,4.4vw,40px)]">
           {EVENT.name}
-          <span className="block" style={{ color: "var(--ng-electric)" }}>
+          <span className="mt-2.5 block" style={{ color: "var(--ng-electric)" }}>
             {EVENT.startDate} – {EVENT.endDate}
           </span>
         </h1>

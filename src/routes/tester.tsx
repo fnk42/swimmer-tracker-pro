@@ -32,6 +32,9 @@ function TesterGate() {
   const [howKnown, setHowKnown] = useState("");
   const [code, setCode] = useState("");
   const [returning, setReturning] = useState(false);
+  // Arrived at the registration form already signed in, because the code
+  // they gave found no tester row. They do not need another one.
+  const [alreadyIn, setAlreadyIn] = useState(false);
 
   const [agreeConf, setAgreeConf] = useState(false);
   const [agreeData, setAgreeData] = useState(false);
@@ -77,6 +80,11 @@ function TesterGate() {
         setError(d.error ?? "Could not send a code.");
         return;
       }
+      if (d.signedIn) {
+        // Registered, and the session is already theirs: on to the agreement.
+        setStep("agree");
+        return;
+      }
       setDevNote(!!d.devMode);
       setReturning(isReturning);
       setStep("code");
@@ -109,6 +117,7 @@ function TesterGate() {
       // find. Bouncing her to /tracker showed a parent "coming soon", which is
       // the fifth dead end in a row. Offer her the registration instead.
       if (!d.isTester) {
+        setAlreadyIn(true);
         setReturning(false);
         setStep("register");
         setError(
@@ -304,7 +313,13 @@ function TesterGate() {
               disabled={busy || !email.trim() || (!returning && fullName.trim().length < 2)}
               onClick={() => void sendCode(returning)}
             >
-              {busy ? "Sending…" : "Send me a code"}
+              {busy
+                ? alreadyIn
+                  ? "Registering…"
+                  : "Sending…"
+                : alreadyIn
+                  ? "Register me"
+                  : "Send me a code"}
             </button>
             {!returning && (
               <p className="mt-3 text-center text-[12.5px] text-white/45">
