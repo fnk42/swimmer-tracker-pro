@@ -27,7 +27,9 @@ export const Route = createFileRoute("/api/admin/progress")({
                     (sp.parent_id is not null)                       as has_parent,
                     (r.swimmer_id is not null)                       as entered,
                     coalesce(pay.total, 0)::float                    as paid,
-                    coalesce(seen.n, 0)::int                         as sign_ins
+                    (coalesce(seen.n, 0) > 0
+                     or coalesce(codes.n, 0) > 0
+                     or p.profile_complete)::bool                    as has_been_here
                from public.swimmers s
                left join public.swimmer_parents sp
                       on sp.swimmer_id = s.id and sp.sort_order = 1
@@ -40,10 +42,23 @@ export const Route = createFileRoute("/api/admin/progress")({
                       select sum(amount) as total from public.payments
                        where swimmer_id = s.id) pay on true
                left join lateral (
+                      -- "Has this person ever been here" cannot be asked of the
+                      -- activity log alone: it only starts on 22 September, and
+                      -- families who signed in before that leave no row. Kevin
+                      -- Kadede looked like he had never reached the app, then
+                      -- completed his registration from a session older than
+                      -- the log. A code ever issued to the address, or a
+                      -- finished profile, says the same thing and goes back
+                      -- further.
                       select count(*) as n from public.activity a
                        where a.kind = 'signed_in'
                          and (a.parent_id = p.id
                               or lower(a.email) = lower(coalesce(p.email, '~')))) seen on true
+               left join lateral (
+                      select count(*) as n from public.auth_codes ac
+                       where lower(ac.email) = lower(coalesce(p.email, '~'))
+                          or lower(ac.email) in (select lower(email) from public.parent_emails
+                                                  where parent_id = p.id)) codes on true
               where ${inSquadSql("s")}
               order by s.name`,
           );

@@ -12,7 +12,7 @@ type Row = {
   has_parent: boolean;
   entered: boolean;
   paid: number;
-  sign_ins: number;
+  has_been_here: boolean;
 };
 
 type Tester = {
@@ -30,7 +30,7 @@ type Tester = {
 // a list of names is not useful, a list of names with a reason is.
 function stage(r: Row): { label: string; done: boolean; tone: string } {
   if (!r.has_parent) return { label: "no adult on record", done: false, tone: "text-destructive" };
-  if (r.sign_ins === 0) return { label: "never signed in", done: false, tone: "text-destructive" };
+  if (!r.has_been_here) return { label: "never signed in", done: false, tone: "text-destructive" };
   if (!r.entered) return { label: "no entry form", done: false, tone: "text-amber-600" };
   if (r.paid <= 0) return { label: "nothing paid", done: false, tone: "text-amber-600" };
   if (r.paid < EVENT.totalKes)
