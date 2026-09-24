@@ -11,8 +11,14 @@ export const Route = createFileRoute("/api/auth/verify-code")({
       POST: async ({ request }) => {
         try {
           const body = await request.json().catch(() => ({}));
-          const email = String(body?.email ?? "").trim().toLowerCase();
+          const email = String(body?.email ?? "")
+            .trim()
+            .toLowerCase();
           const code = String(body?.code ?? "").trim();
+          // A hint about where they came from, not a claim about who they are,
+          // so there is nothing here worth forging: it changes the landing
+          // page and nothing else.
+          const via = body?.via === "tester" ? ("tester" as const) : undefined;
           if (!email || !/^\d{6}$/.test(code)) {
             return json({ error: "Enter the 6-digit code from your email" }, 400);
           }
@@ -72,20 +78,30 @@ export const Route = createFileRoute("/api/auth/verify-code")({
           if (tester && parent && !admin) {
             await q(`update public.auth_codes set consumed_at = now() where id = $1`, [row.id]);
             const token = createSession({
-              email, parentId: parent.id, testerId: tester.id, isAdmin: false,
+              email,
+              parentId: parent.id,
+              testerId: tester.id,
+              isAdmin: false,
+              via,
             });
             await note("signed_in", { email, parentId: parent.id, detail: "parent · tester" });
             return new Response(
-              JSON.stringify({ ok: true, isAdmin: false, isTester: true,
-                               parent: { id: parent.id, fullName: parent.full_name } }),
-              { status: 200, headers: { "content-type": "application/json",
-                                        "set-cookie": cookieHeader(token) } },
+              JSON.stringify({
+                ok: true,
+                isAdmin: false,
+                isTester: true,
+                parent: { id: parent.id, fullName: parent.full_name },
+              }),
+              {
+                status: 200,
+                headers: { "content-type": "application/json", "set-cookie": cookieHeader(token) },
+              },
             );
           }
 
           if (tester && !parent && !admin) {
             await q(`update public.auth_codes set consumed_at = now() where id = $1`, [row.id]);
-            const token = createSession({ email, testerId: tester.id, isAdmin: false });
+            const token = createSession({ email, testerId: tester.id, isAdmin: false, via });
             await note("signed_in", { email, detail: "tester" });
             return new Response(
               JSON.stringify({ ok: true, isAdmin: false, isTester: true, parent: null }),
@@ -140,9 +156,11 @@ export const Route = createFileRoute("/api/auth/verify-code")({
             email,
             parentId: parent?.id,
             isAdmin: admin,
+            via,
           });
           await note("signed_in", {
-            email, parentId: parent?.id ?? null,
+            email,
+            parentId: parent?.id ?? null,
             detail: admin ? "admin" : firstTime ? "parent — first time" : "parent",
           });
           return new Response(

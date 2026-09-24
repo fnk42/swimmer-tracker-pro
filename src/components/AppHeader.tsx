@@ -44,7 +44,11 @@ export function AppHeader() {
   }, [open]);
 
   // Same reason as the tracker bar: a tester belongs back at the tester door.
-  const isTester = !!me.data?.isTester && !me.data?.parent;
+  // Which door, though, is what they came in by — not whether they happen to
+  // lack a parent row. Gladys has one and is still a tester when she arrives
+  // through the tester link, and sending her out through the front door loses
+  // her the only page she was asked to look at.
+  const isTester = me.data?.via === "tester" || (!!me.data?.isTester && !me.data?.parent);
 
   async function logout() {
     await signOut.mutateAsync();
@@ -130,9 +134,7 @@ export function AppHeader() {
                       onClick={() => setOpen(false)}
                       className={itemCls}
                     >
-                      <span className="block text-sm font-medium text-foreground">
-                        Admin view
-                      </span>
+                      <span className="block text-sm font-medium text-foreground">Admin view</span>
                       <span className="block text-xs text-muted-foreground">
                         Every registration and payment
                       </span>

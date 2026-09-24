@@ -5,9 +5,47 @@ import {
   GOLDEN_PIPIT_PHONE,
   GOLDEN_PIPIT_PHONE_DISPLAY,
 } from "@/lib/links";
+import { EVENT } from "@/lib/event-config";
 import { useEffect, useState } from "react";
 import { useMe, useRequestCode, useVerifyCode } from "@/lib/api";
 import { ProgressWall } from "@/components/ProgressWall";
+
+// Where a signed-in person belongs, which is not the same question as what
+// they are allowed to see.
+//
+// Coming through the tester link means Analytics: that is what the preview is
+// for, and it is the one thing an account cannot tell us by itself, because
+// several testers are also Machakos parents with balances owing.
+//
+// Everyone else is here for Machakos while Machakos is open — and "open" means
+// something still wants them: an entry form not filled in, or money still
+// owed. A family that is entered and paid up lands on Analytics instead, and
+// in December, when nobody owes anything, that becomes true of everyone
+// without a line of this being changed.
+async function landingFor(me: { via?: string; sections?: { events: boolean } }): Promise<string> {
+  if (me.via === "tester") return "/tracker";
+  if (!me.sections?.events) return "/tracker";
+  try {
+    const d = await fetch("/api/me/data").then((r) => (r.ok ? r.json() : null));
+    if (!d) return "/tracker";
+    type S = { id: string; event_squad?: boolean };
+    const all: S[] = d.swimmers ?? [];
+    const squad = all.some((x) => x.event_squad) ? all.filter((x) => x.event_squad) : all;
+    if (squad.length === 0) return "/tracker";
+    const entered = new Set(
+      (d.registrations ?? []).map((r: { swimmer_id: string }) => r.swimmer_id),
+    );
+    const paid = (d.payments ?? []).reduce(
+      (n: number, p: { amount?: number | string }) => n + Number(p.amount ?? 0),
+      0,
+    );
+    const owed = EVENT.totalKes * squad.length - paid;
+    const missingForm = squad.some((x) => !entered.has(x.id));
+    return missingForm || owed > 0 ? "/parent" : "/tracker";
+  } catch {
+    return "/tracker";
+  }
+}
 
 export const Route = createFileRoute("/")({
   component: PortalLanding,
@@ -47,8 +85,17 @@ function PortalLanding() {
       navigate({ to: "/tester" });
       return;
     }
-    if (me.data.needsRegistration) { navigate({ to: "/welcome" }); return; }
-    window.location.href = "/tracker";
+    if (me.data.needsRegistration) {
+      navigate({ to: "/welcome" });
+      return;
+    }
+    let gone = false;
+    landingFor(me.data).then((to) => {
+      if (!gone) window.location.href = to;
+    });
+    return () => {
+      gone = true;
+    };
   }, [me.isLoading, me.data, navigate]);
 
   // Whether the shared coordinator sign-in exists at all. The server answers
@@ -105,23 +152,28 @@ function PortalLanding() {
     setError(null);
     try {
       const r = await verifyCode.mutateAsync({ email: email.trim(), code: code.trim() });
-      const who = await fetch("/api/auth/me").then((x) => x.json()).catch(() => null);
+      const who = await fetch("/api/auth/me")
+        .then((x) => x.json())
+        .catch(() => null);
       if (who?.isTester && !who.parent && who.needsAgreement) {
         navigate({ to: "/tester" });
         return;
       }
-      if (who?.needsRegistration) { navigate({ to: "/welcome" }); return; }
-      window.location.href = "/tracker";
+      if (who?.needsRegistration) {
+        navigate({ to: "/welcome" });
+        return;
+      }
+      window.location.href = await landingFor(who ?? {});
     } catch {
       setError("That code is wrong or has expired. Check the email, or send a new code.");
     }
   }
 
   // Listed side by side with no distinction, these read as two things you get
-   // on signing in. Only Events is: the performance pages are coach-only until
-   // the consent drive closes, so a parent entering Machakos today and then
-   // looking for their child's times would find a locked door and no
-   // explanation. Say which is ready.
+  // on signing in. Only Events is: the performance pages are coach-only until
+  // the consent drive closes, so a parent entering Machakos today and then
+  // looking for their child's times would find a locked door and no
+  // explanation. Say which is ready.
   const features = [
     {
       title: "Events",
@@ -162,8 +214,8 @@ function PortalLanding() {
             </span>
           </h1>
           <p className="mt-5 max-w-[48ch] text-[16.5px] leading-relaxed text-white/70">
-            Sign in to see the events your child is entered for, and to enter them for
-            Machakos. The performance pages are coming next.
+            Sign in to see the events your child is entered for, and to enter them for Machakos. The
+            performance pages are coming next.
           </p>
 
           <ul className="ng-panel mt-9 max-w-[520px] px-6 py-1">
@@ -189,16 +241,20 @@ function PortalLanding() {
                   <span className="flex flex-wrap items-baseline gap-2">
                     <span className="text-[15.5px] font-semibold text-white">{f.title}</span>
                     {f.soon ? (
-                      <span className="rounded-full border border-[color:var(--ng-electric)]/45
+                      <span
+                        className="rounded-full border border-[color:var(--ng-electric)]/45
                                        bg-[color:var(--ng-electric)]/12 px-2 py-[1px]
                                        text-[10.5px] font-semibold uppercase tracking-wide
-                                       text-[color:var(--ng-electric)]">
+                                       text-[color:var(--ng-electric)]"
+                      >
                         Coming soon
                       </span>
                     ) : (
-                      <span className="rounded-full border border-emerald-400/40 bg-emerald-400/10
+                      <span
+                        className="rounded-full border border-emerald-400/40 bg-emerald-400/10
                                        px-2 py-[1px] text-[10.5px] font-semibold uppercase
-                                       tracking-wide text-emerald-300">
+                                       tracking-wide text-emerald-300"
+                      >
                         Live now
                       </span>
                     )}
@@ -218,10 +274,12 @@ function PortalLanding() {
             <div>
               <h2 className="text-[20px] font-semibold">Admin sign-in</h2>
               <p className="mb-6 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
-                For the club's admins. This is a shared password, not an email code —
-                parents do not need it.
+                For the club's admins. This is a shared password, not an email code — parents do not
+                need it.
               </p>
-              <label className="ng-label" htmlFor="demopw">Admin password</label>
+              <label className="ng-label" htmlFor="demopw">
+                Admin password
+              </label>
               <input
                 id="demopw"
                 className="ng-field"
@@ -230,7 +288,12 @@ function PortalLanding() {
                 autoFocus
                 value={demoPw}
                 onChange={(e) => setDemoPw(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void onDemo(); } }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void onDemo();
+                  }
+                }}
                 placeholder="Password"
               />
               {error && <p className="mt-3 text-sm font-medium text-[#FFC24B]">{error}</p>}
@@ -247,7 +310,11 @@ function PortalLanding() {
               </p>
               <button
                 type="button"
-                onClick={() => { setShowDemo(false); setDemoPw(""); setError(null); }}
+                onClick={() => {
+                  setShowDemo(false);
+                  setDemoPw("");
+                  setError(null);
+                }}
                 className="mt-5 w-full border-t border-white/10 pt-4 text-xs text-white/45
                            underline-offset-4 hover:text-white hover:underline"
               >
@@ -258,9 +325,8 @@ function PortalLanding() {
             <form onSubmit={onSendCode}>
               <h2 className="text-[20px] font-semibold">Sign in</h2>
               <p className="mb-6 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
-                Any email address — new to the club or not. We send a six-digit code, so there
-                is no password to remember. First time here? Sign in the same way and we will
-                set you up.
+                Any email address — new to the club or not. We send a six-digit code, so there is no
+                password to remember. First time here? Sign in the same way and we will set you up.
               </p>
               <label className="ng-label" htmlFor="email">
                 Email address
@@ -316,8 +382,8 @@ function PortalLanding() {
               <h2 className="text-[20px] font-semibold">Check your email</h2>
               <p className="mb-6 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
                 A six-digit code is on its way to{" "}
-                <span className="font-semibold text-white">{email}</span>. It expires in 10
-                minutes. If it is not there, check your spam folder.
+                <span className="font-semibold text-white">{email}</span>. It expires in 10 minutes.
+                If it is not there, check your spam folder.
               </p>
               <label className="ng-label" htmlFor="code">
                 Six-digit code
@@ -386,13 +452,17 @@ function PortalLanding() {
           Golden Pipit Solutions
         </a>
         <span className="mt-2 block text-white/40">
-          <a href={`mailto:${GOLDEN_PIPIT_EMAIL}`}
-             className="underline-offset-4 hover:text-white/70 hover:underline">
+          <a
+            href={`mailto:${GOLDEN_PIPIT_EMAIL}`}
+            className="underline-offset-4 hover:text-white/70 hover:underline"
+          >
             {GOLDEN_PIPIT_EMAIL}
           </a>
           <span className="px-2 text-white/25">·</span>
-          <a href={`tel:${GOLDEN_PIPIT_PHONE}`}
-             className="underline-offset-4 hover:text-white/70 hover:underline">
+          <a
+            href={`tel:${GOLDEN_PIPIT_PHONE}`}
+            className="underline-offset-4 hover:text-white/70 hover:underline"
+          >
             {GOLDEN_PIPIT_PHONE_DISPLAY}
           </a>
         </span>

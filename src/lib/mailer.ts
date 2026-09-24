@@ -8,8 +8,23 @@ const FROM = process.env.MAIL_FROM ?? "NextGen Swim <onboarding@resend.dev>";
 
 export type SendResult = { delivered: boolean; via: "resend" | "console"; error?: string };
 
+/**
+ * The key, unless mail is switched off.
+ *
+ * MAIL_DISABLED exists because the sending domain is verified: a code
+ * requested on a laptop for a real parent's address is delivered to that real
+ * parent. Testing the sign-in as somebody else — which is the only way to see
+ * what they see — should not put a message in their inbox at one in the
+ * afternoon. With it set, every sender falls back to the console, where the
+ * code can be read by whoever is doing the testing.
+ */
+function mailKey(): string | undefined {
+  if (process.env.MAIL_DISABLED) return undefined;
+  return process.env.RESEND_API_KEY;
+}
+
 export async function sendLoginCode(email: string, code: string): Promise<SendResult> {
-  const key = process.env.RESEND_API_KEY;
+  const key = mailKey();
 
   if (!key) {
     console.warn(
@@ -69,7 +84,7 @@ export async function sendLoginCode(email: string, code: string): Promise<SendRe
  * which is why it is safe if it is forwarded.
  */
 export async function sendParentInvite(email: string, invitedBy: string): Promise<SendResult> {
-  const key = process.env.RESEND_API_KEY;
+  const key = mailKey();
   const url = "https://events.nextgenkenya.com";
 
   if (!key) {
@@ -139,7 +154,7 @@ export async function sendClaimNotice(
   to: string[],
   claim: { parentName: string; parentEmail: string; swimmer: string; phoneMatch: boolean },
 ): Promise<SendResult> {
-  const key = process.env.RESEND_API_KEY;
+  const key = mailKey();
   const url = "https://events.nextgenkenya.com/admin";
   const hint = claim.phoneMatch
     ? "Their phone number matches the one on that swimmer's registration, so the club already had them down as a contact. Nothing to do."
@@ -210,7 +225,7 @@ export async function sendSquadRequest(
   req: { parentName: string; parentEmail: string; parentPhone: string;
          swimmer: string; note: string },
 ): Promise<SendResult> {
-  const key = process.env.RESEND_API_KEY;
+  const key = mailKey();
   const url = "https://events.nextgenkenya.com/admin";
   if (!to.length) return { delivered: false, via: "console" };
 

@@ -355,6 +355,8 @@ export type Me = {
   firstTime?: boolean;
   /** Invited preview tester rather than a parent. */
   isTester?: boolean;
+  /** Which door this sign-in came through, when it says something. */
+  via?: "tester";
   /** Signed in as a tester, but the confidentiality agreement is outstanding. */
   needsAgreement?: boolean;
   /** Holds live preview access: agreed, not revoked, not expired. */
@@ -391,6 +393,7 @@ export function useMe() {
         needsRegistration: !!d.needsRegistration,
         firstTime: !!d.firstTime,
         isTester: !!d.isTester,
+        via: d.via === "tester" ? "tester" : undefined,
         needsAgreement: !!d.needsAgreement,
         previewAccess: !!d.previewAccess,
         needsProfile: !!d.needsProfile,

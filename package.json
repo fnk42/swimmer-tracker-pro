@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "dev:local": "DATABASE_URL=postgresql://postgres:localdev@localhost:5440/nextgen vite dev"
+    "dev:local": "DATABASE_URL=postgresql://postgres:localdev@localhost:5440/nextgen MAIL_DISABLED=1 vite dev"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

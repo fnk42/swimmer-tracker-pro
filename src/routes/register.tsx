@@ -790,7 +790,8 @@ function Shell({ children }: { children: ReactNode }) {
     try {
       await signOut.mutateAsync();
     } finally {
-      window.location.href = "/";
+      // Out through the door they came in by.
+      window.location.href = me.data?.via === "tester" ? "/tester" : "/";
     }
   }
 

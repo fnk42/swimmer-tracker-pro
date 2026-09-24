@@ -42,11 +42,13 @@ export const Route = createFileRoute("/api/auth/me")({
             // treated as a stranger. Reporting them signed out sent them to
             // the Events page with an empty account.
             const v = await viewer(request);
-            const t = await one<{ agreed_at: string | null; expires_at: string;
-                                  revoked_at: string | null }>(
-              `select agreed_at, expires_at, revoked_at from public.testers where id = $1`,
-              [s.testerId],
-            );
+            const t = await one<{
+              agreed_at: string | null;
+              expires_at: string;
+              revoked_at: string | null;
+            }>(`select agreed_at, expires_at, revoked_at from public.testers where id = $1`, [
+              s.testerId,
+            ]);
             return json({
               signedIn: true,
               email: s.email,
@@ -55,6 +57,7 @@ export const Route = createFileRoute("/api/auth/me")({
               previewAccess,
               needsAgreement: !!t && !t.agreed_at && !t.revoked_at,
               testerClosed: !!t && (!!t.revoked_at || new Date(t.expires_at) < new Date()),
+              via: s.via,
               sections: { performance: !!v, events: false },
               scope: v?.scope,
               needsRegistration: false,
@@ -102,6 +105,7 @@ export const Route = createFileRoute("/api/auth/me")({
             // has nothing to register and no balance to pay, so the tab is not
             // theirs — and without it there is no "your child is not in the
             // team" line to write, because they never reach the page.
+            via: s.via,
             sections: {
               performance: true,
               analytics: s.isAdmin || v?.scope === "community" || v?.scope === "coach",
@@ -125,9 +129,7 @@ export const Route = createFileRoute("/api/auth/me")({
                   }
                 : {};
             })()),
-            parent: p
-              ? { id: p.id, fullName: p.full_name, email: p.email, phone: p.phone }
-              : null,
+            parent: p ? { id: p.id, fullName: p.full_name, email: p.email, phone: p.phone } : null,
           });
         } catch (err) {
           return fail("GET /api/auth/me", err, "Could not read session");

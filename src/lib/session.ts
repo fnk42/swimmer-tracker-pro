@@ -14,9 +14,15 @@ const MAX_AGE_S = 60 * 60 * 24 * 30; // 30 days — a term's worth of registrati
 // sign in twice or choose which hat he is wearing.
 export type Session = {
   email: string;
-  parentId?: string;   // present if this address owns a parent row
-  testerId?: string;   // present if this address is an invited preview tester
-  isAdmin: boolean;    // present if this address is on the ADMIN_EMAILS list
+  parentId?: string; // present if this address owns a parent row
+  testerId?: string; // present if this address is an invited preview tester
+  isAdmin: boolean; // present if this address is on the ADMIN_EMAILS list
+  // Which door this sign-in came through. Not a permission — the ids above
+  // are the permissions — but the answer to "why are you here this time",
+  // which one account with two hats cannot otherwise tell us. Gladys is a
+  // paid-up Machakos parent AND a preview tester; arriving by the tester
+  // link is how she says which of the two she came for.
+  via?: "tester";
   exp: number;
 };
 
@@ -48,7 +54,8 @@ export function readSession(token: string | undefined | null): Session | null {
   if (!body || !mac) return null;
   const expected = sign(body);
   // constant-time compare so a wrong signature cannot be probed byte by byte
-  const a = Buffer.from(mac), b = Buffer.from(expected);
+  const a = Buffer.from(mac),
+    b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   try {
     const s = JSON.parse(Buffer.from(body, "base64url").toString()) as Session;
