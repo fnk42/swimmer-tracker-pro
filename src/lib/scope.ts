@@ -7,6 +7,32 @@ import { q, one } from "@/lib/db";
 import { sessionFromRequest } from "@/lib/session";
 import type { Scope } from "@/lib/tiers";
 
+/**
+ * May this session see the analytics?
+ *
+ * Not yet a thing the club has released. Completing registration grants
+ * `community`, which was opening the whole development picture — rankings,
+ * bands, who is improving and who is not — to any parent who filled in a form,
+ * while the preview existed precisely so the coaches read those judgements
+ * first. So the page and the route behind it both ask this, and this asks for
+ * a signed, unexpired preview invitation or a coordinator.
+ *
+ * When the analytics are released, this becomes a wider test and nothing else
+ * has to move.
+ */
+export async function maySeeAnalytics(request: Request): Promise<boolean> {
+  const s = sessionFromRequest(request);
+  if (!s) return false;
+  if (s.isAdmin) return true;
+  if (!s.testerId) return false;
+  const row = await one<{ ok: boolean }>(
+    `select (agreed_at is not null and revoked_at is null and expires_at > now()) as ok
+       from public.testers where id = $1`,
+    [s.testerId],
+  );
+  return !!row?.ok;
+}
+
 // Re-exported so server routes keep importing entitlement facts from one place,
 // while the constants themselves live in a module a client component can also
 // import without pulling in the database driver.

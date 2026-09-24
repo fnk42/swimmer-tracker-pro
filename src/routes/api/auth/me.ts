@@ -58,7 +58,7 @@ export const Route = createFileRoute("/api/auth/me")({
               needsAgreement: !!t && !t.agreed_at && !t.revoked_at,
               testerClosed: !!t && (!!t.revoked_at || new Date(t.expires_at) < new Date()),
               via: s.via,
-              sections: { performance: !!v, events: false },
+              sections: { performance: !!v, analytics: previewAccess, events: false },
               scope: v?.scope,
               needsRegistration: false,
               parent: null,
@@ -108,7 +108,8 @@ export const Route = createFileRoute("/api/auth/me")({
             via: s.via,
             sections: {
               performance: true,
-              analytics: s.isAdmin || v?.scope === "community" || v?.scope === "coach",
+              // Registration is not the key to this. The preview is.
+              analytics: s.isAdmin || previewAccess,
               events: s.isAdmin || inSquad,
             },
             // An account that has never been filled in. /welcome greets these

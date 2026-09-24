@@ -36,16 +36,22 @@ function nextFromUrl(): string | null {
 // owed. A family that is entered and paid up lands on Analytics instead, and
 // in December, when nobody owes anything, that becomes true of everyone
 // without a line of this being changed.
-async function landingFor(me: { via?: string; sections?: { events: boolean } }): Promise<string> {
+async function landingFor(me: {
+  via?: string;
+  sections?: { events: boolean; analytics?: boolean };
+}): Promise<string> {
   if (me.via === "tester") return "/tracker";
+  // While the analytics are in preview, a parent sent there meets a holding
+  // page. Events is the page that is theirs.
+  const analytics = me.sections?.analytics ? "/tracker" : "/parent";
   if (!me.sections?.events) return "/tracker";
   try {
     const d = await fetch("/api/me/data").then((r) => (r.ok ? r.json() : null));
-    if (!d) return "/tracker";
+    if (!d) return analytics;
     type S = { id: string; event_squad?: boolean };
     const all: S[] = d.swimmers ?? [];
     const squad = all.some((x) => x.event_squad) ? all.filter((x) => x.event_squad) : all;
-    if (squad.length === 0) return "/tracker";
+    if (squad.length === 0) return analytics;
     const entered = new Set(
       (d.registrations ?? []).map((r: { swimmer_id: string }) => r.swimmer_id),
     );
@@ -55,9 +61,9 @@ async function landingFor(me: { via?: string; sections?: { events: boolean } }):
     );
     const owed = EVENT.totalKes * squad.length - paid;
     const missingForm = squad.some((x) => !entered.has(x.id));
-    return missingForm || owed > 0 ? "/parent" : "/tracker";
+    return missingForm || owed > 0 ? "/parent" : analytics;
   } catch {
-    return "/tracker";
+    return analytics;
   }
 }
 

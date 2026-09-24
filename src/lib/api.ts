@@ -348,7 +348,7 @@ export type Me = {
   signedIn: boolean;
   email?: string;
   isAdmin?: boolean;
-  sections?: { performance: boolean; events: boolean };
+  sections?: { performance: boolean; analytics?: boolean; events: boolean };
   scope?: "coach" | "community" | "pending";
   needsRegistration?: boolean;
   /** Account opened by signing in, never filled in. Greet them as new. */

@@ -27,7 +27,11 @@ export const Route = createFileRoute("/api/swimmers/$id")({
       // Payments and registrations cascade from the foreign keys, but doing it
       // explicitly inside one transaction means a partial failure rolls back
       // rather than leaving a swimmer with orphaned money attached.
-      DELETE: async ({ params }) => {
+      DELETE: async ({ request, params }) => {
+        // This was missing, so anyone who could reach the URL could remove a
+        // swimmer, their payments and their parent links in one transaction.
+        const denied = requireAdmin(request);
+        if (denied) return denied;
         try {
           await tx(async (c) => {
             await c.query(`delete from public.payments where swimmer_id = $1`, [params.id]);

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { json } from "@/lib/db";
-import { viewer } from "@/lib/scope";
+import { viewer, maySeeAnalytics } from "@/lib/scope";
 import { shapeAnalytics } from "@/lib/tiers";
 import data from "../../../tracker/data.json";
 
@@ -37,6 +37,11 @@ export const Route = createFileRoute("/api/tracker/data")({
             },
             428, // Precondition Required
           );
+        }
+
+        // The page checks this too, but a check in a page is a suggestion.
+        if (!(await maySeeAnalytics(request))) {
+          return json({ error: "The analytics are in preview", preview: true }, 403);
         }
 
         const body = shapeAnalytics(data as unknown as Record<string, unknown>, v.scope);
