@@ -274,7 +274,9 @@ function MachakosFlow() {
           reference: reference.trim(),
           type: payType,
         });
-        setReceipt({ amount: rec.amount, reference: rec.reference });
+        // Postgres hands numeric back as a string, so this arrives as
+        // "7000.00" and printed as KES 7000.00 until it is made a number.
+        setReceipt({ amount: Number(rec.amount), reference: rec.reference });
         setAgreed(false);
         setAmount("");
         setReference("");
