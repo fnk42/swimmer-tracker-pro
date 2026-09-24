@@ -18,6 +18,11 @@ export const Route = createFileRoute("/api/auth/me")({
                 [s.parentId],
               )
             : null;
+          // Deleted out from under a live cookie: answer signed-out rather
+          // than half-signed-in, which is what let writes carry on.
+          if (s.parentId && !p && !s.testerId && !s.isAdmin) {
+            return json({ signedIn: false });
+          }
           // Does this session hold live preview access? Its own question,
           // separate from being a parent: a parent-tester keeps Events either
           // way, and only the analytics wait on the agreement.

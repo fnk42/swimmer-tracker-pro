@@ -104,8 +104,11 @@ export async function viewer(request: Request): Promise<Viewer | null> {
   // the next sign-in.
   if (s.testerId && !s.parentId) {
     const t = await one<{
-      id: string; full_name: string; agreed_at: string | null;
-      expired: boolean; revoked: boolean;
+      id: string;
+      full_name: string;
+      agreed_at: string | null;
+      expired: boolean;
+      revoked: boolean;
     }>(
       `select id, full_name, agreed_at,
               (expires_at < now())    as expired,
@@ -114,8 +117,9 @@ export async function viewer(request: Request): Promise<Viewer | null> {
       [s.testerId],
     );
     if (!t || t.revoked || t.expired || !t.agreed_at) return null;
-    void q(`update public.testers set last_seen_at = now() where id = $1`, [s.testerId])
-      .catch(() => {});
+    void q(`update public.testers set last_seen_at = now() where id = $1`, [s.testerId]).catch(
+      () => {},
+    );
     return {
       email: s.email,
       parentId: null,
@@ -130,6 +134,16 @@ export async function viewer(request: Request): Promise<Viewer | null> {
 
   if (!s.parentId) return null;
   const pid = s.parentId;
+
+  // The cookie is signed and self-contained, so it keeps working after the row
+  // it names has been deleted — and the next write lands wherever the phone
+  // number points, which is how a spare test account ended up writing into a
+  // real family's record. If the account is gone, so is the session.
+  const stillThere = await one<{ n: number }>(
+    `select count(*)::int n from public.parents where id = $1`,
+    [pid],
+  );
+  if ((stillThere?.n ?? 0) === 0) return null;
 
   const [profile, consent, mine, pending] = await Promise.all([
     one<{ profile_complete: boolean; full_name: string; phone: string }>(
@@ -169,8 +183,7 @@ export async function viewer(request: Request): Promise<Viewer | null> {
   // them and be shown an empty page until somebody matched them to a swimmer.
   // Registration is the thing to get right first; the link can follow.
   const registered =
-    !!profile?.profile_complete && !!profile.full_name && !!profile.phone
-    && (consent?.n ?? 0) > 0;
+    !!profile?.profile_complete && !!profile.full_name && !!profile.phone && (consent?.n ?? 0) > 0;
   const approved = myAthletes.length > 0 || registered;
 
   return {
