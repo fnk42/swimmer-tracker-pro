@@ -41,6 +41,9 @@ export function reportClient(err: unknown, where: string): void {
   try {
     Sentry.withScope((scope) => {
       scope.setTag("where", where);
+      // Same reason as the server: the list should say which screen, not just
+      // "error".
+      scope.setTransactionName(where);
       Sentry.captureException(err);
     });
   } catch {

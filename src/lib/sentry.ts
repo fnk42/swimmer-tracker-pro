@@ -58,6 +58,13 @@ export function report(where: string, err: unknown): void {
   try {
     Sentry.withScope((scope) => {
       scope.setTag("where", where);
+      // Name the transaction too, not only the tag. Without it the issue list
+      // reads "error · ?(pg)" for every server fault, because the deepest
+      // frame is the Postgres driver — so a database error in registration and
+      // one in the feedback board look identical until you open them. The
+      // route is the thing worth seeing at a glance.
+      scope.setTransactionName(where);
+      scope.setFingerprint([where, err instanceof Error ? err.message : String(err)]);
       Sentry.captureException(err);
     });
   } catch {
