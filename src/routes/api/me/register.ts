@@ -3,7 +3,7 @@ import { one, json, fail, tx } from "@/lib/db";
 import { sessionFromRequest } from "@/lib/session";
 import { CONSENT_DOCUMENT, CONSENT_VERSION } from "@/lib/scope";
 import { sendParentInvite } from "@/lib/mailer";
-import { normalizeKePhone } from "@/lib/phone";
+import { canonicalPhone } from "@/lib/phone";
 import { adoptPhone } from "@/lib/identity";
 import { createSession, cookieHeader } from "@/lib/session";
 import { note } from "@/lib/activity";
@@ -44,10 +44,10 @@ export const Route = createFileRoute("/api/me/register")({
           // and the guardian was told only "could not finish setting up your
           // account". Returning families never saw it: their number arrives
           // prefilled from a record that is already canonical.
-          const phoneOk = normalizeKePhone(phone);
+          const phoneOk = canonicalPhone(phone);
           if (!phoneOk) {
             return json(
-              { error: "Enter a Kenyan mobile number we can reach you on, like 0712 345 678" },
+              { error: "Enter a phone number we can reach you on" },
               400,
             );
           }

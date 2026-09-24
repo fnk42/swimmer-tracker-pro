@@ -9,7 +9,7 @@
 // first one making a mistake?" has an answer: two adults on a swimmer must be
 // two different numbers.
 import { one, q, tx } from "@/lib/db";
-import { normalizeKePhone } from "@/lib/phone";
+import { canonicalPhone } from "@/lib/phone";
 
 export type AdoptResult =
   | { ok: true; parentId: string; merged: boolean; phone: string }
@@ -30,9 +30,9 @@ export type AdoptResult =
  * `merged` is true, or they will be pointing at a row that no longer exists.
  */
 export async function adoptPhone(parentId: string, rawPhone: string): Promise<AdoptResult> {
-  const phone = normalizeKePhone(rawPhone);
+  const phone = canonicalPhone(rawPhone);
   if (!phone) {
-    return { ok: false, error: "Enter a Kenyan mobile number, like 0712 345 678" };
+    return { ok: false, error: "Enter a phone number we can reach you on" };
   }
 
   const owner = await one<{ id: string }>(

@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { normalizeKePhone } from "@/lib/phone";
+import { canonicalPhone } from "@/lib/phone";
 import {
   useSwimmers,
   useMySwimmers,
@@ -857,7 +857,7 @@ function ParentSection({
     if (!parent1.fullName.trim()) errs.p1FullName = "Full name required";
     if (!parent1.gender) errs.p1Gender = "Gender required";
     if (!parent1.stayingOvernight) errs.p1Sleepover = "Answer required";
-    if (!normalizeKePhone(parent1.phone)) errs.p1Phone = "Enter a valid Kenyan number";
+    if (!canonicalPhone(parent1.phone)) errs.p1Phone = "Enter a phone number we can reach you on";
     return errs;
   }
 
@@ -870,7 +870,7 @@ function ParentSection({
       return;
     }
     try {
-      const normalized = normalizeKePhone(parent1.phone)!;
+      const normalized = canonicalPhone(parent1.phone)!;
       const p1Row = await saveParent.mutateAsync({
         id: existing?.id,
         fullName: parent1.fullName.trim(),

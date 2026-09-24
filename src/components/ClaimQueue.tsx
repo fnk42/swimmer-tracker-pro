@@ -46,6 +46,23 @@ export function ClaimQueue() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  async function actUnlisted(id: string, dismiss: boolean) {
+    setBusy(id);
+    setError(null);
+    try {
+      const r = await fetch("/api/admin/claims", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id, dismiss }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { setError(d.error ?? "Could not do that."); return; }
+      await load();
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function load() {
     try {
       const r = await fetch("/api/admin/claims");
@@ -189,8 +206,19 @@ export function ClaimQueue() {
                   asked for by {u.parent_name} · {u.parent_email}
                 </div>
                 {u.note && <p className="mt-2 text-sm text-foreground">“{u.note}”</p>}
-                <p className="mt-3 text-xs text-muted-foreground">
-                  Add them to the roster above, then the parent can claim them.
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button size="sm" disabled={busy === u.id}
+                          onClick={() => void actUnlisted(u.id, false)}>
+                    {busy === u.id ? "Adding…" : "Add to the roster and link them"}
+                  </Button>
+                  <Button size="sm" variant="outline" disabled={busy === u.id}
+                          onClick={() => void actUnlisted(u.id, true)}>
+                    Dismiss
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Adding puts them on the roster and on this parent's account. They are not in
+                  the Nationals team until the club puts them there.
                 </p>
               </div>
             ))}

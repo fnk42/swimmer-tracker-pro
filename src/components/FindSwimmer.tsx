@@ -71,7 +71,10 @@ export function FindSwimmer({ onClaimed, dark = false, confirmBeforeAdd = false,
       // The server asks for a number when somebody else already holds the
       // child; that is a step, not a failure, so it opens the field rather
       // than printing a refusal.
-      if (/phone number/i.test(msg) && /second parent|Kenyan mobile/i.test(msg)) {
+      // Keyed on the one phrase both phone replies share, rather than on the
+      // wording of either — the wording changed once already and this silently
+      // stopped opening the field.
+      if (/phone number/i.test(msg)) {
         setPhoneFor(id);
         setError(null);
       } else {

@@ -119,6 +119,75 @@ export const Route = createFileRoute("/api/admin/claims")({
         }
       },
 
+      // Add a swimmer the roster did not have, and hand them to the parent
+      // who asked for them.
+      //
+      // The queue could show these and do nothing about them, so a request
+      // sat pending for ever and the parent was told to wait for something
+      // nobody could action. One button now creates the swimmer, links the
+      // parent who asked, and closes the request.
+      PUT: async ({ request }) => {
+        const denied = requireAdmin(request);
+        if (denied) return denied;
+        try {
+          const s = sessionFromRequest(request);
+          const b = await request.json().catch(() => ({}));
+          const id = String(b?.id ?? "");
+          if (!id) return json({ error: "id required" }, 400);
+
+          if (b?.dismiss === true) {
+            await q(
+              `update public.athlete_claim_requests
+                  set status = 'rejected', decided_at = now(), decided_by = $2
+                where id = $1::uuid and status = 'pending'`,
+              [id, s?.email ?? ""],
+            );
+            return json({ ok: true, dismissed: true });
+          }
+
+          const req = await one<{ parent_id: string; child_name: string; child_age: number | null }>(
+            `select parent_id, child_name, child_age from public.athlete_claim_requests
+              where id = $1::uuid and status = 'pending'`,
+            [id],
+          );
+          if (!req) return json({ error: "That request is no longer waiting" }, 404);
+
+          const name = String(b?.name ?? req.child_name).trim();
+          if (name.length < 2) return json({ error: "Enter the swimmer's name" }, 400);
+
+          // An existing swimmer of that name is used rather than duplicated —
+          // the request usually means "not on the list", but sometimes it
+          // means "I could not find them".
+          const existing = await one<{ id: string }>(
+            `select id from public.swimmers where lower(name) = lower($1) limit 1`,
+            [name],
+          );
+          const sw = existing ?? await one<{ id: string }>(
+            `insert into public.swimmers (name, age, event_squad)
+             values ($1, $2, false) returning id`,
+            [name, req.child_age],
+          );
+          if (!sw) return json({ error: "Could not add that swimmer" }, 500);
+
+          await q(
+            `insert into public.swimmer_parents
+               (swimmer_id, parent_id, sort_order, status, decided_at, decided_by, decided_note)
+             values ($1, $2, 1, 'approved', now(), $3, 'added from a parent request')
+             on conflict do nothing`,
+            [sw.id, req.parent_id, s?.email ?? ""],
+          );
+          await q(
+            `update public.athlete_claim_requests
+                set status = 'approved', decided_at = now(), decided_by = $2, swimmer_id = $3
+              where id = $1::uuid`,
+            [id, s?.email ?? "", sw.id],
+          );
+          return json({ ok: true, swimmerId: sw.id, created: !existing });
+        } catch (err) {
+          return fail("PUT /api/admin/claims", err, "Could not add that swimmer");
+        }
+      },
+
       // Approve or reject one claim.
       POST: async ({ request }) => {
         try {

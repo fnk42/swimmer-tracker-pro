@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { q, one, json, fail } from "@/lib/db";
 import { adminEmails } from "@/lib/session";
 import { sendClaimNotice } from "@/lib/mailer";
-import { normalizeKePhone } from "@/lib/phone";
+import { normalizeKePhone, canonicalPhone } from "@/lib/phone";
 import { sessionFromRequest } from "@/lib/session";
 import { note } from "@/lib/activity";
 import { adoptPhone, otherAdultPhones } from "@/lib/identity";
@@ -140,10 +140,10 @@ export const Route = createFileRoute("/api/me/link")({
             // not something to do on the way to refusing the request — doing
             // it in that order merged a second parent into the first and then
             // told her no, leaving her signed in as him.
-            const normalized = normalizeKePhone(givenPhone);
+            const normalized = canonicalPhone(givenPhone);
             if (!normalized) {
               return json(
-                { needsPhone: true, error: "Enter a Kenyan mobile number, like 0712 345 678" },
+                { needsPhone: true, error: "Enter a phone number we can reach you on" },
                 400,
               );
             }

@@ -9,7 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMe, useClaimable, useClaimSwimmer, useMySwimmers } from "@/lib/api";
 import { FindSwimmer } from "@/components/FindSwimmer";
 import { ConsentText } from "@/components/ConsentText";
-import { normalizeKePhone } from "@/lib/phone";
+import { canonicalPhone } from "@/lib/phone";
 
 export const Route = createFileRoute("/welcome")({
   component: Welcome,
@@ -84,7 +84,7 @@ function Welcome() {
     if (step === "you") {
       // The same rule the server applies, so nobody is waved through here and
       // refused at the end for a number that was never going to be accepted.
-      return fullName.trim().length > 1 && !!normalizeKePhone(phone) && !!relationship;
+      return fullName.trim().length > 1 && !!canonicalPhone(phone) && !!relationship;
     }
     // Compulsory, and answerable two ways: pick your child off the roster, or
     // tell us who is missing from it. What cannot happen is carrying on with
