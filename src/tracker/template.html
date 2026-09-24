@@ -4608,9 +4608,13 @@ function portalBar(me){
   setStick();
   window.addEventListener('resize', setStick);
 
+  // Where logging out lands you depends on which door you came in by. A
+  // tester sent to "/" arrives at a page about registering a child for
+  // Machakos, which is not what they were invited to look at.
+  const outTo = me.isTester && !me.parent ? '/tester' : '/';
   document.getElementById('pb-out').onclick = async () => {
     try { await fetch('/api/auth/me', {method:'DELETE'}); } catch (e) {}
-    location.href = '/';
+    location.href = outTo;
   };
 }
 
@@ -4748,7 +4752,9 @@ async function boot(){
   // agreement they never asked for would hijack the journey they came for.
   if (me && me.isTester && me.needsAgreement && !me.parent) { location.replace('/tester'); return; }
 
-  if (me && me.signedIn && !me.isAdmin && !me.previewAccess) {
+  const canSeeAnalytics = me && (me.isAdmin || me.previewAccess
+    || (me.sections && me.sections.analytics));
+  if (me && me.signedIn && !canSeeAnalytics) {
     document.getElementById('foot').textContent = '';
     app.innerHTML =
       '<section class="wrap" style="padding-block:56px 72px;max-width:640px">'

@@ -73,6 +73,15 @@ function ParentPage() {
     // finish. She signed in four times. A coordinator is never held here.
     if (me.data?.signedIn && !me.data.isAdmin && me.data.needsRegistration) {
       navigate({ to: "/welcome" });
+      return;
+    }
+    // Nobody in the Machakos team means nothing to register and no balance to
+    // pay. The tab is already hidden; this closes the door behind it, so a
+    // stale link or a typed URL does not land a parent on a page about a meet
+    // their child is not in.
+    if (me.data?.signedIn && !me.data.isAdmin && me.data.sections
+        && me.data.sections.events === false) {
+      window.location.href = "/tracker";
     }
   }, [sessionLoading, session, navigate, me.data]);
 
@@ -160,27 +169,6 @@ function ParentPage() {
         .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
     [mineQ.data],
   );
-  const offSquad = myAccountSwimmers.filter((s) => !squadIds.has(s.id));
-  // Children the parent has asked the club to add to the team.
-  const [asked, setAsked] = useState<Record<string, boolean>>({});
-  const [asking, setAsking] = useState<string | null>(null);
-
-  async function askForSquad(id: string, name: string) {
-    setAsking(id);
-    try {
-      const r = await fetch("/api/me/squad-request", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ swimmerId: id }),
-      });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) { toast.error(d.error ?? "Could not send that."); return; }
-      setAsked((a) => ({ ...a, [id]: true }));
-      toast.success(`${name} added. The club will link them.`);
-    } finally {
-      setAsking(null);
-    }
-  }
 
   const available = useMemo(
     () =>
@@ -190,7 +178,6 @@ function ParentPage() {
         .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
     [swimmers, groupIds, myLinkedIds, linkedSwimmerIds],
   );
-
   // Chosen from the picker and waiting on the parent to say yes. Nothing is
   // linked while this is set.
   const [pendingChild, setPendingChild] = useState<{ id: string; name: string } | null>(null);
@@ -455,50 +442,6 @@ function ParentPage() {
                     {/* Say it here, once, rather than leaving a parent to
                         work out why a child she has just added cannot be
                         entered. */}
-                    {/* Not a refusal any more. The club still picks the team,
-                        but a parent can hand the question to them from here
-                        instead of being told no with nowhere to go. */}
-                    {offSquad.length > 0 && (
-                      <div
-                        className="mb-3 rounded-xl p-4 text-white"
-                        style={{ background: "linear-gradient(135deg,var(--ng-electric),var(--ng-electric-deep))" }}
-                      >
-                        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/75">
-                          Not in the Nationals team yet
-                        </p>
-                        <p className="mt-1.5 text-[13.5px] leading-relaxed text-white/90">
-                          {offSquad.length === 1 ? "This swimmer is" : "These swimmers are"} on your
-                          account, but the club has not put{" "}
-                          {offSquad.length === 1 ? "them" : "them"} in the Machakos team. Ask and a
-                          coordinator will add {offSquad.length === 1 ? "them" : "them"}.
-                        </p>
-                        <ul className="mt-3 space-y-2">
-                          {offSquad.map((sw) => (
-                            <li key={sw.id}
-                                className="flex flex-wrap items-center gap-2 rounded-lg bg-white/15 px-3 py-2">
-                              <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">
-                                {sw.name}
-                              </span>
-                              {asked[sw.id] ? (
-                                <span className="text-[12.5px] font-medium text-white/90">
-                                  ✓ Child added. The club will link them.
-                                </span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  disabled={asking === sw.id}
-                                  onClick={() => void askForSquad(sw.id, sw.name)}
-                                  className="rounded-lg bg-white px-3 py-1.5 text-[12.5px] font-semibold
-                                             text-[var(--ng-electric-deep)] disabled:opacity-60"
-                                >
-                                  {asking === sw.id ? "Sending…" : "Add to the Nationals"}
-                                </button>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
                     <ul className="divide-y divide-border rounded-lg border border-border">
                       {myAccountSwimmers.map((s) => (
                         <li key={s.id}>

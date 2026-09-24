@@ -62,6 +62,21 @@ export const Route = createFileRoute("/api/auth/me")({
             });
           }
 
+          // Does this parent have anybody in the Machakos team?
+          const squad = s.parentId
+            ? await one<{ n: number }>(
+                `select count(*)::int n
+                   from public.swimmer_parents sp
+                   join public.swimmers sw on sw.id = sp.swimmer_id
+                  where sp.parent_id = $1
+                    and (sw.event_squad
+                         or sw.id in (select swimmer_id from public.registrations))`,
+                [s.parentId],
+              )
+            : null;
+          const inSquad = (squad?.n ?? 0) > 0;
+          const v = await viewer(request);
+
           // Someone can be both — a coordinator who also has a child swimming.
           if (!p && !s.isAdmin) return json({ signedIn: false });
           return json({
@@ -77,7 +92,21 @@ export const Route = createFileRoute("/api/auth/me")({
             // the meet. Today the database only holds Machakos registrants, so
             // every parent has both — the distinction matters once parents of
             // non-registered swimmers can sign in too.
-            sections: { performance: true, events: s.isAdmin || !!s.parentId },
+            // Analytics is for every confirmed guardian — which is what the
+            // consent document has promised all along: "anyone in the NextGen
+            // community who has been confirmed as a parent or guardian can see
+            // race results for all NextGen swimmers". The "coming soon" hold
+            // was for the consent drive, and that is done.
+            //
+            // Events is narrower. A parent with nobody in the Machakos team
+            // has nothing to register and no balance to pay, so the tab is not
+            // theirs — and without it there is no "your child is not in the
+            // team" line to write, because they never reach the page.
+            sections: {
+              performance: true,
+              analytics: s.isAdmin || v?.scope === "community" || v?.scope === "coach",
+              events: s.isAdmin || inSquad,
+            },
             // An account that has never been filled in. /welcome greets these
             // people as first-time registrants rather than asking them to
             // confirm details they have never given.
@@ -85,7 +114,6 @@ export const Route = createFileRoute("/api/auth/me")({
             // Registration state, from the same place every route reads it.
             // Coordinators are never flagged — see the note in scope.ts.
             ...(await (async () => {
-              const v = await viewer(request);
               return v
                 ? {
                     scope: v.scope,

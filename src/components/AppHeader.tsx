@@ -43,9 +43,12 @@ export function AppHeader() {
     };
   }, [open]);
 
+  // Same reason as the tracker bar: a tester belongs back at the tester door.
+  const isTester = !!me.data?.isTester && !me.data?.parent;
+
   async function logout() {
     await signOut.mutateAsync();
-    navigate({ to: "/" });
+    navigate({ to: isTester ? "/tester" : "/" });
   }
 
   // The tab you are on wears the club's electric blue — the same fill the
@@ -86,7 +89,7 @@ export function AppHeader() {
             </a>
           )}
 
-          {sections.events && (
+          {sections.events && !isTester && (
             <div className="relative" ref={menu}>
               <button
                 type="button"

@@ -70,15 +70,12 @@ export const Route = createFileRoute("/api/me/register")({
           // an account with neither is a registration that registers nobody,
           // and that is how four sign-ins produced an empty record.
           const hasChild = await one<{ n: number }>(
-            `select (
-               (select count(*) from public.swimmer_parents where parent_id = $1) +
-               (select count(*) from public.athlete_claim_requests where parent_id = $1)
-             )::int as n`,
+            `select count(*)::int as n from public.swimmer_parents where parent_id = $1`,
             [pid],
           );
           if ((hasChild?.n ?? 0) === 0) {
             return json(
-              { error: "Add your swimmer, or tell us their name if they are not on the list" },
+              { error: "Choose your swimmer from the club roster before finishing" },
               400,
             );
           }

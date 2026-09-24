@@ -36,24 +36,19 @@ function PortalLanding() {
 
   useEffect(() => {
     if (me.isLoading || !me.data?.signedIn) return;
-    // Coordinators land on the analytics; everyone else lands on Events,
-    // which is the part that is actually finished and the reason parents are
-    // here this month. Analytics is still one click away in the bar, and says
-    // for itself that it is not ready. Coordinators are never held behind
-    // registration.
-    if (me.data.isAdmin) { window.location.href = "/tracker"; return; }
-    // A tester has no child and no Events. Unsigned, they go to the agreement;
-    // signed, straight to the analytics they are here to look at.
-    // Only a pure tester is routed to the agreement. A parent who also tests
-    // goes to Events like any other parent; the preview is something they can
-    // choose to open, not a gate across their own child's registration.
-    if (me.data.isTester && !me.data.parent) {
-      if (me.data.needsAgreement) navigate({ to: "/tester" });
-      else window.location.href = "/tracker";
+    // Everyone lands on Analytics — parents, testers and coordinators alike.
+    // It is what the club is for, and every one of them is entitled to it:
+    // the testers ARE parents, and the consent document has always promised a
+    // confirmed guardian the club's race results. Events is a click away for
+    // the families who have somebody in the Machakos team.
+    //
+    // A pure tester who has not signed the agreement is the one detour.
+    if (me.data.isTester && !me.data.parent && me.data.needsAgreement) {
+      navigate({ to: "/tester" });
       return;
     }
     if (me.data.needsRegistration) { navigate({ to: "/welcome" }); return; }
-    navigate({ to: "/parent" });
+    window.location.href = "/tracker";
   }, [me.isLoading, me.data, navigate]);
 
   // Whether the shared coordinator sign-in exists at all. The server answers
@@ -110,15 +105,13 @@ function PortalLanding() {
     setError(null);
     try {
       const r = await verifyCode.mutateAsync({ email: email.trim(), code: code.trim() });
-      if (r.isAdmin) { window.location.href = "/tracker"; return; }
       const who = await fetch("/api/auth/me").then((x) => x.json()).catch(() => null);
-      if (who?.isTester && !who.parent) {
-        if (who.needsAgreement) navigate({ to: "/tester" });
-        else window.location.href = "/tracker";
+      if (who?.isTester && !who.parent && who.needsAgreement) {
+        navigate({ to: "/tester" });
         return;
       }
       if (who?.needsRegistration) { navigate({ to: "/welcome" }); return; }
-      navigate({ to: "/parent" });
+      window.location.href = "/tracker";
     } catch {
       setError("That code is wrong or has expired. Check the email, or send a new code.");
     }
