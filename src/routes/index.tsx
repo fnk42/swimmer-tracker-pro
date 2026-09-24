@@ -10,6 +10,20 @@ import { useEffect, useState } from "react";
 import { useMe, useRequestCode, useVerifyCode } from "@/lib/api";
 import { ProgressWall } from "@/components/ProgressWall";
 
+// Where to go once they are in, when they were already on their way somewhere.
+//
+// Arriving here from a page that needed an account is a detour, and a detour
+// that forgets where you were going is how somebody signs in and then hunts
+// for the thing they clicked in the first place. Only our own paths are
+// honoured — never an absolute URL, which would turn the sign-in page into a
+// way of laundering links.
+function nextFromUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  const raw = new URLSearchParams(window.location.search).get("next");
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return null;
+  return raw;
+}
+
 // Where a signed-in person belongs, which is not the same question as what
 // they are allowed to see.
 //
@@ -89,6 +103,11 @@ function PortalLanding() {
       navigate({ to: "/welcome" });
       return;
     }
+    const wanted = nextFromUrl();
+    if (wanted) {
+      window.location.href = wanted;
+      return;
+    }
     let gone = false;
     landingFor(me.data).then((to) => {
       if (!gone) window.location.href = to;
@@ -163,17 +182,16 @@ function PortalLanding() {
         navigate({ to: "/welcome" });
         return;
       }
-      window.location.href = await landingFor(who ?? {});
+      window.location.href = nextFromUrl() ?? (await landingFor(who ?? {}));
     } catch {
       setError("That code is wrong or has expired. Check the email, or send a new code.");
     }
   }
 
-  // Listed side by side with no distinction, these read as two things you get
-  // on signing in. Only Events is: the performance pages are coach-only until
-  // the consent drive closes, so a parent entering Machakos today and then
-  // looking for their child's times would find a locked door and no
-  // explanation. Say which is ready.
+  // Both are live now. The analytics were coach-only while the consent drive
+  // ran, and this list still said "coming soon" for a fortnight after that
+  // stopped being true — telling every parent who read it that the thing they
+  // were about to be shown did not exist yet.
   const features = [
     {
       title: "Events",
@@ -183,9 +201,9 @@ function PortalLanding() {
     },
     {
       title: "NextGen Analytics",
-      body: "How swimming at the club is developing — season by season, stroke by stroke, by age group. Opening to families once every guardian has been asked to consent.",
+      body: "How swimming at the club is developing — season by season, stroke by stroke, and against a swimmer's own age group.",
       path: "M4 19V10m5 9V5m5 14v-6m5 6V8",
-      soon: true,
+      soon: false,
     },
   ];
 
@@ -214,8 +232,8 @@ function PortalLanding() {
             </span>
           </h1>
           <p className="mt-5 max-w-[48ch] text-[16.5px] leading-relaxed text-white/70">
-            Sign in to see the events your child is entered for, and to enter them for Machakos. The
-            performance pages are coming next.
+            Sign in to enter your swimmer for Machakos, see what is still owed, and follow how their
+            times are moving season by season.
           </p>
 
           <ul className="ng-panel mt-9 max-w-[520px] px-6 py-1">
@@ -324,9 +342,17 @@ function PortalLanding() {
           ) : step === "email" ? (
             <form onSubmit={onSendCode}>
               <h2 className="text-[20px] font-semibold">Sign in</h2>
+              {nextFromUrl() === "/register" && (
+                <p
+                  className="mb-4 mt-2 rounded-xl border border-[color:var(--ng-electric)]/40
+                             bg-[color:var(--ng-electric)]/10 p-3 text-[13.5px] leading-relaxed"
+                >
+                  This takes you straight back to your Machakos entry.
+                </p>
+              )}
               <p className="mb-6 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
-                Any email address — new to the club or not. We send a six-digit code, so there is no
-                password to remember. First time here? Sign in the same way and we will set you up.
+                New here? Use your address anyway — signing in is how an account gets made. There is
+                no password to remember; we send a six-digit code each time.
               </p>
               <label className="ng-label" htmlFor="email">
                 Email address

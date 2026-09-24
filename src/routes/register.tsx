@@ -106,7 +106,9 @@ function MachakosFlow() {
       ? {
           reason: "signedOut",
           body: "You are not signed in. Entering a swimmer for Machakos needs an account, so that the entry is attached to somebody.",
-          to: "/",
+          // Carry the destination, so signing in comes back to this entry
+          // rather than leaving them on the front page to find their own way.
+          to: "/?next=/register",
           cta: "Sign in",
         }
       : me.data.isAdmin
