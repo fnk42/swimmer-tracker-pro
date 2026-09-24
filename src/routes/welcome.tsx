@@ -41,6 +41,12 @@ function Welcome() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [relationship, setRelationship] = useState("");
+  // Who is registering, which is not always a parent. Bongani is 18 and swims
+  // for the club himself; Mercy, Anita, Nyagaki and Boit are parents who also
+  // swim. Asking both questions is the only way to tell those three apart, and
+  // it decides what the next screen is even for.
+  const [isParent, setIsParent] = useState<boolean | null>(null);
+  const [isSwimmer, setIsSwimmer] = useState<boolean | null>(null);
   const [secondName, setSecondName] = useState("");
   const [secondEmail, setSecondEmail] = useState("");
   const [claimed, setClaimed] = useState<string[]>([]);
@@ -78,7 +84,11 @@ function Welcome() {
     if (step === "you") {
       // The same rule the server applies, so nobody is waved through here and
       // refused at the end for a number that was never going to be accepted.
-      return fullName.trim().length > 1 && !!canonicalPhone(phone) && !!relationship;
+      return fullName.trim().length > 1 && !!canonicalPhone(phone)
+        // One of the two must be yes, or there is nothing to register.
+        && (isParent === true || isSwimmer === true)
+        // Only a parent is asked which they are.
+        && (isParent !== true || !!relationship);
     }
     // Compulsory, and answerable two ways: pick your child off the roster, or
     // tell us who is missing from it. What cannot happen is carrying on with
@@ -89,7 +99,8 @@ function Welcome() {
     if (step === "children") return true;
     if (step === "consent") return consentData && consentCommunity;
     return true;
-  }, [step, fullName, phone, relationship, consentData, consentCommunity, addedNames.length]);
+  }, [step, fullName, phone, relationship, consentData, consentCommunity,
+      addedNames.length, isParent, isSwimmer]);
 
   async function finish() {
     setBusy(true);
@@ -101,7 +112,10 @@ function Welcome() {
         body: JSON.stringify({
           fullName: fullName.trim(),
           phone: phone.trim(),
-          relationship,
+          // Somebody who only swims is "self" — they are their own swimmer.
+          relationship: isParent ? relationship : "self",
+          isParent: isParent === true,
+          isSwimmer: isSwimmer === true,
           consentData,
           consentCommunity,
           secondParent:
@@ -207,6 +221,48 @@ function Welcome() {
                 onChange={(e) => setPhone(e.target.value)}
               />
 
+              {/* Two questions, because the answers are independent. A parent
+                  who also swims answers yes twice; an eighteen-year-old
+                  registering himself answers no, then yes. */}
+              <span className="ng-label mt-5 block">
+                Are you a parent or guardian of a NextGen swimmer?
+              </span>
+              <div className="mt-1.5 flex gap-2">
+                {([["Yes", true], ["No", false]] as const).map(([lbl, val]) => (
+                  <button key={lbl} type="button" onClick={() => setIsParent(val)}
+                    className={
+                      "min-h-[44px] flex-1 rounded-xl px-4 text-[14.5px] font-medium transition-colors " +
+                      (isParent === val
+                        ? "bg-[var(--ng-electric)] text-white"
+                        : "border border-white/25 bg-white/5 text-white/80 hover:bg-white/10")
+                    }>
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+
+              <span className="ng-label mt-4 block">Do you swim for NextGen yourself?</span>
+              <div className="mt-1.5 flex gap-2">
+                {([["Yes", true], ["No", false]] as const).map(([lbl, val]) => (
+                  <button key={lbl} type="button" onClick={() => setIsSwimmer(val)}
+                    className={
+                      "min-h-[44px] flex-1 rounded-xl px-4 text-[14.5px] font-medium transition-colors " +
+                      (isSwimmer === val
+                        ? "bg-[var(--ng-electric)] text-white"
+                        : "border border-white/25 bg-white/5 text-white/80 hover:bg-white/10")
+                    }>
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+              {isParent === false && isSwimmer === false && (
+                <p className="mt-3 text-[13px] text-[#FFC24B]">
+                  One of these needs to be yes — otherwise there is nothing for us to set up.
+                </p>
+              )}
+
+              {isParent === true && (
+                <>
               <span className="ng-label mt-4 block">You are the</span>
               <div className="flex flex-wrap gap-2">
                 {["mother", "father", "guardian"].map((r) => (
@@ -226,6 +282,8 @@ function Welcome() {
                   </button>
                 ))}
               </div>
+                </>
+              )}
             </>
           )}
 
@@ -274,9 +332,9 @@ function Welcome() {
               <h1 className="text-[23px] font-semibold">Which swimmers are yours?</h1>
               <p className="mb-5 mt-1.5 text-[14px] leading-relaxed text-white/65">
                 Search their name. Once you add a swimmer you can see their results and enter
-                them for meets straight away. Only parents and guardians register swimmers. If
-                the other parent is already on a child, confirm your own phone number to join
-                them — a swimmer can have two.
+                them for meets straight away. If you swim for NextGen yourself, add your own
+                name here too. If another parent is already on a child, confirm your own phone
+                number to join them — a swimmer can have two.
               </p>
               <div className="rounded-xl bg-white/[.04] p-4">
                 <FindSwimmer

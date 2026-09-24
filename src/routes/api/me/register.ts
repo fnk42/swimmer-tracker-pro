@@ -51,7 +51,9 @@ export const Route = createFileRoute("/api/me/register")({
               400,
             );
           }
-          if (!["mother", "father", "guardian"].includes(relationship)) {
+          // "self" is someone who swims for the club and is nobody's parent —
+          // Bongani at 18, registering himself.
+          if (!["mother", "father", "guardian", "self"].includes(relationship)) {
             return json({ error: "Tell us whether you are the mother, father or guardian" }, 400);
           }
 
