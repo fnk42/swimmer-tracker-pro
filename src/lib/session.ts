@@ -99,6 +99,24 @@ export function adminEmails(): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Who gets emailed when a parent links themselves to a swimmer.
+ *
+ * Deliberately separate from adminEmails(): seeing the coordinator view and
+ * wanting a message about every link are different questions, and answering
+ * them with one list means the only way to stop the messages is to take away
+ * the view. Unset, everyone with the view is told. Set, only these addresses
+ * are — and an empty NOTIFY_EMAILS turns the notices off entirely.
+ */
+export function notifyEmails(): string[] {
+  const set = process.env.NOTIFY_EMAILS;
+  if (set === undefined) return adminEmails();
+  return set
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 export function isAdminEmail(email: string): boolean {
   return adminEmails().includes(email.trim().toLowerCase());
 }

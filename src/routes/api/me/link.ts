@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { q, one, json, fail } from "@/lib/db";
-import { adminEmails } from "@/lib/session";
+import { notifyEmails } from "@/lib/session";
 import { sendClaimNotice } from "@/lib/mailer";
 import { normalizeKePhone, canonicalPhone } from "@/lib/phone";
 import { sessionFromRequest } from "@/lib/session";
@@ -226,7 +226,7 @@ export const Route = createFileRoute("/api/me/link")({
             if (ctx) {
               const d = (x: string) => (normalizeKePhone(x) || x || "").replace(/\D/g, "").slice(-9);
               const mine = d(ctx.parent_phone);
-              await sendClaimNotice(adminEmails(), {
+              await sendClaimNotice(notifyEmails(), {
                 parentName: ctx.parent_name,
                 parentEmail: s.email,
                 swimmer: ctx.swimmer,
