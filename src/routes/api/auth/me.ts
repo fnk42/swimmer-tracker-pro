@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { one, json, fail } from "@/lib/db";
 import { sessionFromRequest, cookieHeader } from "@/lib/session";
 import { viewer } from "@/lib/scope";
+import { inSquadSql } from "@/lib/squad";
 
 export const Route = createFileRoute("/api/auth/me")({
   server: {
@@ -72,8 +73,7 @@ export const Route = createFileRoute("/api/auth/me")({
                    from public.swimmer_parents sp
                    join public.swimmers sw on sw.id = sp.swimmer_id
                   where sp.parent_id = $1
-                    and (sw.event_squad
-                         or sw.id in (select swimmer_id from public.registrations))`,
+                    and ${inSquadSql("sw")}`,
                 [s.parentId],
               )
             : null;

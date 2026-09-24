@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { q, json, fail } from "@/lib/db";
 import { sessionFromRequest } from "@/lib/session";
+import { inSquadSql } from "@/lib/squad";
 
 const MAX_ADULTS = 2;
 const MIN_QUERY = 2;
@@ -35,14 +36,17 @@ export const Route = createFileRoute("/api/me/claimable")({
           if (term.length < MIN_QUERY) return json({ swimmers: [], needsQuery: true });
 
           const rows = await q<{
-            id: string; name: string; adults: number; mine: boolean; in_squad: boolean;
+            id: string;
+            name: string;
+            adults: number;
+            mine: boolean;
+            in_squad: boolean;
           }>(
             `select s.id,
                     s.name,
                     count(sp.parent_id)::int as adults,
                     bool_or(sp.parent_id = $2) as mine,
-                    (s.event_squad
-                       or s.id in (select swimmer_id from public.registrations)) as in_squad
+                    ${inSquadSql("s")} as in_squad
                from public.swimmers s
                left join public.swimmer_parents sp on sp.swimmer_id = s.id
               where s.name ilike '%' || $1 || '%'

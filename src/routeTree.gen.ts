@@ -55,7 +55,6 @@ import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthDemoRouteImport } from './routes/api/auth/demo'
 import { Route as ApiAthleteAssessmentRouteImport } from './routes/api/athlete/assessment'
 import { Route as ApiAdminTestersRouteImport } from './routes/api/admin/testers'
-import { Route as ApiAdminStatusRouteImport } from './routes/api/admin/status'
 import { Route as ApiAdminParentImportRouteImport } from './routes/api/admin/parent-import'
 import { Route as ApiAdminClaimsRouteImport } from './routes/api/admin/claims'
 import { Route as ApiAdminActivityRouteImport } from './routes/api/admin/activity'
@@ -290,11 +289,6 @@ const ApiAdminTestersRoute = ApiAdminTestersRouteImport.update({
   path: '/api/admin/testers',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminStatusRoute = ApiAdminStatusRouteImport.update({
-  id: '/api/admin/status',
-  path: '/api/admin/status',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiAdminParentImportRoute = ApiAdminParentImportRouteImport.update({
   id: '/api/admin/parent-import',
   path: '/api/admin/parent-import',
@@ -338,7 +332,6 @@ export interface FileRoutesByFullPath {
   '/api/admin/activity': typeof ApiAdminActivityRoute
   '/api/admin/claims': typeof ApiAdminClaimsRoute
   '/api/admin/parent-import': typeof ApiAdminParentImportRoute
-  '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/admin/testers': typeof ApiAdminTestersRoute
   '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
   '/api/auth/demo': typeof ApiAuthDemoRoute
@@ -390,7 +383,6 @@ export interface FileRoutesByTo {
   '/api/admin/activity': typeof ApiAdminActivityRoute
   '/api/admin/claims': typeof ApiAdminClaimsRoute
   '/api/admin/parent-import': typeof ApiAdminParentImportRoute
-  '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/admin/testers': typeof ApiAdminTestersRoute
   '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
   '/api/auth/demo': typeof ApiAuthDemoRoute
@@ -443,7 +435,6 @@ export interface FileRoutesById {
   '/api/admin/activity': typeof ApiAdminActivityRoute
   '/api/admin/claims': typeof ApiAdminClaimsRoute
   '/api/admin/parent-import': typeof ApiAdminParentImportRoute
-  '/api/admin/status': typeof ApiAdminStatusRoute
   '/api/admin/testers': typeof ApiAdminTestersRoute
   '/api/athlete/assessment': typeof ApiAthleteAssessmentRoute
   '/api/auth/demo': typeof ApiAuthDemoRoute
@@ -497,7 +488,6 @@ export interface FileRouteTypes {
     | '/api/admin/activity'
     | '/api/admin/claims'
     | '/api/admin/parent-import'
-    | '/api/admin/status'
     | '/api/admin/testers'
     | '/api/athlete/assessment'
     | '/api/auth/demo'
@@ -549,7 +539,6 @@ export interface FileRouteTypes {
     | '/api/admin/activity'
     | '/api/admin/claims'
     | '/api/admin/parent-import'
-    | '/api/admin/status'
     | '/api/admin/testers'
     | '/api/athlete/assessment'
     | '/api/auth/demo'
@@ -601,7 +590,6 @@ export interface FileRouteTypes {
     | '/api/admin/activity'
     | '/api/admin/claims'
     | '/api/admin/parent-import'
-    | '/api/admin/status'
     | '/api/admin/testers'
     | '/api/athlete/assessment'
     | '/api/auth/demo'
@@ -654,7 +642,6 @@ export interface RootRouteChildren {
   ApiAdminActivityRoute: typeof ApiAdminActivityRoute
   ApiAdminClaimsRoute: typeof ApiAdminClaimsRoute
   ApiAdminParentImportRoute: typeof ApiAdminParentImportRoute
-  ApiAdminStatusRoute: typeof ApiAdminStatusRoute
   ApiAdminTestersRoute: typeof ApiAdminTestersRoute
   ApiAthleteAssessmentRoute: typeof ApiAthleteAssessmentRoute
   ApiAuthDemoRoute: typeof ApiAuthDemoRoute
@@ -1001,13 +988,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminTestersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/status': {
-      id: '/api/admin/status'
-      path: '/api/admin/status'
-      fullPath: '/api/admin/status'
-      preLoaderRoute: typeof ApiAdminStatusRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/admin/parent-import': {
       id: '/api/admin/parent-import'
       path: '/api/admin/parent-import'
@@ -1095,7 +1075,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminActivityRoute: ApiAdminActivityRoute,
   ApiAdminClaimsRoute: ApiAdminClaimsRoute,
   ApiAdminParentImportRoute: ApiAdminParentImportRoute,
-  ApiAdminStatusRoute: ApiAdminStatusRoute,
   ApiAdminTestersRoute: ApiAdminTestersRoute,
   ApiAthleteAssessmentRoute: ApiAthleteAssessmentRoute,
   ApiAuthDemoRoute: ApiAuthDemoRoute,

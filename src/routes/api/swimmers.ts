@@ -1,10 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { q, one, json, fail } from "@/lib/db";
 import { requireAdmin, requireSignedIn } from "@/lib/session";
+import { inSquadSql } from "@/lib/squad";
 
 type SwimmerRow = {
-  id: string; name: string; age: number | null;
-  gender: "Male" | "Female" | null; created_at: string; updated_at: string;
+  id: string;
+  name: string;
+  age: number | null;
+  gender: "Male" | "Female" | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export const Route = createFileRoute("/api/swimmers")({
@@ -30,8 +35,7 @@ export const Route = createFileRoute("/api/swimmers")({
               all
                 ? `select * from public.swimmers order by name`
                 : `select * from public.swimmers
-                    where event_squad
-                       or id in (select swimmer_id from public.registrations)
+                    where ${inSquadSql()}
                     order by created_at desc`,
             ),
           );
@@ -51,16 +55,21 @@ export const Route = createFileRoute("/api/swimmers")({
           if (Array.isArray(body)) {
             if (body.length === 0) return json({ imported: [], skipped: [] });
 
-            const existing = await q<{ name: string }>(
-              `select name from public.swimmers`,
-            );
+            const existing = await q<{ name: string }>(`select name from public.swimmers`);
             const seen = new Set(existing.map((s) => s.name.trim().toLowerCase()));
 
             const toInsert: Array<{ name: string; age?: number; gender?: string }> = [];
             const skipped: Array<{ name: string; reason: string }> = [];
-            for (const r of body as Array<{ name?: string; age?: number; gender?: "Male" | "Female" }>) {
+            for (const r of body as Array<{
+              name?: string;
+              age?: number;
+              gender?: "Male" | "Female";
+            }>) {
               const key = (r.name ?? "").trim().toLowerCase();
-              if (!key) { skipped.push({ name: r.name ?? "", reason: "Missing name" }); continue; }
+              if (!key) {
+                skipped.push({ name: r.name ?? "", reason: "Missing name" });
+                continue;
+              }
               if (seen.has(key)) {
                 skipped.push({ name: r.name ?? "", reason: "Duplicate — already in roster" });
                 continue;
