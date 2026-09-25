@@ -9,18 +9,19 @@ import { q } from "@/lib/db";
 // and the failure goes to the server log.
 
 export type Kind =
-  | "code_requested"      // a visitor asked for a sign-in code
-  | "code_undelivered"    // the email did not send — the one to act on
-  | "code_wrong"          // a code was entered and rejected
-  | "signed_in"           // a session was created
-  | "registration_done"   // a parent finished the registration form
-  | "consent_given"       // a guardian accepted the current consent document
-  | "swimmer_claimed"     // a parent put a child on their account
-  | "swimmer_unlinked"    // a parent took a child back off their own account
-  | "tester_registered"   // somebody signed up for the analytics preview
-  | "tester_agreed"       // a tester signed the confidentiality agreement
-  | "tester_refused"      // a tester reached for the preview without agreeing
-  | "tester_feedback";    // a tester posted to the shared board
+  | "code_requested" // a visitor asked for a sign-in code
+  | "code_undelivered" // the email did not send — the one to act on
+  | "code_wrong" // a code was entered and rejected
+  | "signed_in" // a session was created
+  | "registration_done" // a parent finished the registration form
+  | "consent_given" // a guardian accepted the current consent document
+  | "swimmer_claimed" // a parent put a child on their account
+  | "swimmer_unlinked" // a parent took a child back off their own account
+  | "tester_registered" // somebody signed up for the analytics preview
+  | "tester_agreed" // a tester signed the confidentiality agreement
+  | "tester_refused" // a tester reached for the preview without agreeing
+  | "tester_feedback" // a tester posted to the shared board
+  | "payment_recorded"; // a family logged an M-Pesa payment for the trip
 
 export async function note(
   kind: Kind,
