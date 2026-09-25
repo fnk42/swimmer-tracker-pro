@@ -8,6 +8,28 @@ import { sessionFromRequest } from "@/lib/session";
 import type { Scope } from "@/lib/tiers";
 
 /**
+ * The tester row for this session, by id or — failing that — by address.
+ *
+ * A session is a snapshot of what was true when it was signed. Nyawira signed
+ * in at 07:26 as a parent and was added to the preview at 15:52; her cookie
+ * still said "parent and nothing else", so the agreement screen told her she
+ * was not signed in as a tester and there was nothing she could do about it
+ * from that screen. Anybody added to the preview after their last sign-in hits
+ * this. The address is the same person, so look them up by it.
+ */
+export async function testerIdFor(
+  s: { email: string; testerId?: string } | null,
+): Promise<string | null> {
+  if (!s) return null;
+  if (s.testerId) return s.testerId;
+  const row = await one<{ id: string }>(
+    `select id from public.testers where lower(email) = lower($1)`,
+    [s.email],
+  );
+  return row?.id ?? null;
+}
+
+/**
  * May this session see the analytics?
  *
  * Not yet a thing the club has released. Completing registration grants
@@ -24,11 +46,12 @@ export async function maySeeAnalytics(request: Request): Promise<boolean> {
   const s = sessionFromRequest(request);
   if (!s) return false;
   if (s.isAdmin) return true;
-  if (!s.testerId) return false;
+  const tid = await testerIdFor(s);
+  if (!tid) return false;
   const row = await one<{ ok: boolean }>(
     `select (agreed_at is not null and revoked_at is null and expires_at > now()) as ok
        from public.testers where id = $1`,
-    [s.testerId],
+    [tid],
   );
   return !!row?.ok;
 }

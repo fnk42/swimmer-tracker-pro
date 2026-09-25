@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { one, json, fail } from "@/lib/db";
 import { sessionFromRequest, cookieHeader } from "@/lib/session";
-import { viewer } from "@/lib/scope";
+import { viewer, testerIdFor } from "@/lib/scope";
 import { inSquadSql } from "@/lib/squad";
 
 export const Route = createFileRoute("/api/auth/me")({
@@ -20,19 +20,22 @@ export const Route = createFileRoute("/api/auth/me")({
             : null;
           // Deleted out from under a live cookie: answer signed-out rather
           // than half-signed-in, which is what let writes carry on.
-          if (s.parentId && !p && !s.testerId && !s.isAdmin) {
+          // Same reason as the agreement route: somebody added to the preview
+          // after their last sign-in has no testerId in the cookie.
+          const testerId = await testerIdFor(s);
+          if (s.parentId && !p && !testerId && !s.isAdmin) {
             return json({ signedIn: false });
           }
           // Does this session hold live preview access? Its own question,
           // separate from being a parent: a parent-tester keeps Events either
           // way, and only the analytics wait on the agreement.
-          const preview = s.testerId
+          const preview = testerId
             ? await one<{ ok: boolean }>(
                 `select (agreed_at is not null
                          and revoked_at is null
                          and expires_at > now()) as ok
                    from public.testers where id = $1`,
-                [s.testerId],
+                [testerId],
               )
             : null;
           const previewAccess = !!preview?.ok;
@@ -93,7 +96,7 @@ export const Route = createFileRoute("/api/auth/me")({
             isAdmin: s.isAdmin,
             // A parent who also tests. Events is theirs as a parent; the
             // analytics open only once the agreement is signed.
-            isTester: !!s.testerId,
+            isTester: !!testerId,
             previewAccess,
             // Which sections of the portal this person gets. Everyone signed in
             // sees Performance; Events is for the people actually involved in

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { one, json, fail } from "@/lib/db";
 import { sessionFromRequest } from "@/lib/session";
+import { testerIdFor } from "@/lib/scope";
 
 // Where a signed-in tester stands: have they agreed, and is the preview still
 // open? The registration screens read this to decide which step to show.
@@ -10,14 +11,18 @@ export const Route = createFileRoute("/api/tester/me")({
       GET: async ({ request }) => {
         try {
           const s = sessionFromRequest(request);
-          if (!s?.testerId) return json({ isTester: false });
+          const testerId = await testerIdFor(s);
+          if (!testerId) return json({ isTester: false });
           const t = await one<{
-            full_name: string; email: string; agreed_at: string | null;
-            expires_at: string; revoked_at: string | null;
+            full_name: string;
+            email: string;
+            agreed_at: string | null;
+            expires_at: string;
+            revoked_at: string | null;
           }>(
             `select full_name, email, agreed_at, expires_at, revoked_at
                from public.testers where id = $1`,
-            [s.testerId],
+            [testerId],
           );
           if (!t) return json({ isTester: false });
           return json({

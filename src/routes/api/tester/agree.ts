@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { one, q, json, fail } from "@/lib/db";
-import { sessionFromRequest } from "@/lib/session";
+import { sessionFromRequest, createSession, cookieHeader } from "@/lib/session";
+import { testerIdFor } from "@/lib/scope";
 import { CONSENT_VERSION, CONSENT_DOCUMENT } from "@/lib/consent-version";
 import { note } from "@/lib/activity";
 
@@ -13,7 +14,11 @@ export const Route = createFileRoute("/api/tester/agree")({
       POST: async ({ request }) => {
         try {
           const s = sessionFromRequest(request);
-          if (!s?.testerId) return json({ error: "Not signed in as a tester" }, 401);
+          if (!s) return json({ error: "Not signed in" }, 401);
+          // By address, not only by what the cookie happened to know when it
+          // was signed — see testerIdFor.
+          const testerId = await testerIdFor(s);
+          if (!testerId) return json({ error: "That address is not on the preview list" }, 403);
           const b = await request.json().catch(() => ({}));
           if (b?.confidentiality !== true || b?.consent !== true) {
             return json({ error: "Both boxes need to be ticked" }, 400);
@@ -40,14 +45,27 @@ export const Route = createFileRoute("/api/tester/agree")({
                 set agreed_at = coalesce(agreed_at, now()), agreed_version = $2
               where id = $1 and revoked_at is null
              returning id, expires_at`,
-            [s.testerId, CONSENT_VERSION],
+            [testerId, CONSENT_VERSION],
           );
           if (!row) return json({ error: "That tester access has been withdrawn" }, 403);
 
           await note("tester_agreed", {
-            email: s.email, detail: `confidentiality + consent ${CONSENT_VERSION}`,
+            email: s.email,
+            detail: `confidentiality + consent ${CONSENT_VERSION}`,
           });
-          return json({ ok: true, expiresAt: row.expires_at });
+          // Carry the tester id into the session, so the rest of the app can
+          // stop looking it up and she is not sent round this loop again.
+          const token = createSession({
+            email: s.email,
+            parentId: s.parentId,
+            testerId,
+            isAdmin: !!s.isAdmin,
+            via: s.via,
+          });
+          return new Response(JSON.stringify({ ok: true, expiresAt: row.expires_at }), {
+            status: 200,
+            headers: { "content-type": "application/json", "set-cookie": cookieHeader(token) },
+          });
         } catch (err) {
           return fail("POST /api/tester/agree", err, "Could not record your agreement");
         }
