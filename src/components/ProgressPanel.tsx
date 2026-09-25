@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
 import { EVENT, formatKes } from "@/lib/event-config";
 
 type Row = {
@@ -44,6 +45,9 @@ function stage(r: Row): { label: string; done: boolean; tone: string } {
 
 export function ProgressPanel() {
   const [open, setOpen] = useState(false);
+  // Forty-six rows of "no adult on record" is a report, not a dashboard. It
+  // opens when it is asked for.
+  const [expanded, setExpanded] = useState(false);
   const qy = useQuery({
     queryKey: ["admin", "progress"],
     queryFn: async () => {
@@ -80,14 +84,29 @@ export function ProgressPanel() {
                     `${inPreview.length} of ${testers.length} testers in the preview`}
             </CardDescription>
           </div>
-          {rows.length > 0 && (
-            <Button variant="outline" size="sm" className="h-8" onClick={() => setOpen(!open)}>
-              {open ? "Show only those stuck" : `Show all ${rows.length}`}
+          <div className="flex gap-2">
+            {expanded && rows.length > 0 && (
+              <Button variant="outline" size="sm" className="h-9" onClick={() => setOpen(!open)}>
+                {open ? "Only those stuck" : `Show all ${rows.length}`}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 gap-1.5"
+              onClick={() => setExpanded((v) => !v)}
+              aria-expanded={expanded}
+            >
+              {expanded ? "Hide" : `Open${stuck.length ? ` · ${stuck.length} to sort` : ""}`}
+              <ChevronDown
+                aria-hidden
+                className={"h-4 w-4 transition-transform " + (expanded ? "rotate-180" : "")}
+              />
             </Button>
-          )}
+          </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className={expanded ? "space-y-6" : "hidden"}>
         <div>
           <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Machakos {stuck.length > 0 && `· ${stuck.length} still to sort`}

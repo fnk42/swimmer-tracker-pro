@@ -6,7 +6,6 @@ import { ActivityLog } from "@/components/ActivityLog";
 import { ProgressPanel } from "@/components/ProgressPanel";
 import { TesterPanel } from "@/components/TesterPanel";
 import { FeedbackPanel } from "@/components/FeedbackPanel";
-import { ParentImport } from "@/components/ParentImport";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -252,8 +251,6 @@ function AdminPage() {
             <section className="mt-6">
               <ProgressPanel />
             </section>
-
-            <ParentImport onDone={() => swimmersQ.refetch()} />
 
             <Card>
               <CardHeader>

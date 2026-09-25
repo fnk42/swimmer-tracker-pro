@@ -6,14 +6,31 @@ import { useEffect, useState } from "react";
 // "not signed" against it is a person who has seen nothing. That distinction is
 // the one a coordinator most needs at a glance, so it is the loud column.
 type Tester = {
-  id: string; email: string; full_name: string; how_known: string;
-  agreed_at: string | null; expires_at: string; revoked_at: string | null;
-  last_seen_at: string | null; created_at: string;
-  feedback: number; sign_ins: number;
+  id: string;
+  email: string;
+  full_name: string;
+  how_known: string;
+  agreed_at: string | null;
+  expires_at: string;
+  revoked_at: string | null;
+  last_seen_at: string | null;
+  created_at: string;
+  feedback: number;
+  sign_ins: number;
 };
 
+// The day alone was no use for the question actually being asked — did they
+// sign before or after I sent the link, did they agree before or after the
+// fault was fixed. Both are answered in minutes, not days.
 const day = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "—";
+  iso
+    ? new Date(iso).toLocaleString(undefined, {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "—";
 
 const ago = (iso: string | null) => {
   if (!iso) return "never";
@@ -33,7 +50,9 @@ export function TesterPanel() {
       .then((j) => j && setRows(j.rows ?? []))
       .catch(() => undefined);
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
   async function revoke(t: Tester, on: boolean) {
     await fetch("/api/admin/testers", {
@@ -56,12 +75,16 @@ export function TesterPanel() {
           {rows.length} registered · {signed} with access
         </span>
         <span className="flex-1" />
-        <button onClick={() => void navigator.clipboard?.writeText(`${location.origin}/tester`)}
-                className="text-[12.5px] text-muted-foreground underline-offset-4 hover:underline">
+        <button
+          onClick={() => void navigator.clipboard?.writeText(`${location.origin}/tester`)}
+          className="text-[12.5px] text-muted-foreground underline-offset-4 hover:underline"
+        >
           Copy the invite link
         </button>
-        <button onClick={() => void load()}
-                className="text-[12.5px] text-muted-foreground underline-offset-4 hover:underline">
+        <button
+          onClick={() => void load()}
+          className="text-[12.5px] text-muted-foreground underline-offset-4 hover:underline"
+        >
           Refresh
         </button>
       </div>
@@ -77,7 +100,10 @@ export function TesterPanel() {
             const expired = new Date(t.expires_at).getTime() < Date.now();
             const out = !!t.revoked_at || expired || !t.agreed_at;
             return (
-              <li key={t.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 py-2.5 text-[13px]">
+              <li
+                key={t.id}
+                className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 py-2.5 text-[13px]"
+              >
                 <span className="min-w-0 flex-1">
                   <b className="font-medium">{t.full_name || t.email}</b>{" "}
                   <span className="text-muted-foreground">{t.email}</span>
@@ -96,9 +122,13 @@ export function TesterPanel() {
                 </span>
                 <span className="text-muted-foreground">{t.sign_ins} sign-ins</span>
                 <span className="text-muted-foreground">{t.feedback} feedback</span>
-                <span className="font-mono text-[11px] text-muted-foreground">{ago(t.last_seen_at)}</span>
-                <button onClick={() => void revoke(t, !t.revoked_at)}
-                        className="text-[12.5px] text-muted-foreground underline-offset-4 hover:text-destructive hover:underline">
+                <span className="font-mono text-[11px] text-muted-foreground">
+                  {ago(t.last_seen_at)}
+                </span>
+                <button
+                  onClick={() => void revoke(t, !t.revoked_at)}
+                  className="text-[12.5px] text-muted-foreground underline-offset-4 hover:text-destructive hover:underline"
+                >
                   {t.revoked_at ? "Restore" : "Revoke"}
                 </button>
               </li>
@@ -111,7 +141,11 @@ export function TesterPanel() {
         Access needs a signed agreement and ends 30 September 2026. Revoking takes effect on their
         next click. Somebody who is also a parent keeps their own Events either way — only the
         analytics wait on the agreement. Their sign-ins appear in the log above; what they said is
-        on the <a href="/feedback" className="underline underline-offset-2">feedback board</a>.
+        on the{" "}
+        <a href="/feedback" className="underline underline-offset-2">
+          feedback board
+        </a>
+        .
       </p>
     </div>
   );

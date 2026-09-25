@@ -662,9 +662,12 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
 
 /* portal bar — matches AppHeader on the React pages, because it is the same
    portal and the same sign-in; only the rendering differs */
+/* Above the filter bar, not level with it. Both were z-index 40, so the
+   filters — later in the document — slid over the navigation and the bar
+   looked as though it had scrolled away. */
 .pbar{background:rgba(7,20,39,.82);backdrop-filter:blur(14px);
   border-bottom:1px solid rgba(255,255,255,.10);
-  position:sticky;top:env(safe-area-inset-top,0px);z-index:40}
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:60}
 .pbar .in{max-width:1180px;margin:0 auto;padding:0 20px;height:56px;
   display:flex;align-items:center;gap:14px}
 .pbar .club.abbr{display:none;font-weight:600;color:#C9DAEC}
@@ -972,20 +975,19 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 /* One row per filter, label left, controls right. Side by side, the three
    groups wrapped unpredictably as the chip counts changed and the Age row
    could end up split across two lines while Stroke sat alone on a third. */
-.fbar{position:sticky;top:var(--stick,0px);z-index:40;display:grid;
-  grid-template-columns:auto minmax(0,1fr);gap:9px 14px;align-items:center;
+/* One line, and dropdowns rather than eleven chips laid out in the open.
+   The chips were a row of buttons per filter — three stacked bands of
+   options, permanently expanded, above every page. */
+.fbar{position:sticky;top:var(--stick,0px);z-index:40;display:flex;
+  flex-wrap:wrap;gap:10px 18px;align-items:center;
   margin:16px 0 4px;padding:12px 14px;
   background:color-mix(in srgb, var(--surface) 94%, transparent);
   backdrop-filter:saturate(140%) blur(8px);
   border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow-sm)}
-.fb-grp{display:grid;grid-template-columns:subgrid;grid-column:1 / -1;
-  align-items:center;min-width:0}
-@supports not (grid-template-columns: subgrid){
-  .fb-grp{display:flex;align-items:center;gap:9px}
-}
+.fb-grp{display:flex;align-items:center;gap:8px;min-width:0}
 .fb-lab{font-size:10px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
   color:var(--muted);white-space:nowrap}
-.fb-chips{display:flex;flex-wrap:wrap;gap:3px}
+.fb-chips{display:none}
 .fb-chips button{appearance:none;border:1px solid var(--line);background:var(--surface);
   font:inherit;font-size:12px;font-weight:600;color:var(--muted);padding:4px 9px;
   border-radius:999px;cursor:pointer;white-space:nowrap}
@@ -995,9 +997,15 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 .fbar select{font:inherit;font-size:12.5px;padding:5px 8px;border-radius:8px;
   border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 .fb-arr{color:var(--muted);font-size:12px}
-.fb-search{flex:1 1 160px}
-.fb-search .f-q{width:100%;min-width:0;font:inherit;font-size:13px;padding:6px 10px;
+/* The name typed here is the thing being looked for, so it is set like the
+   swimmer's name in Follow a swimmer rather than like placeholder grey. */
+.fb-search{flex:1 1 320px;min-width:220px}
+.fb-search .f-q{width:100%;min-width:0;font:inherit;font-size:14px;font-weight:700;
+  color:var(--ink);padding:8px 12px;
   border-radius:9px;border:1px solid var(--line);background:var(--surface)}
+.fb-search .f-q:focus{outline:2px solid var(--electric);outline-offset:1px;
+  border-color:var(--electric)}
+.fb-search .f-q::placeholder{font-weight:500;color:var(--muted)}
 .pw-span{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;
   font-weight:700;color:var(--ink)}
 .fb-clear{appearance:none;border:0;background:none;font:inherit;font-size:12px;
@@ -1012,14 +1020,14 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
    the phone renders as its own native picker. */
 .fb-wrap{min-width:0}
 .fb-span{display:flex;align-items:center;gap:7px;min-width:0}
-.fb-sel{display:none}
+.fb-sel{display:inline-block;font:inherit;font-size:13px;padding:7px 10px;
+  border-radius:9px;border:1px solid var(--line);background:var(--surface);
+  color:var(--ink);font-weight:600}
 @media (max-width:700px){
   .fbar{grid-template-columns:minmax(0,1fr);gap:8px;padding:10px}
   .fb-grp{display:grid;grid-template-columns:62px minmax(0,1fr);gap:8px}
   .fb-chips{display:none}
-  .fb-sel{display:block;width:100%;min-width:0;font:inherit;font-size:13.5px;
-    padding:7px 9px;border-radius:9px;border:1px solid var(--line);
-    background:var(--surface);color:var(--ink)}
+  .fb-sel{width:100%}
   .fb-span select{flex:1 1 0}
   .fb-search{grid-column:1 / -1}
   .fb-clear{grid-column:1 / -1;text-align:left}
@@ -1027,9 +1035,12 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 }
 
 /* type a name instead of scrolling 125 of them */
-.twpick{font:inherit;font-size:13.5px;padding:8px 11px;border-radius:9px;
+.twpick{font:inherit;font-size:15px;font-weight:700;padding:9px 12px;border-radius:9px;
   border:1px solid var(--line);background:var(--surface);color:var(--ink);
-  min-width:200px;max-width:100%}
+  min-width:230px;max-width:100%}
+/* Whose chart this is, said in the club's blue — the same fill the selected
+   swimmer wears everywhere else. */
+#twA{border-color:var(--electric);box-shadow:inset 3px 0 0 var(--electric)}
 .twpick:focus{outline:2px solid var(--electric);outline-offset:1px;border-color:var(--electric)}
 .twpick::placeholder{color:var(--muted)}
 .twcb{position:relative;display:inline-block}
@@ -2340,7 +2351,11 @@ function twoSection(){
   })();
   let all = (DATA.years.all.swimmers || []).filter(s => (s.events || []).length)
     .map(s => s.name).sort();
-  if (fActive()) all = all.filter(n => SC.names.has(n));
+  // The filters above decide WHAT is drawn — which stroke, which seasons —
+  // never WHO. Narrowing this list by them took Sierra out of it the moment
+  // butterfly was chosen, and the line below then fell back to all[0]:
+  // somebody else's child, drawn under the name you had typed. Every swimmer
+  // stays pickable, and a stroke they do not swim is said in words.
   twNames = all;
   if (!all.length) return `<p class="nodata">No swimmer matches the filters above.</p>`;
   // A swimmer chosen before the filter narrowed may no longer be in it.
@@ -2397,6 +2412,13 @@ function twoSection(){
   }).filter(s => s.pts.length);
 
   if (!series.length) return `<p class="nodata">Nothing to plot for this swimmer.</p>`;
+  // The chosen swimmer has no race at all under these filters — nearly always
+  // a stroke they do not swim. Say which, and leave every control in place so
+  // the next click is a stroke change rather than a reload.
+  const twEmpty = series[0].races === 0
+    ? `${esc(series[0].name)} has no ${twBy === 'stroke' ? '' : esc(twStroke) + ' '}races`
+      + `${fActive() ? ' under these filters' : ''}.`
+    : '';
 
   // The axis categories, needed by the span bars below as well as the chart.
   // Keyed by meet id, but a meet id is not a label — carry the readable form
@@ -2531,9 +2553,6 @@ function twoSection(){
       <label>Measured against<select id="twBase">${Object.entries(TW_BASE).map(([k, v]) =>
         `<option value="${k}"${twBase === k ? ' selected' : ''}>${esc(v[0])}</option>`).join('')}
       </select></label>
-      ${twBy === 'stroke' ? '' : `<label>Stroke<select id="twStroke">${STROKE_LIST.map(k =>
-        `<option value="${k}"${k === twStroke ? ' selected' : ''}>${k}</option>`).join('')}
-      </select></label>`}
       <label>Broken down by<select id="twBy">
         <option value="meet"${twBy === 'meet' ? ' selected' : ''}>Meet</option>
         <option value="season"${twBy === 'season' ? ' selected' : ''}>Season</option>
@@ -2541,6 +2560,9 @@ function twoSection(){
       </select></label>
     </div>
 
+    ${twEmpty ? `<p class="nodata" style="margin-top:14px">${twEmpty} Change the stroke in the
+      filter bar at the top, or choose <b>Stroke</b> under \u201cBroken down by\u201d to see every
+      stroke they do swim.</p>` : `
     <div class="dbody solo"><div class="dmain">
       ${spanBars}
       ${DOWN_IS_FASTER}
@@ -2600,6 +2622,7 @@ function twoSection(){
           ? ` — the ${esc(aBand)} median is ${pct(bandNorm)} a year` : ''}, so two ages on one
         axis would say more about the ages than the swimmers.` : ''}</p>
     </div></div>
+    `}
   </section>`;
 }
 
@@ -4396,7 +4419,6 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
 
   // Writes to the shared filter, so a stroke chosen on this chart stays
   // chosen on the bar above and on every other page.
-  bind('twStroke', e => { fStroke = e.target.value; render(); });
   pickName('twA', v => { twA = v; if (twB === twA) twB = ''; }, false);
   pickName('twB', v => { twB = v; }, true, () => twNamesB);  // empty means nobody
   bind('twBy',   e => { twBy = e.target.value; render(); });
