@@ -3,7 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useMe, useSignOut } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { EVENT } from "@/lib/event-config";
-import { LogOut } from "lucide-react";
+import { LogOut, ChevronDown } from "lucide-react";
 
 // One sign-in, so one bar to move between what that sign-in gives you.
 //
@@ -103,9 +103,13 @@ export function AppHeader() {
                 className={`${tabBase} ${onEvents ? tabActive : tabIdle} flex items-center gap-1.5`}
               >
                 Events
-                <span aria-hidden className="text-[10px] leading-none">
-                  ▾
-                </span>
+                {/* 10px on a 14px label read as a speck of dust. This is the
+                    same chevron shadcn uses elsewhere, at the size the rest of
+                    the bar is drawn in. */}
+                <ChevronDown
+                  aria-hidden
+                  className={"h-4 w-4 transition-transform " + (open ? "rotate-180" : "")}
+                />
               </button>
 
               {open && (

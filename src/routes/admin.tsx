@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { RosterManager } from "@/components/RosterManager";
-import { ClaimQueue } from "@/components/ClaimQueue";
 import { ActivityLog } from "@/components/ActivityLog";
 import { ProgressPanel } from "@/components/ProgressPanel";
 import { TesterPanel } from "@/components/TesterPanel";
@@ -50,7 +49,16 @@ import { EVENT, formatKes } from "@/lib/event-config";
 import { exportAllData, downloadCsv } from "@/lib/csv";
 import type { Swimmer, Registration, Payment, Parent, SwimmerParentLink } from "@/lib/schemas";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight, Trash2, FileDown, Pencil, Check, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronRight,
+  FileDown,
+  Pencil,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
@@ -59,6 +67,8 @@ export const Route = createFileRoute("/admin")({
 function AdminPage() {
   const navigate = useNavigate();
   const [toDelete, setToDelete] = useState<Swimmer | null>(null);
+  const [rosterOpen, setRosterOpen] = useState(false);
+  const [swimmerQuery, setSwimmerQuery] = useState("");
 
   const swimmersQ = useSwimmers();
   const registrationsQ = useRegistrations();
@@ -105,6 +115,11 @@ function AdminPage() {
   }, [swimmers, registrations, payments]);
   const parents = parentsQ.data ?? [];
   const links = linksQ.data ?? [];
+
+  const shownSwimmers = useMemo(() => {
+    const q = swimmerQuery.trim().toLowerCase();
+    return q ? swimmers.filter((x) => x.name.toLowerCase().includes(q)) : swimmers;
+  }, [swimmers, swimmerQuery]);
 
   const registrationById = useMemo(() => {
     const m = new Map<string, Registration>();
@@ -218,18 +233,11 @@ function AdminPage() {
               links={links}
             />
 
-            {/* First, because it is the thing a coordinator opens this page to
-                check on a registration weekend: is anybody stuck at the door?
-                It used to sit below the roster tools, far enough down that it
-                was reported missing. */}
-            {/* Before the log, because the log says what happened and this
-                says what has not. A family that never reached the app is
-                invisible in everything else on this page. */}
+            {/* What a coordinator is rung about, in the order they are rung
+                about it: did I get in, did my payment land — then the preview,
+                then what the testers found. Who is attached to which child
+                matters, but not at nine on a payment morning. */}
             <section className="mt-8">
-              <ProgressPanel />
-            </section>
-
-            <section className="mt-6">
               <ActivityLog />
             </section>
 
@@ -237,19 +245,15 @@ function AdminPage() {
               <TesterPanel />
             </section>
 
-            {/* Right under the testers themselves: who is in, then what they
-                found. */}
             <section className="mt-6">
               <FeedbackPanel />
             </section>
 
-            {/* The parent list is what unblocks every family. */}
-            <ParentImport onDone={() => swimmersQ.refetch()} />
+            <section className="mt-6">
+              <ProgressPanel />
+            </section>
 
-            {/* Swimmer claims no longer wait here — they take effect when the
-                parent makes them. What is left is children nobody could find on
-                the roster, which still needs a person. */}
-            <ClaimQueue />
+            <ParentImport onDone={() => swimmersQ.refetch()} />
 
             <Card>
               <CardHeader>
@@ -261,14 +265,49 @@ function AdminPage() {
               </CardContent>
             </Card>
 
+            {/* Forty-six rows, each one expandable, sat open at the bottom of
+                every visit. Shut by default with the count on the button, and
+                a box to find one by name — which is how anybody actually
+                arrives at this table: with a name already in mind. */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Swimmers</CardTitle>
-                <CardDescription>
-                  Click a row to see registration & payment details.
-                </CardDescription>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="space-y-1.5">
+                    <CardTitle className="text-base">Swimmers</CardTitle>
+                    <CardDescription>
+                      Click a row to see registration &amp; payment details.
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 gap-1.5"
+                    onClick={() => setRosterOpen((v) => !v)}
+                    aria-expanded={rosterOpen}
+                  >
+                    {rosterOpen ? "Hide" : `Show all ${swimmers.length}`}
+                    <ChevronDown
+                      aria-hidden
+                      className={"h-4 w-4 transition-transform " + (rosterOpen ? "rotate-180" : "")}
+                    />
+                  </Button>
+                </div>
+                {rosterOpen && (
+                  <div className="relative mt-4">
+                    <Search
+                      aria-hidden
+                      className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                    />
+                    <Input
+                      value={swimmerQuery}
+                      onChange={(e) => setSwimmerQuery(e.target.value)}
+                      placeholder="Find a swimmer by name…"
+                      className="h-10 pl-9"
+                    />
+                  </div>
+                )}
               </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className={rosterOpen ? "p-0" : "hidden p-0"}>
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -285,14 +324,16 @@ function AdminPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {swimmers.length === 0 && (
+                      {shownSwimmers.length === 0 && (
                         <TableRow>
                           <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                            No swimmers yet. Add one above.
+                            {swimmerQuery.trim()
+                              ? "Nobody by that name."
+                              : "No swimmers yet. Add one above."}
                           </TableCell>
                         </TableRow>
                       )}
-                      {swimmers.map((s) => (
+                      {shownSwimmers.map((s) => (
                         <SwimmerRow
                           key={s.id}
                           swimmer={s}

@@ -103,41 +103,17 @@ export function ParentImport({ onDone }: { onDone?: () => void }) {
     <Card className="border-[color:var(--ng-electric)]/40">
       <CardHeader>
         <CardTitle className="text-base">Upload the parent list</CardTitle>
-        <CardDescription>
-          The one thing that would help most right now.
-        </CardDescription>
+        <CardDescription>The one thing that would help most right now.</CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* A note from Njenga, because this is a favour being asked, not a
-            feature being announced. */}
-        <div className="rounded-xl border-l-[3px] border-l-[color:var(--ng-electric)] bg-secondary p-4">
-          <p className="text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
-            A note from Njenga
-          </p>
-          <p className="mt-2 text-[14.5px] leading-relaxed text-foreground">
-            Dr Boit — the archive now has all <strong>190</strong> swimmers in it, going back to
-            2022. What it does not have is parents: only <strong>24</strong> swimmers have an adult
-            attached, so most families cannot yet see their own child.
-          </p>
-          <p className="mt-2 text-[14.5px] leading-relaxed text-foreground">
-            If you paste or upload your parent list here, I will match it against the roster and
-            link them. You will see exactly what I am about to do before anything is saved, and
-            anything I am unsure about I will leave for you to decide.
-          </p>
-          <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">
-            Any format is fine — a copy-paste out of a spreadsheet, or a CSV. Name, email and
-            phone is plenty. If you have a column listing each parent's children, even better.
-          </p>
-        </div>
-
         {applied && (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 text-sm text-emerald-700">
             Done — <strong>{applied.parentsAdded}</strong> parent
-            {applied.parentsAdded === 1 ? "" : "s"} added and{" "}
-            <strong>{applied.linksAdded}</strong> swimmer link
-            {applied.linksAdded === 1 ? "" : "s"} made. Those families can now sign in and see
-            their own children.
+            {applied.parentsAdded === 1 ? "" : "s"} added and <strong>{applied.linksAdded}</strong>{" "}
+            swimmer link
+            {applied.linksAdded === 1 ? "" : "s"} made. Those families can now sign in and see their
+            own children.
           </div>
         )}
 
@@ -248,9 +224,7 @@ export function ParentImport({ onDone }: { onDone?: () => void }) {
 
             <div className="flex flex-wrap items-center gap-2">
               <Button disabled={busy} onClick={apply}>
-                {busy
-                  ? "Saving…"
-                  : `Link ${rows.length - skip.size} of ${rows.length}`}
+                {busy ? "Saving…" : `Link ${rows.length - skip.size} of ${rows.length}`}
               </Button>
               <Button variant="outline" disabled={busy} onClick={() => setRows(null)}>
                 Back
