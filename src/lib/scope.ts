@@ -23,29 +23,21 @@ export async function testerIdFor(
   if (!s) return null;
   if (s.testerId) return s.testerId;
   const row = await one<{ id: string }>(
-    `select id from public.testers where lower(email) = lower($1)`,
+    `select id from public.testers where lower(trim(email)) = lower(trim($1))`,
     [s.email],
   );
   return row?.id ?? null;
 }
 
 /**
- * May this session see the analytics?
+ * Has this address signed the preview agreement, and is that still in force?
  *
- * Not yet a thing the club has released. Completing registration grants
- * `community`, which was opening the whole development picture — rankings,
- * bands, who is improving and who is not — to any parent who filled in a form,
- * while the preview existed precisely so the coaches read those judgements
- * first. So the page and the route behind it both ask this, and this asks for
- * a signed, unexpired preview invitation or a coordinator.
- *
- * When the analytics are released, this becomes a wider test and nothing else
- * has to move.
+ * The preview is over as a gate — every parent is let in once they have said
+ * who they are and whose parent they are. But the people who signed the
+ * agreement were promised access and keep it: nobody loses anything by the
+ * door being widened.
  */
-export async function maySeeAnalytics(request: Request): Promise<boolean> {
-  const s = sessionFromRequest(request);
-  if (!s) return false;
-  if (s.isAdmin) return true;
+async function signedTester(s: { email: string; testerId?: string }): Promise<boolean> {
   const tid = await testerIdFor(s);
   if (!tid) return false;
   const row = await one<{ ok: boolean }>(
@@ -54,6 +46,29 @@ export async function maySeeAnalytics(request: Request): Promise<boolean> {
     [tid],
   );
   return !!row?.ok;
+}
+
+/**
+ * May this session see the analytics?
+ *
+ * Every parent, once they have been through /welcome: who they are, which
+ * children are theirs, and the consent — whose wording has always promised a
+ * confirmed guardian the club's race results. Coordinators always, and anyone
+ * who signed the preview agreement while it was the way in.
+ *
+ * There used to be a separate tester door with its own rows, its own agreement
+ * and its own shape of data. Every failure of the week of 21 September came
+ * from the seams between the two doors — a cookie that predated a tester row,
+ * a row deleted under a live cookie, a parent-tester handed a shape the page
+ * could not draw — so there is now one door (Felix and Boit, 27 Sep 2026).
+ */
+export async function maySeeAnalytics(request: Request): Promise<boolean> {
+  const s = sessionFromRequest(request);
+  if (!s) return false;
+  if (s.isAdmin) return true;
+  if (await signedTester(s)) return true;
+  const v = await viewer(request);
+  return v?.scope === "community";
 }
 
 // Re-exported so server routes keep importing entitlement facts from one place,
@@ -209,11 +224,17 @@ export async function viewer(request: Request): Promise<Viewer | null> {
     !!profile?.profile_complete && !!profile.full_name && !!profile.phone && (consent?.n ?? 0) > 0;
   const approved = myAthletes.length > 0 || registered;
 
+  // A parent who signed the preview agreement sees what any tester sees, even
+  // before /welcome is finished. Handing them "pending" — no names — is what
+  // left Joan on "Loading…": the page could not draw a club without names.
+  const previewScope =
+    !approved && !s.isAdmin && (await signedTester(s)) ? ("tester" as const) : null;
+
   return {
     email: s.email,
     parentId: pid,
     isAdmin: !!s.isAdmin,
-    scope: s.isAdmin ? "coach" : approved ? "community" : "pending",
+    scope: s.isAdmin ? "coach" : approved ? "community" : (previewScope ?? "pending"),
     needsProfile: !profile?.profile_complete || !profile.full_name || !profile.phone,
     needsConsent: (consent?.n ?? 0) === 0,
     myAthletes,

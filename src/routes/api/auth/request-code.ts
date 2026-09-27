@@ -56,8 +56,22 @@ export const Route = createFileRoute("/api/auth/request-code")({
           // belongs to the address being asked about, they proved it minutes
           // ago — sending another only invalidates the one they are holding,
           // which is how a working sign-in turns into "that code is wrong".
+          //
+          // Only while the account the cookie names still exists. A cookie is
+          // signed and self-contained, so it outlives a deleted account — and
+          // answering "already signed in" to a phone whose account was reset
+          // sends them in a loop with no code, which is what Nyawira met after
+          // hers was wiped. No account behind it: send a code like anyone else.
           const live = sessionFromRequest(request);
-          if (live && live.email.toLowerCase() === email) {
+          const liveAccount =
+            live && live.email.toLowerCase() === email
+              ? live.isAdmin ||
+                (!!live.parentId &&
+                  !!(await one<{ id: string }>(`select id from public.parents where id = $1`, [
+                    live.parentId,
+                  ])))
+              : false;
+          if (liveAccount) {
             return json({ ok: true, signedIn: true });
           }
 

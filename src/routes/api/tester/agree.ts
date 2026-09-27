@@ -18,7 +18,11 @@ export const Route = createFileRoute("/api/tester/agree")({
           // By address, not only by what the cookie happened to know when it
           // was signed — see testerIdFor.
           const testerId = await testerIdFor(s);
-          if (!testerId) return json({ error: "That address is not on the preview list" }, 403);
+          // Say which address, so the person reading it can see at once whether they
+          // signed in with a different one from the address they were invited on.
+          if (!testerId) {
+            return json({ error: `${s.email} is not on the preview list` }, 403);
+          }
           const b = await request.json().catch(() => ({}));
           if (b?.confidentiality !== true || b?.consent !== true) {
             return json({ error: "Both boxes need to be ticked" }, 400);

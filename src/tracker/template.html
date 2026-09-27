@@ -2711,6 +2711,7 @@ function medianCurve(lines, mx, steps){
 /** "Waweru, Makena" -> "W Makena" — short enough to sit beside a line end,
     and the way the club refers to them. */
 function shortName(n){
+  if (!n) return '';
   const [sur, rest] = n.split(',');
   const first = (rest || '').trim().split(/\s+/)[0] || '';
   const i = (sur || '').trim()[0] || '';
@@ -4773,32 +4774,28 @@ document.addEventListener('keydown', e => {
   if (card) { e.preventDefault(); openMeet(card.dataset.meet); }
 });
 
+// A request that never answers — a phone dropping between masts, a function
+// that stalls — used to leave "Loading…" on screen for good, with nothing to
+// tell the parent to refresh. Joan sat on it. Give up after a while, so the
+// failure is said out loud instead.
+function fetchWithin(url, ms){
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms);
+  return fetch(url, { signal: ctl.signal }).finally(() => clearTimeout(t));
+}
+
 async function boot(){
   const app = document.getElementById('app');
   app.innerHTML = '<section class="wrap"><p class="sec-sub">Loading…</p></section>';
   let me = null;
-  try { me = await fetch('/api/auth/me').then(r => r.ok ? r.json() : null); } catch (e) {}
+  try { me = await fetchWithin('/api/auth/me', 20000).then(r => r.ok ? r.json() : null); } catch (e) {}
   portalBar(me);
 
-  // Parents get a holding page, not the numbers.
-  //
-  // The analytics are real and the scope rules behind them work, but they have
-  // not been through the club yet, and a parent reading a half-finished
-  // assessment of somebody's child cannot be taken back. Coordinators see the
-  // whole thing; everyone else is told plainly that this is coming, with the
-  // way back to the part that is finished. The server still enforces this
-  // independently — /api/tracker/data answers to scope, not to this check.
-  // A tester who has not signed the agreement gets sent to it, rather than
-  // bouncing off the 401 and out through the front door.
-  // A pure tester with the agreement outstanding is sent to it. A parent who
-  // also tests is NOT: Events is theirs regardless, and being marched to an
-  // agreement they never asked for would hijack the journey they came for.
-  // Gladys is a Machakos parent as well as a tester. Judging her by the
-  // absence of a parent row left her on the holding page with no way to
-  // sign the thing that would open it; arriving by the tester door is the
-  // answer, and now the session says so.
-  if (me && me.isTester && me.needsAgreement && (me.via === 'tester' || !me.parent)) {
-    location.replace('/tester'); return;
+  // One path for every parent: /welcome first — who you are, which children
+  // are yours, the consent — then here. Somebody signed in who has not done
+  // that yet is taken there rather than shown a wall.
+  if (me && me.signedIn && !me.isAdmin && me.needsRegistration) {
+    location.replace('/welcome'); return;
   }
 
   const canSeeAnalytics = me && (me.isAdmin || me.previewAccess
@@ -4825,7 +4822,7 @@ async function boot(){
   }
 
   try {
-    const res = await fetch('/api/tracker/data');
+    const res = await fetchWithin('/api/tracker/data', 45000);
     if (res.status === 401 || res.status === 403) { gate(); return; }
     // Something the account has not done yet, rather than something
     // broken. Send them to it instead of calling it a failure.
@@ -4837,6 +4834,16 @@ async function boot(){
       + 'Please refresh, or tell Felix if it keeps happening.</div></section>';
     return;
   }
+  // Anything that throws from here on used to leave "Loading…" on screen for
+  // good. Say it failed instead, and keep the reason for whoever looks.
+  try { draw(); } catch (e) {
+    console.error('[tracker] could not draw', e);
+    app.innerHTML = '<section class="wrap"><div class="caution"><strong>Could not load the data.</strong> '
+      + 'Please refresh, or tell Felix if it keeps happening.</div></section>';
+  }
+}
+
+function draw(){
   SCOPE = DATA.scope === 'family' ? 'family' : 'club';
   applyScope();
   YEARS = ['all'].concat(Object.keys(DATA.years).filter(y=>y!=='all').sort().reverse());

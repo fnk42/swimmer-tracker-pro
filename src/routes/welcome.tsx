@@ -46,7 +46,7 @@ function Welcome() {
   // for the club himself; Mercy, Anita, Nyagaki and Boit are parents who also
   // swim. Asking both questions is the only way to tell those three apart, and
   // it decides what the next screen is even for.
-  const [isParent, setIsParent] = useState<boolean | null>(null);
+  const isParent = true; // only parents and guardians register
   const [isSwimmer, setIsSwimmer] = useState<boolean | null>(null);
   const [secondName, setSecondName] = useState("");
   const [secondEmail, setSecondEmail] = useState("");
@@ -88,10 +88,8 @@ function Welcome() {
       return (
         fullName.trim().length > 1 &&
         !!canonicalPhone(phone) &&
-        // One of the two must be yes, or there is nothing to register.
-        (isParent === true || isSwimmer === true) &&
-        // Only a parent is asked which they are.
-        (isParent !== true || !!relationship)
+        isSwimmer !== null &&
+        !!relationship
       );
     }
     // Compulsory, and answerable two ways: pick your child off the roster, or
@@ -125,9 +123,8 @@ function Welcome() {
         body: JSON.stringify({
           fullName: fullName.trim(),
           phone: phone.trim(),
-          // Somebody who only swims is "self" — they are their own swimmer.
-          relationship: isParent ? relationship : "self",
-          isParent: isParent === true,
+          relationship,
+          isParent: true,
           isSwimmer: isSwimmer === true,
           consentData,
           consentCommunity,
@@ -142,14 +139,11 @@ function Welcome() {
         setError(d.error ?? "Could not finish setting up your account.");
         return;
       }
-      const who = await me.refetch();
-      // They have just finished four screens. Landing them on another screen
-      // that says STEP 1 OF 4 reads as being sent back to the beginning — it
-      // was reported as "very weird", by somebody who had just done the work.
-      // So say what happened on arrival, and only send them to Machakos if
-      // there is actually something there for them.
-      const inTeam = who.data?.sections?.events !== false;
-      window.location.href = inTeam ? "/register?from=welcome" : "/tracker";
+      await me.refetch();
+      // Everyone goes on to Analytics. Machakos is a button there for the
+      // families with somebody in the team, not a stop on the way (Felix,
+      // 27 Sep 2026).
+      window.location.href = "/tracker";
     } catch {
       setError("Could not reach the server. Please try again.");
     } finally {
@@ -242,36 +236,12 @@ function Welcome() {
                 onChange={(e) => setPhone(e.target.value)}
               />
 
-              {/* Two questions, because the answers are independent. A parent
-                  who also swims answers yes twice; an eighteen-year-old
-                  registering himself answers no, then yes. */}
-              <span className="ng-label mt-5 block">
-                Are you a parent or guardian of a NextGen swimmer?
-              </span>
-              <div className="mt-1.5 flex gap-2">
-                {(
-                  [
-                    ["Yes", true],
-                    ["No", false],
-                  ] as const
-                ).map(([lbl, val]) => (
-                  <button
-                    key={lbl}
-                    type="button"
-                    onClick={() => setIsParent(val)}
-                    className={
-                      "min-h-[44px] flex-1 rounded-xl px-4 text-[14.5px] font-medium transition-colors " +
-                      (isParent === val
-                        ? "bg-[var(--ng-electric)] text-white"
-                        : "border border-white/25 bg-white/5 text-white/80 hover:bg-white/10")
-                    }
-                  >
-                    {lbl}
-                  </button>
-                ))}
-              </div>
-
-              <span className="ng-label mt-4 block">Do you swim for NextGen yourself?</span>
+              {/* Everybody here is a parent or guardian. A swimmer — Bongani at
+                  eighteen included — is registered by their parents, who give
+                  the consent; there is no registering yourself (Felix,
+                  27 Sep 2026). A parent who also swims says so here, as Mercy
+                  and Boit do. */}
+              <span className="ng-label mt-5 block">Do you swim for NextGen yourself?</span>
               <div className="mt-1.5 flex gap-2">
                 {(
                   [
@@ -294,13 +264,8 @@ function Welcome() {
                   </button>
                 ))}
               </div>
-              {isParent === false && isSwimmer === false && (
-                <p className="mt-3 text-[13px] text-[#FFC24B]">
-                  One of these needs to be yes — otherwise there is nothing for us to set up.
-                </p>
-              )}
 
-              {isParent === true && (
+              {isParent && (
                 <>
                   <span className="ng-label mt-4 block">You are the</span>
                   <div className="flex flex-wrap gap-2">

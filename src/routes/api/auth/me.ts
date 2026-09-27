@@ -116,8 +116,10 @@ export const Route = createFileRoute("/api/auth/me")({
             via: s.via,
             sections: {
               performance: true,
-              // Registration is not the key to this. The preview is.
-              analytics: s.isAdmin || previewAccess,
+              // Every parent who has been through /welcome — the same rule
+              // maySeeAnalytics applies to the data itself. A signed preview
+              // agreement still counts, so no tester loses access.
+              analytics: s.isAdmin || previewAccess || v?.scope === "community",
               events: s.isAdmin || inSquad,
             },
             // An account that has never been filled in. /welcome greets these

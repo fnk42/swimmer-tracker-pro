@@ -5,7 +5,6 @@ import {
   GOLDEN_PIPIT_PHONE,
   GOLDEN_PIPIT_PHONE_DISPLAY,
 } from "@/lib/links";
-import { EVENT } from "@/lib/event-config";
 import { useEffect, useState } from "react";
 import { useMe, useRequestCode, useVerifyCode } from "@/lib/api";
 import { ProgressWall } from "@/components/ProgressWall";
@@ -38,47 +37,13 @@ function nextFromUrl(): string | null {
   return raw;
 }
 
-// Where a signed-in person belongs, which is not the same question as what
-// they are allowed to see.
+// Where a signed-in person belongs, once /welcome is behind them.
 //
-// Coming through the tester link means Analytics: that is what the preview is
-// for, and it is the one thing an account cannot tell us by itself, because
-// several testers are also Machakos parents with balances owing.
-//
-// Everyone else is here for Machakos while Machakos is open — and "open" means
-// something still wants them: an entry form not filled in, or money still
-// owed. A family that is entered and paid up lands on Analytics instead, and
-// in December, when nobody owes anything, that becomes true of everyone
-// without a line of this being changed.
-async function landingFor(me: {
-  via?: string;
-  sections?: { events: boolean; analytics?: boolean };
-}): Promise<string> {
-  if (me.via === "tester") return "/tracker";
-  // While the analytics are in preview, a parent sent there meets a holding
-  // page. Events is the page that is theirs.
-  const analytics = me.sections?.analytics ? "/tracker" : "/register";
-  if (!me.sections?.events) return "/tracker";
-  try {
-    const d = await fetch("/api/me/data").then((r) => (r.ok ? r.json() : null));
-    if (!d) return analytics;
-    type S = { id: string; event_squad?: boolean };
-    const all: S[] = d.swimmers ?? [];
-    const squad = all.some((x) => x.event_squad) ? all.filter((x) => x.event_squad) : all;
-    if (squad.length === 0) return analytics;
-    const entered = new Set(
-      (d.registrations ?? []).map((r: { swimmer_id: string }) => r.swimmer_id),
-    );
-    const paid = (d.payments ?? []).reduce(
-      (n: number, p: { amount?: number | string }) => n + Number(p.amount ?? 0),
-      0,
-    );
-    const owed = EVENT.totalKes * squad.length - paid;
-    const missingForm = squad.some((x) => !entered.has(x.id));
-    return missingForm || owed > 0 ? "/register" : analytics;
-  } catch {
-    return analytics;
-  }
+// Analytics, for everyone — parents, former testers and coordinators alike.
+// Machakos is a button on that page for the families who have somebody in the
+// team; it is no longer where anyone is sent (Felix, 27 Sep 2026).
+function landing(): string {
+  return nextFromUrl() ?? "/tracker";
 }
 
 export const Route = createFileRoute("/")({
@@ -108,41 +73,13 @@ function PortalLanding() {
 
   useEffect(() => {
     if (me.isLoading || !me.data?.signedIn) return;
-    // Everyone lands on Analytics — parents, testers and coordinators alike.
-    // It is what the club is for, and every one of them is entitled to it:
-    // the testers ARE parents, and the consent document has always promised a
-    // confirmed guardian the club's race results. Events is a click away for
-    // the families who have somebody in the Machakos team.
-    //
-    // A pure tester who has not signed the agreement is the one detour.
-    if (
-      me.data.isTester &&
-      me.data.needsAgreement &&
-      (me.data.via === "tester" || !me.data.parent)
-    ) {
-      navigate({ to: "/tester" });
-      return;
-    }
+    // One path for everybody: say who you are and whose parent you are on
+    // /welcome, then Analytics.
     if (me.data.needsRegistration) {
       navigate({ to: "/welcome" });
       return;
     }
-    const wanted = nextFromUrl();
-    if (wanted) {
-      window.location.href = wanted;
-      return;
-    }
-    if (doorFromHost() === "tester") {
-      window.location.href = "/tracker";
-      return;
-    }
-    let gone = false;
-    landingFor(me.data).then((to) => {
-      if (!gone) window.location.href = to;
-    });
-    return () => {
-      gone = true;
-    };
+    window.location.href = landing();
   }, [me.isLoading, me.data, navigate]);
 
   // Whether the shared coordinator sign-in exists at all. The server answers
@@ -192,7 +129,11 @@ function PortalLanding() {
         const who = await fetch("/api/auth/me")
           .then((x) => x.json())
           .catch(() => null);
-        window.location.href = nextFromUrl() ?? (await landingFor(who ?? {}));
+        if (who?.needsRegistration) {
+          navigate({ to: "/welcome" });
+          return;
+        }
+        window.location.href = landing();
         return;
       }
       setDevNote(!!r.devMode);
@@ -214,15 +155,11 @@ function PortalLanding() {
       const who = await fetch("/api/auth/me")
         .then((x) => x.json())
         .catch(() => null);
-      if (who?.isTester && who.needsAgreement && (who.via === "tester" || !who.parent)) {
-        navigate({ to: "/tester" });
-        return;
-      }
       if (who?.needsRegistration) {
         navigate({ to: "/welcome" });
         return;
       }
-      window.location.href = nextFromUrl() ?? (await landingFor(who ?? {}));
+      window.location.href = landing();
     } catch {
       setError("That code is wrong or has expired. Check the email, or send a new code.");
     }

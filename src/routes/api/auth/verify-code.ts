@@ -60,60 +60,18 @@ export const Route = createFileRoute("/api/auth/verify-code")({
           );
           const admin = isAdminEmail(email);
 
-          // An invited tester. Looked up before the parent row is created,
-          // because a tester has no child and must not be handed an empty
-          // parent account — that is the Events side, which is not theirs.
+          // Somebody who signed the preview agreement keeps it: carrying the
+          // tester id in the session is what lets their access follow them. It
+          // no longer decides anything else — everyone who signs in is a parent
+          // now, with a parent account, on the one path through /welcome. The
+          // tester-only account, with no parent row, is gone: it was a second
+          // door, and the seams between the two doors are where Nyawira and
+          // Joan got stuck.
           const tester = await one<{ id: string }>(
             `select id from public.testers
-              where lower(email) = $1 and revoked_at is null`,
+              where lower(trim(email)) = $1 and revoked_at is null`,
             [email],
           );
-          // Someone can be both. Gladys is a parent with a child on the
-          // roster AND registered for the preview; the parent branch won
-          // every time, so her tester registration could never take effect —
-          // she signed in four times and the panel still read "no access".
-          // The session now carries both ids, and each side is decided on its
-          // own: Events because she is a parent, the preview because she
-          // signed the agreement.
-          if (tester && parent && !admin) {
-            await q(`update public.auth_codes set consumed_at = now() where id = $1`, [row.id]);
-            const token = createSession({
-              email,
-              parentId: parent.id,
-              testerId: tester.id,
-              isAdmin: false,
-              via,
-            });
-            await note("signed_in", { email, parentId: parent.id, detail: "parent · tester" });
-            return new Response(
-              JSON.stringify({
-                ok: true,
-                isAdmin: false,
-                isTester: true,
-                parent: { id: parent.id, fullName: parent.full_name },
-              }),
-              {
-                status: 200,
-                headers: { "content-type": "application/json", "set-cookie": cookieHeader(token) },
-              },
-            );
-          }
-
-          if (tester && !parent && !admin) {
-            await q(`update public.auth_codes set consumed_at = now() where id = $1`, [row.id]);
-            const token = createSession({ email, testerId: tester.id, isAdmin: false, via });
-            await note("signed_in", { email, detail: "tester" });
-            return new Response(
-              JSON.stringify({ ok: true, isAdmin: false, isTester: true, parent: null }),
-              {
-                status: 200,
-                headers: {
-                  "content-type": "application/json",
-                  "set-cookie": cookieHeader(token),
-                },
-              },
-            );
-          }
 
           // First time this address has proved it owns its own inbox: open an
           // empty account for it rather than turning it away. Name and phone
@@ -123,7 +81,7 @@ export const Route = createFileRoute("/api/auth/verify-code")({
           //
           // The row is worth nothing on its own. It holds no claim on any
           // swimmer, and until a coordinator approves one it never will.
-          const firstTime = !parent && !admin && !tester;
+          const firstTime = !parent && !admin;
           if (firstTime) {
             parent = await one<{ id: string; full_name: string; email: string }>(
               `insert into public.parents (email, full_name, phone, profile_complete)
@@ -155,6 +113,7 @@ export const Route = createFileRoute("/api/auth/verify-code")({
           const token = createSession({
             email,
             parentId: parent?.id,
+            testerId: tester?.id,
             isAdmin: admin,
             via,
           });
@@ -167,6 +126,7 @@ export const Route = createFileRoute("/api/auth/verify-code")({
             JSON.stringify({
               ok: true,
               isAdmin: admin,
+              isTester: !!tester,
               firstTime,
               parent: parent ? { id: parent.id, fullName: parent.full_name } : null,
             }),

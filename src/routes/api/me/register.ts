@@ -51,9 +51,10 @@ export const Route = createFileRoute("/api/me/register")({
               400,
             );
           }
-          // "self" is someone who swims for the club and is nobody's parent —
-          // Bongani at 18, registering himself.
-          if (!["mother", "father", "guardian", "self"].includes(relationship)) {
+          // Only parents and guardians register. A swimmer of any age — Bongani
+          // at eighteen included — is registered by their parents, whose consent
+          // it is; "self" is no longer accepted (Felix, 27 Sep 2026).
+          if (!["mother", "father", "guardian"].includes(relationship)) {
             return json({ error: "Tell us whether you are the mother, father or guardian" }, 400);
           }
 
