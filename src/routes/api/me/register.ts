@@ -90,8 +90,13 @@ export const Route = createFileRoute("/api/me/register")({
           // known it was the same person — and this is where they say so. If
           // the number already belongs to an account, the two become one and
           // the session follows the survivor.
-          const adopted = await adoptPhone(pid, phoneOk);
-          if (!adopted.ok) return json({ error: adopted.error }, 400);
+          const adopted = await adoptPhone(pid, phoneOk, {
+            email: s.email,
+            proof: String(b.phoneCode ?? ""),
+          });
+          if (!adopted.ok) {
+            return json({ error: adopted.error, needsProof: adopted.needsProof }, adopted.needsProof ? 409 : 400);
+          }
           if (adopted.merged) {
             pid = adopted.parentId;
             refreshed = createSession({ email: s.email, parentId: pid, isAdmin: !!s.isAdmin });

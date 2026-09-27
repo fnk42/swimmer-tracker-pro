@@ -51,6 +51,10 @@ function Welcome() {
   const [secondName, setSecondName] = useState("");
   const [secondEmail, setSecondEmail] = useState("");
   const [secondPhone, setSecondPhone] = useState("");
+  // Set when the number given is already on another account: a code has gone
+  // to that account's email, and joining it waits on the code.
+  const [proofMsg, setProofMsg] = useState<string | null>(null);
+  const [phoneCode, setPhoneCode] = useState("");
   const [claimed, setClaimed] = useState<string[]>([]);
   const [consentData, setConsentData] = useState(false);
   const [consentCommunity, setConsentCommunity] = useState(false);
@@ -145,6 +149,7 @@ function Welcome() {
           isSwimmer: isSwimmer === true,
           consentData,
           consentCommunity,
+          phoneCode: phoneCode.trim() || undefined,
           secondParent:
             secondName.trim() && secondEmail.trim()
               ? { name: secondName.trim(), email: secondEmail.trim(), phone: secondPhone.trim() }
@@ -153,6 +158,11 @@ function Welcome() {
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) {
+        if (d.needsProof) {
+          setProofMsg(d.error);
+          setPhoneCode("");
+          return;
+        }
         setError(d.error ?? "Could not finish setting up your account.");
         return;
       }
@@ -250,7 +260,10 @@ function Welcome() {
                 autoComplete="tel"
                 placeholder="07xx xxx xxx"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  setProofMsg(null); // a different number is a different question
+                }}
               />
 
               {/* Everybody here is a parent or guardian. A swimmer — Bongani at
@@ -479,6 +492,26 @@ function Welcome() {
             </>
           )}
 
+          {proofMsg && step === "consent" && (
+            <div className="mt-5 rounded-xl border border-[#FFC24B]/35 bg-[#FFC24B]/10 p-4">
+              <p className="text-[13.5px] leading-relaxed text-white/85">{proofMsg}</p>
+              <label className="ng-label mt-3" htmlFor="w-proof">
+                Code from that email
+              </label>
+              <input
+                id="w-proof"
+                className="ng-field"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                placeholder="000000"
+                value={phoneCode}
+                onChange={(e) => setPhoneCode(e.target.value)}
+              />
+              <p className="mt-2 text-xs text-white/45">
+                Not your account? Go back and check the number you gave.
+              </p>
+            </div>
+          )}
           {error && <p className="mt-4 text-sm font-medium text-[#FFC24B]">{error}</p>}
 
           <div className="mt-6 flex items-center gap-3">
@@ -493,7 +526,9 @@ function Welcome() {
             )}
             <button
               type="button"
-              disabled={!canAdvance || busy}
+              disabled={
+                !canAdvance || busy || (!!proofMsg && step === "consent" && phoneCode.trim().length < 6)
+              }
               onClick={() => (step === "consent" ? finish() : setStep(STEPS[idx + 1]))}
               className="ng-btn ng-btn-primary ml-auto min-h-[44px] flex-1 sm:flex-none sm:px-8"
             >

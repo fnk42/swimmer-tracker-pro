@@ -52,6 +52,10 @@ export function FindSwimmer({
   // identity their account is known by.
   const [phoneFor, setPhoneFor] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
+  // The number is already on another account: a code went to that account's
+  // email, and the link waits on it.
+  const [proofMsg, setProofMsg] = useState<string | null>(null);
+  const [phoneCode, setPhoneCode] = useState("");
   const results = useClaimable(debounced);
   const claim = useClaimSwimmer();
 
@@ -67,7 +71,13 @@ export function FindSwimmer({
     setError(null);
     setConfirming(null);
     try {
-      await claim.mutateAsync({ swimmerId: id, phone: withPhone });
+      await claim.mutateAsync({
+        swimmerId: id,
+        phone: withPhone,
+        phoneCode: proofMsg ? phoneCode.trim() : undefined,
+      });
+      setProofMsg(null);
+      setPhoneCode("");
       setTerm("");
       setDebounced("");
       setPhoneFor(null);
@@ -81,7 +91,11 @@ export function FindSwimmer({
       // Keyed on the one phrase both phone replies share, rather than on the
       // wording of either — the wording changed once already and this silently
       // stopped opening the field.
-      if (/phone number/i.test(msg)) {
+      if (/sent a code|code is wrong/i.test(msg)) {
+        setProofMsg(msg);
+        setPhoneCode("");
+        setError(null);
+      } else if (/phone number/i.test(msg)) {
         setPhoneFor(id);
         setError(null);
       } else {
@@ -212,10 +226,31 @@ export function FindSwimmer({
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                     />
+                    {proofMsg && (
+                      <div className="mt-2.5">
+                        <p className="text-[13px] leading-relaxed">{proofMsg}</p>
+                        <input
+                          className={
+                            "mt-2 w-full rounded-lg px-3 py-2 text-sm " +
+                            (dark ? "ng-field" : "border border-border bg-background")
+                          }
+                          inputMode="numeric"
+                          autoComplete="one-time-code"
+                          placeholder="000000"
+                          aria-label="Code from that email"
+                          value={phoneCode}
+                          onChange={(e) => setPhoneCode(e.target.value)}
+                        />
+                      </div>
+                    )}
                     <div className="mt-2.5 flex flex-wrap gap-2">
                       <Button
                         size="sm"
-                        disabled={claim.isPending || phone.trim().length < 9}
+                        disabled={
+                          claim.isPending ||
+                          phone.trim().length < 9 ||
+                          (!!proofMsg && phoneCode.trim().length < 6)
+                        }
                         onClick={() => void add(s.id, s.name, phone.trim())}
                       >
                         Confirm and add {s.name}
@@ -234,6 +269,8 @@ export function FindSwimmer({
                         onClick={() => {
                           setPhoneFor(null);
                           setPhone("");
+                          setProofMsg(null);
+                          setPhoneCode("");
                         }}
                       >
                         Cancel

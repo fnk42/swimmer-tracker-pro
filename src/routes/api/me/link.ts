@@ -161,8 +161,18 @@ export const Route = createFileRoute("/api/me/link")({
               );
             }
 
-            const adopted = await adoptPhone(parentId, normalized);
-            if (!adopted.ok) return json({ needsPhone: true, error: adopted.error }, 400);
+            const adopted = await adoptPhone(parentId, normalized, {
+              email: s.email,
+              proof: String(b?.phoneCode ?? ""),
+            });
+            if (!adopted.ok) {
+              return json(
+                adopted.needsProof
+                  ? { needsProof: true, error: adopted.error }
+                  : { needsPhone: true, error: adopted.error },
+                adopted.needsProof ? 409 : 400,
+              );
+            }
 
             // The account may have just been folded into an older one that
             // owns this number, so the session has to follow it.
