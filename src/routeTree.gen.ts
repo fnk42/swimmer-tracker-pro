@@ -57,6 +57,7 @@ import { Route as ApiAthleteAssessmentRouteImport } from './routes/api/athlete/a
 import { Route as ApiAdminTestersRouteImport } from './routes/api/admin/testers'
 import { Route as ApiAdminProgressRouteImport } from './routes/api/admin/progress'
 import { Route as ApiAdminParentImportRouteImport } from './routes/api/admin/parent-import'
+import { Route as ApiAdminLinksRouteImport } from './routes/api/admin/links'
 import { Route as ApiAdminClaimsRouteImport } from './routes/api/admin/claims'
 import { Route as ApiAdminActivityRouteImport } from './routes/api/admin/activity'
 
@@ -300,6 +301,11 @@ const ApiAdminParentImportRoute = ApiAdminParentImportRouteImport.update({
   path: '/api/admin/parent-import',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminLinksRoute = ApiAdminLinksRouteImport.update({
+  id: '/api/admin/links',
+  path: '/api/admin/links',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminClaimsRoute = ApiAdminClaimsRouteImport.update({
   id: '/api/admin/claims',
   path: '/api/admin/claims',
@@ -337,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/activity': typeof ApiAdminActivityRoute
   '/api/admin/claims': typeof ApiAdminClaimsRoute
+  '/api/admin/links': typeof ApiAdminLinksRoute
   '/api/admin/parent-import': typeof ApiAdminParentImportRoute
   '/api/admin/progress': typeof ApiAdminProgressRoute
   '/api/admin/testers': typeof ApiAdminTestersRoute
@@ -389,6 +396,7 @@ export interface FileRoutesByTo {
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/activity': typeof ApiAdminActivityRoute
   '/api/admin/claims': typeof ApiAdminClaimsRoute
+  '/api/admin/links': typeof ApiAdminLinksRoute
   '/api/admin/parent-import': typeof ApiAdminParentImportRoute
   '/api/admin/progress': typeof ApiAdminProgressRoute
   '/api/admin/testers': typeof ApiAdminTestersRoute
@@ -442,6 +450,7 @@ export interface FileRoutesById {
   '/api/swimmers': typeof ApiSwimmersRouteWithChildren
   '/api/admin/activity': typeof ApiAdminActivityRoute
   '/api/admin/claims': typeof ApiAdminClaimsRoute
+  '/api/admin/links': typeof ApiAdminLinksRoute
   '/api/admin/parent-import': typeof ApiAdminParentImportRoute
   '/api/admin/progress': typeof ApiAdminProgressRoute
   '/api/admin/testers': typeof ApiAdminTestersRoute
@@ -496,6 +505,7 @@ export interface FileRouteTypes {
     | '/api/swimmers'
     | '/api/admin/activity'
     | '/api/admin/claims'
+    | '/api/admin/links'
     | '/api/admin/parent-import'
     | '/api/admin/progress'
     | '/api/admin/testers'
@@ -548,6 +558,7 @@ export interface FileRouteTypes {
     | '/api/swimmers'
     | '/api/admin/activity'
     | '/api/admin/claims'
+    | '/api/admin/links'
     | '/api/admin/parent-import'
     | '/api/admin/progress'
     | '/api/admin/testers'
@@ -600,6 +611,7 @@ export interface FileRouteTypes {
     | '/api/swimmers'
     | '/api/admin/activity'
     | '/api/admin/claims'
+    | '/api/admin/links'
     | '/api/admin/parent-import'
     | '/api/admin/progress'
     | '/api/admin/testers'
@@ -653,6 +665,7 @@ export interface RootRouteChildren {
   ApiSwimmersRoute: typeof ApiSwimmersRouteWithChildren
   ApiAdminActivityRoute: typeof ApiAdminActivityRoute
   ApiAdminClaimsRoute: typeof ApiAdminClaimsRoute
+  ApiAdminLinksRoute: typeof ApiAdminLinksRoute
   ApiAdminParentImportRoute: typeof ApiAdminParentImportRoute
   ApiAdminProgressRoute: typeof ApiAdminProgressRoute
   ApiAdminTestersRoute: typeof ApiAdminTestersRoute
@@ -1015,6 +1028,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminParentImportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/links': {
+      id: '/api/admin/links'
+      path: '/api/admin/links'
+      fullPath: '/api/admin/links'
+      preLoaderRoute: typeof ApiAdminLinksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/claims': {
       id: '/api/admin/claims'
       path: '/api/admin/claims'
@@ -1094,6 +1114,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSwimmersRoute: ApiSwimmersRouteWithChildren,
   ApiAdminActivityRoute: ApiAdminActivityRoute,
   ApiAdminClaimsRoute: ApiAdminClaimsRoute,
+  ApiAdminLinksRoute: ApiAdminLinksRoute,
   ApiAdminParentImportRoute: ApiAdminParentImportRoute,
   ApiAdminProgressRoute: ApiAdminProgressRoute,
   ApiAdminTestersRoute: ApiAdminTestersRoute,

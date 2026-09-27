@@ -5,6 +5,7 @@ import { RosterManager } from "@/components/RosterManager";
 import { ActivityLog } from "@/components/ActivityLog";
 import { ProgressPanel } from "@/components/ProgressPanel";
 import { TesterPanel } from "@/components/TesterPanel";
+import { LinksPanel } from "@/components/LinksPanel";
 import { FeedbackPanel } from "@/components/FeedbackPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ import {
 
 import {
   useSwimmers,
+  useSignOut,
   useRegistrations,
   usePayments,
   useParents,
@@ -83,7 +85,9 @@ function AdminPage() {
   useEffect(() => {
     if (me.isLoading) return;
     if (!me.data?.signedIn) navigate({ to: "/" });
-    else if (!me.data.isAdmin) navigate({ to: "/parent" });
+    // Signed in, not an admin: said on the page below, not a silent redirect.
+    // Felix followed the link in a claim email while signed in as his parent
+    // account and landed on the Machakos entry form with no idea why.
   }, [me.isLoading, me.data, navigate]);
 
   const swimmers = swimmersQ.data ?? [];
@@ -152,7 +156,8 @@ function AdminPage() {
     }
   }
 
-  if (me.isLoading || !me.data?.isAdmin) return null;
+  if (me.isLoading || !me.data?.signedIn) return null;
+  if (!me.data.isAdmin) return <NotAdmin email={me.data.email ?? ""} />;
 
   return (
     <div className="min-h-screen bg-secondary">
@@ -238,6 +243,10 @@ function AdminPage() {
                 matters, but not at nine on a payment morning. */}
             <section className="mt-8">
               <ActivityLog />
+            </section>
+
+            <section className="mt-6">
+              <LinksPanel />
             </section>
 
             <section className="mt-6">
@@ -804,4 +813,35 @@ function GenderPill({ gender }: { gender: "Male" | "Female" | undefined }) {
     );
   }
   return <span className="text-xs text-muted-foreground italic">Unspecified</span>;
+}
+
+// Somebody signed in with an address that is not on the admin list — often an
+// admin on their own parent account, following a link from a notice email.
+function NotAdmin({ email }: { email: string }) {
+  const signOut = useSignOut();
+  return (
+    <div className="min-h-screen bg-secondary">
+      <main className="mx-auto max-w-md px-4 py-16">
+        <h1 className="text-xl font-semibold">This page is for NextGen admins</h1>
+        <p className="mt-3 text-[14.5px] leading-relaxed text-muted-foreground">
+          You are signed in as <b className="text-foreground">{email}</b>, which is not an admin
+          address. Sign out, then sign in with your admin address to come back here.
+        </p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            onClick={async () => {
+              await signOut.mutateAsync();
+              window.location.href = "/?next=/admin";
+            }}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Sign out and switch
+          </button>
+          <a href="/tracker" className="px-2 py-2 text-sm text-muted-foreground underline-offset-4 hover:underline">
+            Back to the analytics
+          </a>
+        </div>
+      </main>
+    </div>
+  );
 }

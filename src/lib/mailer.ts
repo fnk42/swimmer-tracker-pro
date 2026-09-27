@@ -157,7 +157,16 @@ export async function sendClaimNotice(
   claim: { parentName: string; parentEmail: string; swimmer: string; phoneMatch: boolean },
 ): Promise<SendResult> {
   const key = mailKey();
-  const url = "https://events.nextgenkenya.com/admin";
+  // Straight to the Parent links panel, which opens with the newest links on
+  // top. It used to be the bare admin page, which had no way to remove a link.
+  const url = "https://events.nextgenkenya.com/admin#links";
+  // An account can be linked before its name is given; "  is now linked to"
+  // with a gap where the name should be is what arrived. The address always
+  // exists. And the name is whatever the parent typed, so it is escaped before
+  // it goes into HTML.
+  const who = (claim.parentName ?? "").trim() || claim.parentEmail;
+  const esc = (x: string) =>
+    x.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
   const hint = claim.phoneMatch
     ? "Their phone number matches the one on that swimmer's registration, so the club already had them down as a contact. Nothing to do."
     : "Their phone number does NOT match that swimmer's registration, so this one is worth a second look.";
@@ -179,27 +188,32 @@ export async function sendClaimNotice(
       body: JSON.stringify({
         from: FROM,
         to,
-        subject: `${claim.parentName} is now linked to ${claim.swimmer}`,
+        subject: `${who} is now linked to ${claim.swimmer}`,
         text:
           `A parent has linked themselves to a NextGen swimmer.\n\n` +
-          `Parent:  ${claim.parentName} (${claim.parentEmail})\n` +
+          `Parent:  ${(claim.parentName ?? "").trim() ? `${claim.parentName} (${claim.parentEmail})` : `${claim.parentEmail} (no name given yet)`}\n` +
           `Swimmer: ${claim.swimmer}\n\n` +
           `${hint}\n\n` +
           `The link is already live — they can see that swimmer's results and ` +
           `enter them for meets. A swimmer can have at most two adults. If this ` +
-          `one is wrong, sign in and remove it:\n${url}\n\n` +
+          `one is wrong, remove it from the admin page (Parent links):\n${url}\n\n` +
           `NextGen Multi Sport Academy`,
         html:
           `<p>A parent has linked themselves to a NextGen swimmer.</p>` +
           `<table style="font:14px system-ui;border-collapse:collapse">` +
           `<tr><td style="padding:2px 12px 2px 0;color:#666">Parent</td>` +
-          `<td><strong>${claim.parentName}</strong> (${claim.parentEmail})</td></tr>` +
+          `<td>${
+            (claim.parentName ?? "").trim()
+              ? `<strong>${esc(claim.parentName)}</strong> (${esc(claim.parentEmail)})`
+              : `<strong>${esc(claim.parentEmail)}</strong> <span style="color:#666">(no name given yet)</span>`
+          }</td></tr>` +
           `<tr><td style="padding:2px 12px 2px 0;color:#666">Swimmer</td>` +
-          `<td><strong>${claim.swimmer}</strong></td></tr></table>` +
+          `<td><strong>${esc(claim.swimmer)}</strong></td></tr></table>` +
           `<p>${hint}</p>` +
           `<p>The link is already live — they can see that swimmer's results and enter ` +
           `them for meets. A swimmer can have at most two adults.</p>` +
-          `<p>If this one is wrong, <a href="${url}">sign in and remove it</a>.</p>` +
+          `<p>If this one is wrong, <a href="${url}">remove it on the admin page</a> ` +
+          `(Parent links).</p>` +
           `<p style="color:#666;font-size:13px">NextGen Multi Sport Academy</p>`,
       }),
     });
