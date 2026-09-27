@@ -183,7 +183,7 @@ export async function viewer(request: Request): Promise<Viewer | null> {
   );
   if ((stillThere?.n ?? 0) === 0) return null;
 
-  const [profile, consent, mine, pending] = await Promise.all([
+  const [profile, consent, mine, pending, linked] = await Promise.all([
     one<{ profile_complete: boolean; full_name: string; phone: string }>(
       `select profile_complete, coalesce(full_name,'') as full_name,
               coalesce(phone,'') as phone
@@ -209,6 +209,13 @@ export async function viewer(request: Request): Promise<Viewer | null> {
         where parent_id = $1 and status = 'pending'`,
       [pid],
     ),
+    // Any child on the account, whether or not they have raced yet — a new
+    // swimmer has no analytics name, and their parent is still a parent.
+    one<{ n: number }>(
+      `select count(*)::int n from public.swimmer_parents
+        where parent_id = $1 and status = 'approved'`,
+      [pid],
+    ).then((r) => r ?? { n: 0 }),
   ]);
 
   const myAthletes = mine.map((r) => r.analytics_name);
@@ -220,9 +227,14 @@ export async function viewer(request: Request): Promise<Viewer | null> {
   // results, which meant a parent could complete every step the club asked of
   // them and be shown an empty page until somebody matched them to a swimmer.
   // Registration is the thing to get right first; the link can follow.
-  const registered =
-    !!profile?.profile_complete && !!profile.full_name && !!profile.phone && (consent?.n ?? 0) > 0;
-  const approved = myAthletes.length > 0 || registered;
+  //
+  // Not any more. With the analytics open to every parent, "registered" was
+  // only an email address, a name, a number and two ticks — nothing a stranger
+  // could not supply — and it opened every child's results. Felix signed up
+  // with no swimmer and was let in (27 Sep 2026). A child on the account is
+  // now the key: the thing /welcome begins with, and the thing a coordinator
+  // can see and undo.
+  const approved = linked.n > 0;
 
   // A parent who signed the preview agreement sees what any tester sees, even
   // before /welcome is finished. Handing them "pending" — no names — is what

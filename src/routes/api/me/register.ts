@@ -34,9 +34,26 @@ export const Route = createFileRoute("/api/me/register")({
           const relationship = String(b.relationship ?? "").trim().toLowerCase();
           const consentData = b.consentData === true;
           const consentCommunity = b.consentCommunity === true;
-          const second = (b.secondParent ?? null) as { name?: string; email?: string } | null;
+          const second = (b.secondParent ?? null) as {
+            name?: string;
+            email?: string;
+            phone?: string;
+          } | null;
 
           if (fullName.length < 2) return json({ error: "Enter your full name" }, 400);
+
+          // A second parent, if given, brings their own number: two parents
+          // are two numbers. Refused out loud rather than dropped quietly, so
+          // nobody believes an invitation went that did not.
+          const secondPhone = second ? canonicalPhone(String(second.phone ?? "")) : null;
+          if (second && (second.name || second.email)) {
+            if (!secondPhone) {
+              return json({ error: "Enter the second parent's phone number" }, 400);
+            }
+            if (secondPhone === canonicalPhone(phone)) {
+              return json({ error: "The second parent needs their own phone number" }, 400);
+            }
+          }
 
           // Normalised here, not merely counted. The column insists on the
           // canonical 254XXXXXXXXX form, and a parent types 0712 345 678 — so
@@ -110,19 +127,18 @@ export const Route = createFileRoute("/api/me/register")({
 
             // A second guardian is a person with their own account, not a name
             // on someone else's record — they consent for themselves.
-            const existing = await c.query(`select id from public.parents where lower(email) = $1`, [
-              email,
-            ]);
+            // Already known — by this address, or by their number, which is
+            // who they are — then there is nobody new to create.
+            const existing = await c.query(
+              `select id from public.parents where lower(email) = $1 or phone = $2`,
+              [email, secondPhone],
+            );
             if (existing.rowCount === 0) {
-              // phone is NOT NULL with no default, and we do not know this
-              // person's number — they give it themselves when they register.
-              // Omitting it threw, which rolled back the whole transaction and
-              // failed the registration of the guardian who invited them.
               const made = await c.query<{ id: string }>(
                 `insert into public.parents (full_name, email, invited_by, phone)
-                 values ($1, $2, $3, '')
+                 values ($1, $2, $3, $4)
                  returning id`,
-                [name, email, pid],
+                [name, email, pid, secondPhone],
               );
               if (made.rows[0]) {
                 await c.query(

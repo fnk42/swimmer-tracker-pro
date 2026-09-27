@@ -4800,23 +4800,23 @@ async function boot(){
 
   const canSeeAnalytics = me && (me.isAdmin || me.previewAccess
     || (me.sections && me.sections.analytics));
+  // Signed in and registered, but with no child on the account. The analytics
+  // are for NextGen families, and a child on the account is what says you are
+  // one — so say that, and give the one way forward.
   if (me && me.signedIn && !canSeeAnalytics) {
     document.getElementById('foot').textContent = '';
     app.innerHTML =
       '<section class="wrap" style="padding-block:56px 72px;max-width:640px">'
       + '<p style="font:700 11px/1 Inter,system-ui;letter-spacing:1.6px;text-transform:uppercase;'
-      + 'color:var(--electric);margin:0 0 14px">Coming soon</p>'
-      + '<h1 style="font-size:30px;line-height:1.15;margin:0 0 14px">NextGen Analytics</h1>'
-      + '<p class="sec-sub" style="font-size:15px;margin:0 0 18px">Every race your child has '
-      + 'swum for the club, how their times are moving season by season, and where they sit '
-      + 'against their own age group. We are checking it with the coaches before any of it '
-      + 'goes in front of parents.</p>'
-      + '<p class="sec-sub" style="font-size:15px;margin:0 0 26px">Nothing here yet is missing '
-      + 'from your account &mdash; entries, payments and your swimmers all live under '
-      + '<b>Events</b>, which is ready now.</p>'
-      + '<a href="/parent" style="display:inline-block;padding:11px 18px;border-radius:9px;'
+      + 'color:var(--electric);margin:0 0 14px">One step left</p>'
+      + '<h1 style="font-size:30px;line-height:1.15;margin:0 0 14px">Add your swimmer</h1>'
+      + '<p class="sec-sub" style="font-size:15px;margin:0 0 18px">NextGen Analytics is for the '
+      + 'families of NextGen swimmers. It opens as soon as a child of yours is on your account.</p>'
+      + '<p class="sec-sub" style="font-size:15px;margin:0 0 26px">Search for your child\'s name '
+      + 'and add them. If they are not in the list, message Felix or Boit and we will add them.</p>'
+      + '<a href="/welcome" style="display:inline-block;padding:11px 18px;border-radius:9px;'
       + 'background:var(--electric);color:#fff;font-weight:600;font-size:15px;'
-      + 'text-decoration:none">Go to Events</a>'
+      + 'text-decoration:none">Add my swimmer</a>'
       + '</section>';
     return;
   }

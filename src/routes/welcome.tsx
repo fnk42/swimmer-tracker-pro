@@ -50,6 +50,7 @@ function Welcome() {
   const [isSwimmer, setIsSwimmer] = useState<boolean | null>(null);
   const [secondName, setSecondName] = useState("");
   const [secondEmail, setSecondEmail] = useState("");
+  const [secondPhone, setSecondPhone] = useState("");
   const [claimed, setClaimed] = useState<string[]>([]);
   const [consentData, setConsentData] = useState(false);
   const [consentCommunity, setConsentCommunity] = useState(false);
@@ -98,11 +99,27 @@ function Welcome() {
     // Optional again. Getting every parent registered matters more than
     // getting every child matched on the way through — the club can link them
     // afterwards, and a parent stuck at this step is a parent not registered.
+    // A second parent is optional, but if one is given they need a name, an
+    // email for their invitation and their own number — two parents are two
+    // numbers, which is how the club tells them apart (Felix, 27 Sep 2026).
+    if (step === "second") {
+      if (!secondName.trim() && !secondEmail.trim() && !secondPhone.trim()) return true;
+      const theirs = canonicalPhone(secondPhone);
+      return (
+        secondName.trim().length > 1 &&
+        /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(secondEmail.trim()) &&
+        !!theirs &&
+        theirs !== canonicalPhone(phone)
+      );
+    }
     if (step === "children") return true;
     if (step === "consent") return consentData && consentCommunity;
     return true;
   }, [
     step,
+    secondName,
+    secondEmail,
+    secondPhone,
     fullName,
     phone,
     relationship,
@@ -130,7 +147,7 @@ function Welcome() {
           consentCommunity,
           secondParent:
             secondName.trim() && secondEmail.trim()
-              ? { name: secondName.trim(), email: secondEmail.trim() }
+              ? { name: secondName.trim(), email: secondEmail.trim(), phone: secondPhone.trim() }
               : null,
         }),
       });
@@ -325,8 +342,28 @@ function Welcome() {
                 value={secondEmail}
                 onChange={(e) => setSecondEmail(e.target.value)}
               />
+
+              <label className="ng-label mt-4" htmlFor="w-2phone">
+                Their phone number
+              </label>
+              <input
+                id="w-2phone"
+                className="ng-field"
+                type="tel"
+                inputMode="tel"
+                autoComplete="off"
+                placeholder="07xx xxx xxx"
+                value={secondPhone}
+                onChange={(e) => setSecondPhone(e.target.value)}
+              />
+              {!!canonicalPhone(secondPhone) &&
+                canonicalPhone(secondPhone) === canonicalPhone(phone) && (
+                  <p className="mt-2 text-[13px] text-[#FFC24B]">
+                    That is your own number. Each parent needs their own.
+                  </p>
+                )}
               <p className="mt-3 text-xs text-white/45">
-                Leave both blank to skip. You can add them later.
+                Leave all three blank to skip. You can add them later.
               </p>
             </>
           )}
@@ -464,7 +501,7 @@ function Welcome() {
                 ? "Setting up…"
                 : step === "consent"
                   ? "Agree and finish"
-                  : step === "second" && !secondName && !secondEmail
+                  : step === "second" && !secondName && !secondEmail && !secondPhone
                     ? "Skip"
                     : "Continue"}
             </button>
