@@ -127,18 +127,23 @@ export const Route = createFileRoute("/api/me/register")({
 
             // A second guardian is a person with their own account, not a name
             // on someone else's record — they consent for themselves.
-            // Already known — by this address, or by their number, which is
-            // who they are — then there is nobody new to create.
-            const existing = await c.query(
-              `select id from public.parents where lower(email) = $1 or phone = $2`,
-              [email, secondPhone],
-            );
+            // A second guardian is a person with their own account, not a name
+            // on someone else's record — they consent for themselves.
+            const existing = await c.query(`select id from public.parents where lower(email) = $1`, [
+              email,
+            ]);
             if (existing.rowCount === 0) {
+              // The number they were given is NOT written as their phone. A phone
+              // is who a parent is — registering with a number already on an
+              // account folds you into it — so a number typed by somebody else
+              // would let whoever holds this invited email inherit the account
+              // of whoever that number belongs to. They give their own number
+              // when they register; the one we were told goes in the log.
               const made = await c.query<{ id: string }>(
                 `insert into public.parents (full_name, email, invited_by, phone)
-                 values ($1, $2, $3, $4)
+                 values ($1, $2, $3, '')
                  returning id`,
-                [name, email, pid, secondPhone],
+                [name, email, pid],
               );
               if (made.rows[0]) {
                 await c.query(
@@ -158,6 +163,13 @@ export const Route = createFileRoute("/api/me/register")({
           // The two milestones a coordinator actually chases: the form
           // finished, and the current consent document accepted.
           await note("registration_done", { email: s.email, parentId: pid });
+          if (invited) {
+            await note("parent_invited", {
+              email: s.email,
+              parentId: pid,
+              detail: `${invited} · number given ${secondPhone}`,
+            });
+          }
           await note("consent_given", {
             email: s.email, parentId: pid,
             detail: `version ${CONSENT_VERSION}`,

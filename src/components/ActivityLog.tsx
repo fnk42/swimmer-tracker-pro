@@ -41,6 +41,7 @@ const LABEL: Record<string, string> = {
   code_wrong: "wrong or expired code",
   signed_in: "signed in",
   registration_done: "finished registering",
+  parent_invited: "invited a second parent",
   consent_given: "accepted the consent document",
   swimmer_claimed: "claimed a swimmer",
   swimmer_unlinked: "removed a swimmer from their account",

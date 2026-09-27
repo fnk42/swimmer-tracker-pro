@@ -234,7 +234,14 @@ export async function viewer(request: Request): Promise<Viewer | null> {
   // with no swimmer and was let in (27 Sep 2026). A child on the account is
   // now the key: the thing /welcome begins with, and the thing a coordinator
   // can see and undo.
-  const approved = linked.n > 0;
+  //
+  // And the registration finished. A child is added the moment it is picked
+  // on /welcome, before the consent — so somebody who picks a child and walks
+  // away had a child on the account, no consent, and the data route open
+  // behind a page that only redirected them.
+  const finished =
+    !!profile?.profile_complete && !!profile.full_name && !!profile.phone && (consent?.n ?? 0) > 0;
+  const approved = linked.n > 0 && finished;
 
   // A parent who signed the preview agreement sees what any tester sees, even
   // before /welcome is finished. Handing them "pending" — no names — is what
