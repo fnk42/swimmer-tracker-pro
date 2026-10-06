@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as DatabaseRouteImport } from './routes/database'
 import { Route as DormantRouteImport } from './routes/dormant'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as ParentRouteImport } from './routes/parent'
 import { Route as RegisterRouteImport } from './routes/register'
@@ -79,6 +80,11 @@ const DatabaseRoute = DatabaseRouteImport.update({
 const DormantRoute = DormantRouteImport.update({
   id: '/dormant',
   path: '/dormant',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeedbackRoute = FeedbackRouteImport.update({
@@ -322,6 +328,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/database': typeof DatabaseRoute
   '/dormant': typeof DormantRoute
+  '/faq': typeof FaqRoute
   '/feedback': typeof FeedbackRoute
   '/parent': typeof ParentRoute
   '/register': typeof RegisterRoute
@@ -375,6 +382,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/database': typeof DatabaseRoute
   '/dormant': typeof DormantRoute
+  '/faq': typeof FaqRoute
   '/feedback': typeof FeedbackRoute
   '/parent': typeof ParentRoute
   '/register': typeof RegisterRoute
@@ -429,6 +437,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/database': typeof DatabaseRoute
   '/dormant': typeof DormantRoute
+  '/faq': typeof FaqRoute
   '/feedback': typeof FeedbackRoute
   '/parent': typeof ParentRoute
   '/register': typeof RegisterRoute
@@ -484,6 +493,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/database'
     | '/dormant'
+    | '/faq'
     | '/feedback'
     | '/parent'
     | '/register'
@@ -537,6 +547,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/database'
     | '/dormant'
+    | '/faq'
     | '/feedback'
     | '/parent'
     | '/register'
@@ -590,6 +601,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/database'
     | '/dormant'
+    | '/faq'
     | '/feedback'
     | '/parent'
     | '/register'
@@ -644,6 +656,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   DatabaseRoute: typeof DatabaseRoute
   DormantRoute: typeof DormantRoute
+  FaqRoute: typeof FaqRoute
   FeedbackRoute: typeof FeedbackRoute
   ParentRoute: typeof ParentRoute
   RegisterRoute: typeof RegisterRoute
@@ -718,6 +731,13 @@ declare module '@tanstack/react-router' {
       path: '/dormant'
       fullPath: '/dormant'
       preLoaderRoute: typeof DormantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/feedback': {
@@ -1093,6 +1113,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   DatabaseRoute: DatabaseRoute,
   DormantRoute: DormantRoute,
+  FaqRoute: FaqRoute,
   FeedbackRoute: FeedbackRoute,
   ParentRoute: ParentRoute,
   RegisterRoute: RegisterRoute,

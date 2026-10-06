@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Questions · NextGen Analytics</title>
+<meta name="description" content="How NextGen Analytics measures a swimmer's improvement, what the groups mean, and where the results come from.">
+<meta name="theme-color" content="#0A1B33">
+<link rel="icon" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Sora:wght@400;500;600;700&display=swap">
+<style>
+/* The questions behind the numbers, one per heading. The analytics pages keep
+   one line of explanation and an info button; the full answer lives here, and
+   each info button links to its own question (#anchor). Same colours and type
+   as the analytics. */
+:root{
+  --navy:#0A1B33; --electric:#16A6E8; --electric-deep:#0E7FC0; --cyan:#46D3F0;
+  --ink:#0A1B33; --muted:#5C7390; --line:rgba(10,27,51,.12);
+  --bg:#F4FAFE; --surface:#FFFFFF; --ice:#EAF6FD;
+  --ok-t:#0E8455; --gold-t:#8A5D00; --alert-t:#B03127;
+  --shadow-sm:0 8px 24px -14px rgba(10,27,51,.35);
+  --hero:linear-gradient(160deg,#071427 0%,#0A1B33 58%,#08284A 100%);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ink:#E8F2FA; --muted:#93A9C2; --line:rgba(190,220,245,.16);
+  --bg:#071320; --surface:#0E2237; --ice:#13304A;
+  --ok-t:#6FE3B4; --gold-t:#FFC24B; --alert-t:#FF9A92; --electric-deep:#4FC0F5;
+  --shadow-sm:0 8px 24px -14px rgba(0,0,0,.6); color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --ink:#E8F2FA; --muted:#93A9C2; --line:rgba(190,220,245,.16);
+  --bg:#071320; --surface:#0E2237; --ice:#13304A;
+  --ok-t:#6FE3B4; --gold-t:#FFC24B; --alert-t:#FF9A92; --electric-deep:#4FC0F5;
+  --shadow-sm:0 8px 24px -14px rgba(0,0,0,.6); color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:16px}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.6 Sora,system-ui,sans-serif}
+a{color:var(--electric-deep)}
+.wrap{max-width:760px;margin:0 auto;padding-inline:20px}
+header{background:var(--hero);color:#fff;padding-block:22px 26px}
+header .top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+header .back{color:#C9DAEC;text-decoration:none;font-size:14px;min-height:44px;display:inline-flex;align-items:center}
+header .back:hover{color:#fff}
+header .eyebrow{margin-top:18px;font-size:11px;font-weight:700;letter-spacing:1.8px;
+  text-transform:uppercase;color:var(--cyan)}
+header h1{margin:6px 0 0;font:400 34px/1.05 Anton,Impact,sans-serif;letter-spacing:.5px;text-wrap:balance}
+header p{margin:8px 0 0;color:#B8CCE0;font-size:14px;max-width:56ch}
+nav.toc{margin:22px 0 4px;padding:14px 16px;background:var(--surface);border:1px solid var(--line);
+  border-radius:14px;box-shadow:var(--shadow-sm)}
+nav.toc ol{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px}
+nav.toc a{text-decoration:none}
+nav.toc a:hover{text-decoration:underline}
+section.q{margin-top:14px;padding:18px 18px 16px;background:var(--surface);border:1px solid var(--line);
+  border-radius:14px;box-shadow:var(--shadow-sm)}
+section.q:target{border-color:var(--electric);box-shadow:0 0 0 3px rgba(22,166,232,.18)}
+section.q h2{margin:0 0 8px;font-size:17px;line-height:1.35;font-weight:700;text-wrap:balance}
+section.q p{margin:0 0 8px;max-width:65ch}
+section.q p:last-child{margin-bottom:0}
+.groups{margin:4px 0 10px;padding:0;list-style:none;display:grid;gap:6px}
+.groups li{display:flex;gap:10px;align-items:baseline}
+.dot{flex:none;width:10px;height:10px;border-radius:50%;transform:translateY(1px)}
+.d-fast{background:#7C4DFF}.d-improving{background:#1FB67A}.d-stable{background:#FFC24B}
+.d-review{background:#E0524A}.d-unrated{background:#9AACBF}
+.good{color:var(--ok-t);font-weight:600}.mid{color:var(--gold-t);font-weight:600}.bad{color:var(--alert-t);font-weight:600}
+footer{margin:28px 0 0;padding-block:22px 34px;color:var(--muted);font-size:13px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="top">
+      <a class="back" href="/tracker">&larr; Back to the analytics</a>
+    </div>
+    <div class="eyebrow">NextGen Analytics</div>
+    <h1>Questions</h1>
+    <p>How the numbers are worked out, in plain words. Tap a question to jump to it.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <nav class="toc" aria-label="Questions on this page">
+    <ol>
+      <li><a href="#rate">How is a swimmer's improvement rate calculated?</a></li>
+      <li><a href="#benchmark">What is the benchmark under each rate?</a></li>
+      <li><a href="#lower-group">Why is my child in a lower group when they are getting faster?</a></li>
+      <li><a href="#groups">What do the development groups mean?</a></li>
+      <li><a href="#vs-form">What do "vs form" and "pts" mean on a meet?</a></li>
+      <li><a href="#rated">What does "rated" mean, and why are some swimmers not rated?</a></li>
+      <li><a href="#pb-rate">What is the PB rate?</a></li>
+      <li><a href="#chart">How do I read the progress chart?</a></li>
+      <li><a href="#data">Where does the data come from?</a></li>
+    </ol>
+  </nav>
+
+  <section class="q" id="rate">
+    <h2>How is a swimmer's improvement rate calculated?</h2>
+    <p>We draw a straight line through every race a swimmer has swum in one event at one pool
+      length, and turn its slope into a percentage of their own average time per year. Their
+      yearly rate is the middle value (the median) across all their events.</p>
+    <p>A line through every race, rather than first race against last, means one bad morning at
+      either end cannot decide the result. "14.5%/yr faster" means their times are coming down by
+      about 14.5% a year.</p>
+  </section>
+
+  <section class="q" id="benchmark">
+    <h2>What is the benchmark under each rate?</h2>
+    <p>Young swimmers improve far faster than older ones, whatever the coaching, so each swimmer
+      is compared with the typical (median) rate of NextGen swimmers in their own age group over
+      the same period.</p>
+    <p>"1.6%/yr more than 9-10 typically gain" means that swimmer is improving a little faster than
+      most nine- and ten-year-olds at the club. If fewer than 6 swimmers in an age group are rated,
+      the club-wide figure is used instead, and the card says so.</p>
+  </section>
+
+  <section class="q" id="lower-group">
+    <h2>Why is my child in a lower group when they are getting faster?</h2>
+    <p>The groups do not ask whether a swimmer is getting faster; nearly all of them are. They
+      compare each swimmer's rate with others of the same age, then rank the club.</p>
+    <p>About three in ten rated swimmers are always in the bottom group, however well the whole club
+      is doing. A swimmer can also move between groups without their own swimming changing, because
+      the swimmers around them changed. Read the rate as well as the group.</p>
+  </section>
+
+  <section class="q" id="groups">
+    <h2>What do the development groups mean?</h2>
+    <p>Once age is taken into account, rated swimmers are sorted and split at fixed points:</p>
+    <ul class="groups">
+      <li><span class="dot d-fast"></span><span><b>Fast improvement</b>: the top 10% of the club.</span></li>
+      <li><span class="dot d-improving"></span><span><b>Good improvement</b>: the next 30%, improving more than is typical for their age.</span></li>
+      <li><span class="dot d-stable"></span><span><b>Steady improvement</b>: the middle 30%, about the rate their age group manages.</span></li>
+      <li><span class="dot d-review"></span><span><b>Slowest improvement</b>: the bottom 30%, usually still getting faster, but by less than their age group.</span></li>
+      <li><span class="dot d-unrated"></span><span><b>Not enough data</b>: not enough racing yet to measure a trend.</span></li>
+    </ul>
+    <p>The groups are a guide to who to look at first, never a verdict on a child.</p>
+  </section>
+
+  <section class="q" id="vs-form">
+    <h2>What do "vs form" and "pts" mean on a meet?</h2>
+    <p>"vs form" compares every swim at that meet with the best that swimmer had already swum in the
+      same event before the day, and takes the middle value. "&minus;2%" means the team swam about 2%
+      faster than their previous bests; "+1%" means about 1% slower.</p>
+    <p>It shows <span class="good">green</span> at &minus;2% or better, <span class="mid">amber</span>
+      up to +0.6%, and <span class="bad">red</span> beyond that. "vs previous meet" counts how many
+      percentage points (pts) that figure moved since the meet before: a minus number means the team
+      swam closer to, or past, their bests than last time.</p>
+  </section>
+
+  <section class="q" id="rated">
+    <h2>What does "rated" mean, and why are some swimmers not rated?</h2>
+    <p>A swimmer is rated once there are enough races to measure a trend: at least 2 races in the
+      same event and pool length, at least 60 days apart. Anything less would be a guess, not a
+      measurement.</p>
+    <p>"Not enough data" is about the number of races, not about the swimmer. Each of those swimmers'
+      cards says what is missing, which is usually a second meet.</p>
+  </section>
+
+  <section class="q" id="pb-rate">
+    <h2>What is the PB rate?</h2>
+    <p>The share of a swimmer's races, or of a meet's swims, that were personal bests: the fastest
+      that swimmer had ever swum in that event at that pool length. A swimmer's first-ever swim in an event counts as a
+      personal best, which is why newer swimmers often have a high PB rate.</p>
+  </section>
+
+  <section class="q" id="chart">
+    <h2>How do I read the progress chart?</h2>
+    <p>A line that falls is a swimmer getting faster: times come down as they improve, so down the
+      chart is progress. On a swimmer's own card, each line is one stroke at one distance and pool
+      length, race by race.</p>
+    <p>In "Follow a swimmer", each dot is one meet (or one season, or one stroke, depending on the
+      view), set against that swimmer's own baseline: 0% is the baseline, and &minus;5% means five per
+      cent quicker. 25m and 50m pools are never mixed on one line.</p>
+  </section>
+
+  <section class="q" id="data">
+    <h2>Where does the data come from?</h2>
+    <p>From the timing system's own result files, the same ones meet organisers publish, read field
+      by field with nothing typed in by hand. Each meet is checked against the official results PDF
+      before it is loaded.</p>
+    <p>Club figures count races from the day a swimmer joined NextGen; races swum earlier, or for
+      another club, stay on that swimmer's own chart. If anything here contradicts your own record,
+      your record is right, and we want to hear about it.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>NextGen Analytics · NextGen Multi Sport Academy</span>
+    <span>A product of <a href="https://goldenpipitsolutions.com" target="_blank" rel="noopener noreferrer">Golden Pipit Solutions</a> · hello@goldenpipitsolutions.com</span>
+  </div>
+</footer>
+</body>
+</html>

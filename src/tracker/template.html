@@ -137,6 +137,12 @@ h1,h2,h3{text-wrap:balance;margin:0}
 
 section{padding-block:34px}
 .sec-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+/* One link per section to the question that explains it, in /faq. */
+.faq-link{margin-left:auto;align-self:center;font-size:12.5px;font-weight:600;text-decoration:none;
+  color:var(--electric-deep);border:1px solid var(--line);border-radius:999px;padding:4px 11px;
+  min-height:30px;display:inline-flex;align-items:center;position:relative}
+.faq-link::after{content:"";position:absolute;inset:-7px -4px}   /* 44px tap target */
+.faq-link:hover{border-color:var(--electric)}
 .sec-num{font-family:'Anton',sans-serif;font-size:12px;letter-spacing:2px;color:var(--electric-deep)}
 h2{font-size:clamp(20px,3vw,27px);font-weight:700;letter-spacing:-.3px}
 /* 70ch broke at 728px inside a 1100px column on every page in the app, which
@@ -1454,7 +1460,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 
 <footer>
   <div class="wrap">
-    <span>NextGen Analytics · NextGen Multi Sport Academy</span>
+    <span>NextGen Analytics · NextGen Multi Sport Academy · <a class="gplink" href="/faq">Questions (FAQ)</a></span>
     <span id="foot"></span>
   </div>
   <div class="wrap gpline">
@@ -2287,7 +2293,7 @@ function meetSection(){
   const bests = rows.filter(r => r[9]).length;
   return `
   <section class="wrap" id="s0b" data-page="meets">
-    <div class="sec-head"><span class="sec-num">00</span><h2>How a meet went</h2></div>
+    <div class="sec-head"><span class="sec-num">00</span><h2>How a meet went</h2><a class="faq-link" href="/faq#vs-form">FAQ</a></div>
     <p class="sec-sub">One meet at a time. Every race that day as its own column, measured
       against whichever baseline you pick — so you can ask whether a swim was a best,
       whether it was good for that swimmer, or whether it was good for their age.</p>
@@ -2586,7 +2592,7 @@ function twoSection(){
   const others = all.filter(n => n !== a);
   return `
   <section class="wrap" id="s0c" data-page="swimmers">
-    <div class="sec-head"><span class="sec-num">00</span><h2>Follow a swimmer</h2></div>
+    <div class="sec-head"><span class="sec-num">00</span><h2>Follow a swimmer</h2><a class="faq-link" href="/faq#chart">FAQ</a></div>
     <p class="sec-sub">One swimmer through their seasons, their meets or their strokes, with a
       second alongside if you want the comparison. How long each has been racing is shown first,
       because that is what makes two lines comparable or not.</p>
@@ -3971,7 +3977,7 @@ function render(){
 
   document.getElementById('app').innerHTML = `
   <section class="wrap" id="s1" data-page="analytics">
-    <div class="sec-head"><span class="sec-num">01</span><h2>Is it working?</h2></div>
+    <div class="sec-head"><span class="sec-num">01</span><h2>Is it working?</h2><a class="faq-link" href="/faq#groups">FAQ</a></div>
     <p class="sec-sub">${FS.swimmers} swimmers · ${FS.swims} races · ${FS.nMeets} meet${
       FS.nMeets===1?'':'s'}, ${FS.lo===FS.hi?FS.lo:FS.lo+' to '+FS.hi}. Every result checked
       against the official times.</p>
@@ -4046,7 +4052,7 @@ function render(){
   </section>
 
   <section class="wrap" id="s2" data-page="age-groups">
-    <div class="sec-head"><span class="sec-num">02</span><h2>Which age group?</h2></div>
+    <div class="sec-head"><span class="sec-num">02</span><h2>Which age group?</h2><a class="faq-link" href="/faq#benchmark">FAQ</a></div>
     <p class="sec-sub">Where the squad is gaining, and where it has stalled.</p>
     ${filterBar(false)}
     ${fNote(FS)}
@@ -4076,7 +4082,7 @@ function render(){
   </section>
 
   <section class="wrap" id="s3" data-page="swimmers">
-    <div class="sec-head"><span class="sec-num">03</span><h2>Which swimmers?</h2></div>
+    <div class="sec-head"><span class="sec-num">03</span><h2>Which swimmers?</h2><a class="faq-link" href="/faq#rate">FAQ</a></div>
         <p class="sec-sub">Tap a group, then a swimmer, for their strokes, distances and every event
       they have raced twice. Or just search a name.</p>
     <p class="sec-sub" style="margin-top:8px"><strong>How the groups work.</strong> These groups
@@ -4107,14 +4113,14 @@ function render(){
   ${twoSection()}
 
   <section class="wrap" id="s4" data-page="meets">
-    <div class="sec-head"><span class="sec-num">04</span><h2>Did it show on the day?</h2></div>
+    <div class="sec-head"><span class="sec-num">04</span><h2>Did it show on the day?</h2><a class="faq-link" href="/faq#vs-form">FAQ</a></div>
     <p class="sec-sub">Did the training show up on the day. Tap a meet for every race in it.</p>
     ${compSeasons}
   </section>
   ${meetSection()}
 
   <section class="wrap" id="s6" data-page="method">
-    <div class="sec-head"><span class="sec-num">06</span><h2>How these numbers are made</h2></div>
+    <div class="sec-head"><span class="sec-num">06</span><h2>How these numbers are made</h2><a class="faq-link" href="/faq">FAQ</a></div>
     <p class="sec-sub">Every figure on the other five pages comes from the rules below. They are
       written down so you can disagree with them. Where one of these numbers contradicts your own
       record, your record is right and we want to hear about it.</p>
@@ -4293,7 +4299,7 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
   </section>
 
   <section class="wrap" id="s5" data-page="decisions">
-    <div class="sec-head"><span class="sec-num">05</span><h2>So what now?</h2></div>
+    <div class="sec-head"><span class="sec-num">05</span><h2>So what now?</h2><a class="faq-link" href="/faq#groups">FAQ</a></div>
     <p class="sec-sub">Meets tell you what happened. This tells you what to do about it.
       Every swimmer with enough races to judge sits in one of three calls &mdash;
       ${rated} of ${s.swimmers} right now, the rest having not yet raced the same event
