@@ -9,101 +9,61 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WelcomeRouteImport } from './routes/welcome'
-import { Route as TrackerRouteImport } from './routes/tracker'
-import { Route as TesterRouteImport } from './routes/tester'
-import { Route as RoadmapRouteImport } from './routes/roadmap'
-import { Route as RegisterRouteImport } from './routes/register'
-import { Route as ParentRouteImport } from './routes/parent'
-import { Route as FeedbackRouteImport } from './routes/feedback'
-import { Route as DormantRouteImport } from './routes/dormant'
-import { Route as DatabaseRouteImport } from './routes/database'
-import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiSwimmersRouteImport } from './routes/api/swimmers'
-import { Route as ApiSwimmerParentsRouteImport } from './routes/api/swimmer-parents'
-import { Route as ApiSwimmerDetailsRouteImport } from './routes/api/swimmer-details'
-import { Route as ApiRosterStatusRouteImport } from './routes/api/roster-status'
-import { Route as ApiRoadmapRouteImport } from './routes/api/roadmap'
-import { Route as ApiRegistrationsRouteImport } from './routes/api/registrations'
-import { Route as ApiRegisterRouteImport } from './routes/api/register'
-import { Route as ApiPaymentsRouteImport } from './routes/api/payments'
-import { Route as ApiPaymentRouteImport } from './routes/api/payment'
-import { Route as ApiParentsRouteImport } from './routes/api/parents'
-import { Route as ApiNotesRouteImport } from './routes/api/notes'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as DatabaseRouteImport } from './routes/database'
+import { Route as DormantRouteImport } from './routes/dormant'
+import { Route as FeedbackRouteImport } from './routes/feedback'
+import { Route as ParentRouteImport } from './routes/parent'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as RoadmapRouteImport } from './routes/roadmap'
+import { Route as TesterRouteImport } from './routes/tester'
+import { Route as TrackerRouteImport } from './routes/tracker'
+import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as ApiHealthRouteImport } from './routes/api/health'
-import { Route as ApiTrackerSummaryRouteImport } from './routes/api/tracker/summary'
-import { Route as ApiTrackerDataRouteImport } from './routes/api/tracker/data'
-import { Route as ApiTesterRegisterRouteImport } from './routes/api/tester/register'
-import { Route as ApiTesterMeRouteImport } from './routes/api/tester/me'
-import { Route as ApiTesterFeedbackRouteImport } from './routes/api/tester/feedback'
-import { Route as ApiTesterAgreeRouteImport } from './routes/api/tester/agree'
-import { Route as ApiSwimmersIdRouteImport } from './routes/api/swimmers/$id'
-import { Route as ApiRoadmapCommentRouteImport } from './routes/api/roadmap/comment'
-import { Route as ApiParentsLinkRouteImport } from './routes/api/parents/link'
-import { Route as ApiMeetDetailRouteImport } from './routes/api/meet/detail'
-import { Route as ApiMeRegistrationRouteImport } from './routes/api/me/registration'
-import { Route as ApiMeRegisterRouteImport } from './routes/api/me/register'
-import { Route as ApiMePaymentRouteImport } from './routes/api/me/payment'
-import { Route as ApiMeParentRouteImport } from './routes/api/me/parent'
-import { Route as ApiMeLinkRouteImport } from './routes/api/me/link'
-import { Route as ApiMeDataRouteImport } from './routes/api/me/data'
-import { Route as ApiMeClaimableRouteImport } from './routes/api/me/claimable'
-import { Route as ApiAuthVerifyCodeRouteImport } from './routes/api/auth/verify-code'
-import { Route as ApiAuthRequestCodeRouteImport } from './routes/api/auth/request-code'
-import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
-import { Route as ApiAuthDemoRouteImport } from './routes/api/auth/demo'
-import { Route as ApiAthleteAssessmentRouteImport } from './routes/api/athlete/assessment'
-import { Route as ApiAdminTestersRouteImport } from './routes/api/admin/testers'
-import { Route as ApiAdminProgressRouteImport } from './routes/api/admin/progress'
-import { Route as ApiAdminParentImportRouteImport } from './routes/api/admin/parent-import'
-import { Route as ApiAdminLinksRouteImport } from './routes/api/admin/links'
-import { Route as ApiAdminClaimsRouteImport } from './routes/api/admin/claims'
+import { Route as ApiNotesRouteImport } from './routes/api/notes'
+import { Route as ApiParentsRouteImport } from './routes/api/parents'
+import { Route as ApiPaymentRouteImport } from './routes/api/payment'
+import { Route as ApiPaymentsRouteImport } from './routes/api/payments'
+import { Route as ApiRegisterRouteImport } from './routes/api/register'
+import { Route as ApiRegistrationsRouteImport } from './routes/api/registrations'
+import { Route as ApiRoadmapRouteImport } from './routes/api/roadmap'
+import { Route as ApiRosterStatusRouteImport } from './routes/api/roster-status'
+import { Route as ApiSwimmerDetailsRouteImport } from './routes/api/swimmer-details'
+import { Route as ApiSwimmerParentsRouteImport } from './routes/api/swimmer-parents'
+import { Route as ApiSwimmersRouteImport } from './routes/api/swimmers'
 import { Route as ApiAdminActivityRouteImport } from './routes/api/admin/activity'
+import { Route as ApiAdminClaimsRouteImport } from './routes/api/admin/claims'
+import { Route as ApiAdminLinksRouteImport } from './routes/api/admin/links'
+import { Route as ApiAdminParentImportRouteImport } from './routes/api/admin/parent-import'
+import { Route as ApiAdminProgressRouteImport } from './routes/api/admin/progress'
+import { Route as ApiAdminTestersRouteImport } from './routes/api/admin/testers'
+import { Route as ApiAthleteAssessmentRouteImport } from './routes/api/athlete/assessment'
+import { Route as ApiAuthDemoRouteImport } from './routes/api/auth/demo'
+import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
+import { Route as ApiAuthRequestCodeRouteImport } from './routes/api/auth/request-code'
+import { Route as ApiAuthVerifyCodeRouteImport } from './routes/api/auth/verify-code'
+import { Route as ApiMeClaimableRouteImport } from './routes/api/me/claimable'
+import { Route as ApiMeDataRouteImport } from './routes/api/me/data'
+import { Route as ApiMeLinkRouteImport } from './routes/api/me/link'
+import { Route as ApiMeParentRouteImport } from './routes/api/me/parent'
+import { Route as ApiMePaymentRouteImport } from './routes/api/me/payment'
+import { Route as ApiMeRegisterRouteImport } from './routes/api/me/register'
+import { Route as ApiMeRegistrationRouteImport } from './routes/api/me/registration'
+import { Route as ApiMeetDetailRouteImport } from './routes/api/meet/detail'
+import { Route as ApiParentsLinkRouteImport } from './routes/api/parents/link'
+import { Route as ApiRoadmapCommentRouteImport } from './routes/api/roadmap/comment'
+import { Route as ApiSwimmersIdRouteImport } from './routes/api/swimmers/$id'
+import { Route as ApiTesterAgreeRouteImport } from './routes/api/tester/agree'
+import { Route as ApiTesterFeedbackRouteImport } from './routes/api/tester/feedback'
+import { Route as ApiTesterMeRouteImport } from './routes/api/tester/me'
+import { Route as ApiTesterRegisterRouteImport } from './routes/api/tester/register'
+import { Route as ApiTrackerDataRouteImport } from './routes/api/tracker/data'
+import { Route as ApiTrackerSummaryRouteImport } from './routes/api/tracker/summary'
 
-const WelcomeRoute = WelcomeRouteImport.update({
-  id: '/welcome',
-  path: '/welcome',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TrackerRoute = TrackerRouteImport.update({
-  id: '/tracker',
-  path: '/tracker',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TesterRoute = TesterRouteImport.update({
-  id: '/tester',
-  path: '/tester',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RoadmapRoute = RoadmapRouteImport.update({
-  id: '/roadmap',
-  path: '/roadmap',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RegisterRoute = RegisterRouteImport.update({
-  id: '/register',
-  path: '/register',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ParentRoute = ParentRouteImport.update({
-  id: '/parent',
-  path: '/parent',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeedbackRoute = FeedbackRouteImport.update({
-  id: '/feedback',
-  path: '/feedback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DormantRoute = DormantRouteImport.update({
-  id: '/dormant',
-  path: '/dormant',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DatabaseRoute = DatabaseRouteImport.update({
-  id: '/database',
-  path: '/database',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -111,64 +71,49 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const DatabaseRoute = DatabaseRouteImport.update({
+  id: '/database',
+  path: '/database',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiSwimmersRoute = ApiSwimmersRouteImport.update({
-  id: '/api/swimmers',
-  path: '/api/swimmers',
+const DormantRoute = DormantRouteImport.update({
+  id: '/dormant',
+  path: '/dormant',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiSwimmerParentsRoute = ApiSwimmerParentsRouteImport.update({
-  id: '/api/swimmer-parents',
-  path: '/api/swimmer-parents',
+const FeedbackRoute = FeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiSwimmerDetailsRoute = ApiSwimmerDetailsRouteImport.update({
-  id: '/api/swimmer-details',
-  path: '/api/swimmer-details',
+const ParentRoute = ParentRouteImport.update({
+  id: '/parent',
+  path: '/parent',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiRosterStatusRoute = ApiRosterStatusRouteImport.update({
-  id: '/api/roster-status',
-  path: '/api/roster-status',
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiRoadmapRoute = ApiRoadmapRouteImport.update({
-  id: '/api/roadmap',
-  path: '/api/roadmap',
+const RoadmapRoute = RoadmapRouteImport.update({
+  id: '/roadmap',
+  path: '/roadmap',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiRegistrationsRoute = ApiRegistrationsRouteImport.update({
-  id: '/api/registrations',
-  path: '/api/registrations',
+const TesterRoute = TesterRouteImport.update({
+  id: '/tester',
+  path: '/tester',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiRegisterRoute = ApiRegisterRouteImport.update({
-  id: '/api/register',
-  path: '/api/register',
+const TrackerRoute = TrackerRouteImport.update({
+  id: '/tracker',
+  path: '/tracker',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPaymentsRoute = ApiPaymentsRouteImport.update({
-  id: '/api/payments',
-  path: '/api/payments',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPaymentRoute = ApiPaymentRouteImport.update({
-  id: '/api/payment',
-  path: '/api/payment',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiParentsRoute = ApiParentsRouteImport.update({
-  id: '/api/parents',
-  path: '/api/parents',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiNotesRoute = ApiNotesRouteImport.update({
-  id: '/api/notes',
-  path: '/api/notes',
+const WelcomeRoute = WelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
@@ -176,134 +121,64 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
   path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTrackerSummaryRoute = ApiTrackerSummaryRouteImport.update({
-  id: '/api/tracker/summary',
-  path: '/api/tracker/summary',
+const ApiNotesRoute = ApiNotesRouteImport.update({
+  id: '/api/notes',
+  path: '/api/notes',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTrackerDataRoute = ApiTrackerDataRouteImport.update({
-  id: '/api/tracker/data',
-  path: '/api/tracker/data',
+const ApiParentsRoute = ApiParentsRouteImport.update({
+  id: '/api/parents',
+  path: '/api/parents',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTesterRegisterRoute = ApiTesterRegisterRouteImport.update({
-  id: '/api/tester/register',
-  path: '/api/tester/register',
+const ApiPaymentRoute = ApiPaymentRouteImport.update({
+  id: '/api/payment',
+  path: '/api/payment',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTesterMeRoute = ApiTesterMeRouteImport.update({
-  id: '/api/tester/me',
-  path: '/api/tester/me',
+const ApiPaymentsRoute = ApiPaymentsRouteImport.update({
+  id: '/api/payments',
+  path: '/api/payments',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTesterFeedbackRoute = ApiTesterFeedbackRouteImport.update({
-  id: '/api/tester/feedback',
-  path: '/api/tester/feedback',
+const ApiRegisterRoute = ApiRegisterRouteImport.update({
+  id: '/api/register',
+  path: '/api/register',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiTesterAgreeRoute = ApiTesterAgreeRouteImport.update({
-  id: '/api/tester/agree',
-  path: '/api/tester/agree',
+const ApiRegistrationsRoute = ApiRegistrationsRouteImport.update({
+  id: '/api/registrations',
+  path: '/api/registrations',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiSwimmersIdRoute = ApiSwimmersIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ApiSwimmersRoute,
-} as any)
-const ApiRoadmapCommentRoute = ApiRoadmapCommentRouteImport.update({
-  id: '/comment',
-  path: '/comment',
-  getParentRoute: () => ApiRoadmapRoute,
-} as any)
-const ApiParentsLinkRoute = ApiParentsLinkRouteImport.update({
-  id: '/link',
-  path: '/link',
-  getParentRoute: () => ApiParentsRoute,
-} as any)
-const ApiMeetDetailRoute = ApiMeetDetailRouteImport.update({
-  id: '/api/meet/detail',
-  path: '/api/meet/detail',
+const ApiRoadmapRoute = ApiRoadmapRouteImport.update({
+  id: '/api/roadmap',
+  path: '/api/roadmap',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiMeRegistrationRoute = ApiMeRegistrationRouteImport.update({
-  id: '/api/me/registration',
-  path: '/api/me/registration',
+const ApiRosterStatusRoute = ApiRosterStatusRouteImport.update({
+  id: '/api/roster-status',
+  path: '/api/roster-status',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiMeRegisterRoute = ApiMeRegisterRouteImport.update({
-  id: '/api/me/register',
-  path: '/api/me/register',
+const ApiSwimmerDetailsRoute = ApiSwimmerDetailsRouteImport.update({
+  id: '/api/swimmer-details',
+  path: '/api/swimmer-details',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiMePaymentRoute = ApiMePaymentRouteImport.update({
-  id: '/api/me/payment',
-  path: '/api/me/payment',
+const ApiSwimmerParentsRoute = ApiSwimmerParentsRouteImport.update({
+  id: '/api/swimmer-parents',
+  path: '/api/swimmer-parents',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiMeParentRoute = ApiMeParentRouteImport.update({
-  id: '/api/me/parent',
-  path: '/api/me/parent',
+const ApiSwimmersRoute = ApiSwimmersRouteImport.update({
+  id: '/api/swimmers',
+  path: '/api/swimmers',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiMeLinkRoute = ApiMeLinkRouteImport.update({
-  id: '/api/me/link',
-  path: '/api/me/link',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiMeDataRoute = ApiMeDataRouteImport.update({
-  id: '/api/me/data',
-  path: '/api/me/data',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiMeClaimableRoute = ApiMeClaimableRouteImport.update({
-  id: '/api/me/claimable',
-  path: '/api/me/claimable',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAuthVerifyCodeRoute = ApiAuthVerifyCodeRouteImport.update({
-  id: '/api/auth/verify-code',
-  path: '/api/auth/verify-code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAuthRequestCodeRoute = ApiAuthRequestCodeRouteImport.update({
-  id: '/api/auth/request-code',
-  path: '/api/auth/request-code',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAuthMeRoute = ApiAuthMeRouteImport.update({
-  id: '/api/auth/me',
-  path: '/api/auth/me',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAuthDemoRoute = ApiAuthDemoRouteImport.update({
-  id: '/api/auth/demo',
-  path: '/api/auth/demo',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAthleteAssessmentRoute = ApiAthleteAssessmentRouteImport.update({
-  id: '/api/athlete/assessment',
-  path: '/api/athlete/assessment',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminTestersRoute = ApiAdminTestersRouteImport.update({
-  id: '/api/admin/testers',
-  path: '/api/admin/testers',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminProgressRoute = ApiAdminProgressRouteImport.update({
-  id: '/api/admin/progress',
-  path: '/api/admin/progress',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminParentImportRoute = ApiAdminParentImportRouteImport.update({
-  id: '/api/admin/parent-import',
-  path: '/api/admin/parent-import',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAdminLinksRoute = ApiAdminLinksRouteImport.update({
-  id: '/api/admin/links',
-  path: '/api/admin/links',
+const ApiAdminActivityRoute = ApiAdminActivityRouteImport.update({
+  id: '/api/admin/activity',
+  path: '/api/admin/activity',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminClaimsRoute = ApiAdminClaimsRouteImport.update({
@@ -311,9 +186,134 @@ const ApiAdminClaimsRoute = ApiAdminClaimsRouteImport.update({
   path: '/api/admin/claims',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminActivityRoute = ApiAdminActivityRouteImport.update({
-  id: '/api/admin/activity',
-  path: '/api/admin/activity',
+const ApiAdminLinksRoute = ApiAdminLinksRouteImport.update({
+  id: '/api/admin/links',
+  path: '/api/admin/links',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminParentImportRoute = ApiAdminParentImportRouteImport.update({
+  id: '/api/admin/parent-import',
+  path: '/api/admin/parent-import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminProgressRoute = ApiAdminProgressRouteImport.update({
+  id: '/api/admin/progress',
+  path: '/api/admin/progress',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminTestersRoute = ApiAdminTestersRouteImport.update({
+  id: '/api/admin/testers',
+  path: '/api/admin/testers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAthleteAssessmentRoute = ApiAthleteAssessmentRouteImport.update({
+  id: '/api/athlete/assessment',
+  path: '/api/athlete/assessment',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthDemoRoute = ApiAuthDemoRouteImport.update({
+  id: '/api/auth/demo',
+  path: '/api/auth/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthMeRoute = ApiAuthMeRouteImport.update({
+  id: '/api/auth/me',
+  path: '/api/auth/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthRequestCodeRoute = ApiAuthRequestCodeRouteImport.update({
+  id: '/api/auth/request-code',
+  path: '/api/auth/request-code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthVerifyCodeRoute = ApiAuthVerifyCodeRouteImport.update({
+  id: '/api/auth/verify-code',
+  path: '/api/auth/verify-code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMeClaimableRoute = ApiMeClaimableRouteImport.update({
+  id: '/api/me/claimable',
+  path: '/api/me/claimable',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMeDataRoute = ApiMeDataRouteImport.update({
+  id: '/api/me/data',
+  path: '/api/me/data',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMeLinkRoute = ApiMeLinkRouteImport.update({
+  id: '/api/me/link',
+  path: '/api/me/link',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMeParentRoute = ApiMeParentRouteImport.update({
+  id: '/api/me/parent',
+  path: '/api/me/parent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMePaymentRoute = ApiMePaymentRouteImport.update({
+  id: '/api/me/payment',
+  path: '/api/me/payment',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMeRegisterRoute = ApiMeRegisterRouteImport.update({
+  id: '/api/me/register',
+  path: '/api/me/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMeRegistrationRoute = ApiMeRegistrationRouteImport.update({
+  id: '/api/me/registration',
+  path: '/api/me/registration',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMeetDetailRoute = ApiMeetDetailRouteImport.update({
+  id: '/api/meet/detail',
+  path: '/api/meet/detail',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiParentsLinkRoute = ApiParentsLinkRouteImport.update({
+  id: '/link',
+  path: '/link',
+  getParentRoute: () => ApiParentsRoute,
+} as any)
+const ApiRoadmapCommentRoute = ApiRoadmapCommentRouteImport.update({
+  id: '/comment',
+  path: '/comment',
+  getParentRoute: () => ApiRoadmapRoute,
+} as any)
+const ApiSwimmersIdRoute = ApiSwimmersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiSwimmersRoute,
+} as any)
+const ApiTesterAgreeRoute = ApiTesterAgreeRouteImport.update({
+  id: '/api/tester/agree',
+  path: '/api/tester/agree',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTesterFeedbackRoute = ApiTesterFeedbackRouteImport.update({
+  id: '/api/tester/feedback',
+  path: '/api/tester/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTesterMeRoute = ApiTesterMeRouteImport.update({
+  id: '/api/tester/me',
+  path: '/api/tester/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTesterRegisterRoute = ApiTesterRegisterRouteImport.update({
+  id: '/api/tester/register',
+  path: '/api/tester/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTrackerDataRoute = ApiTrackerDataRouteImport.update({
+  id: '/api/tracker/data',
+  path: '/api/tracker/data',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTrackerSummaryRoute = ApiTrackerSummaryRouteImport.update({
+  id: '/api/tracker/summary',
+  path: '/api/tracker/summary',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -692,67 +692,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/welcome': {
-      id: '/welcome'
-      path: '/welcome'
-      fullPath: '/welcome'
-      preLoaderRoute: typeof WelcomeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tracker': {
-      id: '/tracker'
-      path: '/tracker'
-      fullPath: '/tracker'
-      preLoaderRoute: typeof TrackerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/tester': {
-      id: '/tester'
-      path: '/tester'
-      fullPath: '/tester'
-      preLoaderRoute: typeof TesterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/roadmap': {
-      id: '/roadmap'
-      path: '/roadmap'
-      fullPath: '/roadmap'
-      preLoaderRoute: typeof RoadmapRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/register': {
-      id: '/register'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/parent': {
-      id: '/parent'
-      path: '/parent'
-      fullPath: '/parent'
-      preLoaderRoute: typeof ParentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/feedback': {
-      id: '/feedback'
-      path: '/feedback'
-      fullPath: '/feedback'
-      preLoaderRoute: typeof FeedbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dormant': {
-      id: '/dormant'
-      path: '/dormant'
-      fullPath: '/dormant'
-      preLoaderRoute: typeof DormantRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/database': {
-      id: '/database'
-      path: '/database'
-      fullPath: '/database'
-      preLoaderRoute: typeof DatabaseRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -762,88 +706,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/database': {
+      id: '/database'
+      path: '/database'
+      fullPath: '/database'
+      preLoaderRoute: typeof DatabaseRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/swimmers': {
-      id: '/api/swimmers'
-      path: '/api/swimmers'
-      fullPath: '/api/swimmers'
-      preLoaderRoute: typeof ApiSwimmersRouteImport
+    '/dormant': {
+      id: '/dormant'
+      path: '/dormant'
+      fullPath: '/dormant'
+      preLoaderRoute: typeof DormantRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/swimmer-parents': {
-      id: '/api/swimmer-parents'
-      path: '/api/swimmer-parents'
-      fullPath: '/api/swimmer-parents'
-      preLoaderRoute: typeof ApiSwimmerParentsRouteImport
+    '/feedback': {
+      id: '/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof FeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/swimmer-details': {
-      id: '/api/swimmer-details'
-      path: '/api/swimmer-details'
-      fullPath: '/api/swimmer-details'
-      preLoaderRoute: typeof ApiSwimmerDetailsRouteImport
+    '/parent': {
+      id: '/parent'
+      path: '/parent'
+      fullPath: '/parent'
+      preLoaderRoute: typeof ParentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/roster-status': {
-      id: '/api/roster-status'
-      path: '/api/roster-status'
-      fullPath: '/api/roster-status'
-      preLoaderRoute: typeof ApiRosterStatusRouteImport
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/roadmap': {
-      id: '/api/roadmap'
-      path: '/api/roadmap'
-      fullPath: '/api/roadmap'
-      preLoaderRoute: typeof ApiRoadmapRouteImport
+    '/roadmap': {
+      id: '/roadmap'
+      path: '/roadmap'
+      fullPath: '/roadmap'
+      preLoaderRoute: typeof RoadmapRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/registrations': {
-      id: '/api/registrations'
-      path: '/api/registrations'
-      fullPath: '/api/registrations'
-      preLoaderRoute: typeof ApiRegistrationsRouteImport
+    '/tester': {
+      id: '/tester'
+      path: '/tester'
+      fullPath: '/tester'
+      preLoaderRoute: typeof TesterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/register': {
-      id: '/api/register'
-      path: '/api/register'
-      fullPath: '/api/register'
-      preLoaderRoute: typeof ApiRegisterRouteImport
+    '/tracker': {
+      id: '/tracker'
+      path: '/tracker'
+      fullPath: '/tracker'
+      preLoaderRoute: typeof TrackerRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/payments': {
-      id: '/api/payments'
-      path: '/api/payments'
-      fullPath: '/api/payments'
-      preLoaderRoute: typeof ApiPaymentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/payment': {
-      id: '/api/payment'
-      path: '/api/payment'
-      fullPath: '/api/payment'
-      preLoaderRoute: typeof ApiPaymentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/parents': {
-      id: '/api/parents'
-      path: '/api/parents'
-      fullPath: '/api/parents'
-      preLoaderRoute: typeof ApiParentsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/notes': {
-      id: '/api/notes'
-      path: '/api/notes'
-      fullPath: '/api/notes'
-      preLoaderRoute: typeof ApiNotesRouteImport
+    '/welcome': {
+      id: '/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof WelcomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/health': {
@@ -853,186 +776,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/tracker/summary': {
-      id: '/api/tracker/summary'
-      path: '/api/tracker/summary'
-      fullPath: '/api/tracker/summary'
-      preLoaderRoute: typeof ApiTrackerSummaryRouteImport
+    '/api/notes': {
+      id: '/api/notes'
+      path: '/api/notes'
+      fullPath: '/api/notes'
+      preLoaderRoute: typeof ApiNotesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/tracker/data': {
-      id: '/api/tracker/data'
-      path: '/api/tracker/data'
-      fullPath: '/api/tracker/data'
-      preLoaderRoute: typeof ApiTrackerDataRouteImport
+    '/api/parents': {
+      id: '/api/parents'
+      path: '/api/parents'
+      fullPath: '/api/parents'
+      preLoaderRoute: typeof ApiParentsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/tester/register': {
-      id: '/api/tester/register'
-      path: '/api/tester/register'
-      fullPath: '/api/tester/register'
-      preLoaderRoute: typeof ApiTesterRegisterRouteImport
+    '/api/payment': {
+      id: '/api/payment'
+      path: '/api/payment'
+      fullPath: '/api/payment'
+      preLoaderRoute: typeof ApiPaymentRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/tester/me': {
-      id: '/api/tester/me'
-      path: '/api/tester/me'
-      fullPath: '/api/tester/me'
-      preLoaderRoute: typeof ApiTesterMeRouteImport
+    '/api/payments': {
+      id: '/api/payments'
+      path: '/api/payments'
+      fullPath: '/api/payments'
+      preLoaderRoute: typeof ApiPaymentsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/tester/feedback': {
-      id: '/api/tester/feedback'
-      path: '/api/tester/feedback'
-      fullPath: '/api/tester/feedback'
-      preLoaderRoute: typeof ApiTesterFeedbackRouteImport
+    '/api/register': {
+      id: '/api/register'
+      path: '/api/register'
+      fullPath: '/api/register'
+      preLoaderRoute: typeof ApiRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/tester/agree': {
-      id: '/api/tester/agree'
-      path: '/api/tester/agree'
-      fullPath: '/api/tester/agree'
-      preLoaderRoute: typeof ApiTesterAgreeRouteImport
+    '/api/registrations': {
+      id: '/api/registrations'
+      path: '/api/registrations'
+      fullPath: '/api/registrations'
+      preLoaderRoute: typeof ApiRegistrationsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/swimmers/$id': {
-      id: '/api/swimmers/$id'
-      path: '/$id'
-      fullPath: '/api/swimmers/$id'
-      preLoaderRoute: typeof ApiSwimmersIdRouteImport
-      parentRoute: typeof ApiSwimmersRoute
-    }
-    '/api/roadmap/comment': {
-      id: '/api/roadmap/comment'
-      path: '/comment'
-      fullPath: '/api/roadmap/comment'
-      preLoaderRoute: typeof ApiRoadmapCommentRouteImport
-      parentRoute: typeof ApiRoadmapRoute
-    }
-    '/api/parents/link': {
-      id: '/api/parents/link'
-      path: '/link'
-      fullPath: '/api/parents/link'
-      preLoaderRoute: typeof ApiParentsLinkRouteImport
-      parentRoute: typeof ApiParentsRoute
-    }
-    '/api/meet/detail': {
-      id: '/api/meet/detail'
-      path: '/api/meet/detail'
-      fullPath: '/api/meet/detail'
-      preLoaderRoute: typeof ApiMeetDetailRouteImport
+    '/api/roadmap': {
+      id: '/api/roadmap'
+      path: '/api/roadmap'
+      fullPath: '/api/roadmap'
+      preLoaderRoute: typeof ApiRoadmapRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/me/registration': {
-      id: '/api/me/registration'
-      path: '/api/me/registration'
-      fullPath: '/api/me/registration'
-      preLoaderRoute: typeof ApiMeRegistrationRouteImport
+    '/api/roster-status': {
+      id: '/api/roster-status'
+      path: '/api/roster-status'
+      fullPath: '/api/roster-status'
+      preLoaderRoute: typeof ApiRosterStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/me/register': {
-      id: '/api/me/register'
-      path: '/api/me/register'
-      fullPath: '/api/me/register'
-      preLoaderRoute: typeof ApiMeRegisterRouteImport
+    '/api/swimmer-details': {
+      id: '/api/swimmer-details'
+      path: '/api/swimmer-details'
+      fullPath: '/api/swimmer-details'
+      preLoaderRoute: typeof ApiSwimmerDetailsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/me/payment': {
-      id: '/api/me/payment'
-      path: '/api/me/payment'
-      fullPath: '/api/me/payment'
-      preLoaderRoute: typeof ApiMePaymentRouteImport
+    '/api/swimmer-parents': {
+      id: '/api/swimmer-parents'
+      path: '/api/swimmer-parents'
+      fullPath: '/api/swimmer-parents'
+      preLoaderRoute: typeof ApiSwimmerParentsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/me/parent': {
-      id: '/api/me/parent'
-      path: '/api/me/parent'
-      fullPath: '/api/me/parent'
-      preLoaderRoute: typeof ApiMeParentRouteImport
+    '/api/swimmers': {
+      id: '/api/swimmers'
+      path: '/api/swimmers'
+      fullPath: '/api/swimmers'
+      preLoaderRoute: typeof ApiSwimmersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/me/link': {
-      id: '/api/me/link'
-      path: '/api/me/link'
-      fullPath: '/api/me/link'
-      preLoaderRoute: typeof ApiMeLinkRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/me/data': {
-      id: '/api/me/data'
-      path: '/api/me/data'
-      fullPath: '/api/me/data'
-      preLoaderRoute: typeof ApiMeDataRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/me/claimable': {
-      id: '/api/me/claimable'
-      path: '/api/me/claimable'
-      fullPath: '/api/me/claimable'
-      preLoaderRoute: typeof ApiMeClaimableRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/auth/verify-code': {
-      id: '/api/auth/verify-code'
-      path: '/api/auth/verify-code'
-      fullPath: '/api/auth/verify-code'
-      preLoaderRoute: typeof ApiAuthVerifyCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/auth/request-code': {
-      id: '/api/auth/request-code'
-      path: '/api/auth/request-code'
-      fullPath: '/api/auth/request-code'
-      preLoaderRoute: typeof ApiAuthRequestCodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/auth/me': {
-      id: '/api/auth/me'
-      path: '/api/auth/me'
-      fullPath: '/api/auth/me'
-      preLoaderRoute: typeof ApiAuthMeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/auth/demo': {
-      id: '/api/auth/demo'
-      path: '/api/auth/demo'
-      fullPath: '/api/auth/demo'
-      preLoaderRoute: typeof ApiAuthDemoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/athlete/assessment': {
-      id: '/api/athlete/assessment'
-      path: '/api/athlete/assessment'
-      fullPath: '/api/athlete/assessment'
-      preLoaderRoute: typeof ApiAthleteAssessmentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/admin/testers': {
-      id: '/api/admin/testers'
-      path: '/api/admin/testers'
-      fullPath: '/api/admin/testers'
-      preLoaderRoute: typeof ApiAdminTestersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/admin/progress': {
-      id: '/api/admin/progress'
-      path: '/api/admin/progress'
-      fullPath: '/api/admin/progress'
-      preLoaderRoute: typeof ApiAdminProgressRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/admin/parent-import': {
-      id: '/api/admin/parent-import'
-      path: '/api/admin/parent-import'
-      fullPath: '/api/admin/parent-import'
-      preLoaderRoute: typeof ApiAdminParentImportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/admin/links': {
-      id: '/api/admin/links'
-      path: '/api/admin/links'
-      fullPath: '/api/admin/links'
-      preLoaderRoute: typeof ApiAdminLinksRouteImport
+    '/api/admin/activity': {
+      id: '/api/admin/activity'
+      path: '/api/admin/activity'
+      fullPath: '/api/admin/activity'
+      preLoaderRoute: typeof ApiAdminActivityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/claims': {
@@ -1042,11 +867,186 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminClaimsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/activity': {
-      id: '/api/admin/activity'
-      path: '/api/admin/activity'
-      fullPath: '/api/admin/activity'
-      preLoaderRoute: typeof ApiAdminActivityRouteImport
+    '/api/admin/links': {
+      id: '/api/admin/links'
+      path: '/api/admin/links'
+      fullPath: '/api/admin/links'
+      preLoaderRoute: typeof ApiAdminLinksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/parent-import': {
+      id: '/api/admin/parent-import'
+      path: '/api/admin/parent-import'
+      fullPath: '/api/admin/parent-import'
+      preLoaderRoute: typeof ApiAdminParentImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/progress': {
+      id: '/api/admin/progress'
+      path: '/api/admin/progress'
+      fullPath: '/api/admin/progress'
+      preLoaderRoute: typeof ApiAdminProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/testers': {
+      id: '/api/admin/testers'
+      path: '/api/admin/testers'
+      fullPath: '/api/admin/testers'
+      preLoaderRoute: typeof ApiAdminTestersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/athlete/assessment': {
+      id: '/api/athlete/assessment'
+      path: '/api/athlete/assessment'
+      fullPath: '/api/athlete/assessment'
+      preLoaderRoute: typeof ApiAthleteAssessmentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/demo': {
+      id: '/api/auth/demo'
+      path: '/api/auth/demo'
+      fullPath: '/api/auth/demo'
+      preLoaderRoute: typeof ApiAuthDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/me': {
+      id: '/api/auth/me'
+      path: '/api/auth/me'
+      fullPath: '/api/auth/me'
+      preLoaderRoute: typeof ApiAuthMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/request-code': {
+      id: '/api/auth/request-code'
+      path: '/api/auth/request-code'
+      fullPath: '/api/auth/request-code'
+      preLoaderRoute: typeof ApiAuthRequestCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/verify-code': {
+      id: '/api/auth/verify-code'
+      path: '/api/auth/verify-code'
+      fullPath: '/api/auth/verify-code'
+      preLoaderRoute: typeof ApiAuthVerifyCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/me/claimable': {
+      id: '/api/me/claimable'
+      path: '/api/me/claimable'
+      fullPath: '/api/me/claimable'
+      preLoaderRoute: typeof ApiMeClaimableRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/me/data': {
+      id: '/api/me/data'
+      path: '/api/me/data'
+      fullPath: '/api/me/data'
+      preLoaderRoute: typeof ApiMeDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/me/link': {
+      id: '/api/me/link'
+      path: '/api/me/link'
+      fullPath: '/api/me/link'
+      preLoaderRoute: typeof ApiMeLinkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/me/parent': {
+      id: '/api/me/parent'
+      path: '/api/me/parent'
+      fullPath: '/api/me/parent'
+      preLoaderRoute: typeof ApiMeParentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/me/payment': {
+      id: '/api/me/payment'
+      path: '/api/me/payment'
+      fullPath: '/api/me/payment'
+      preLoaderRoute: typeof ApiMePaymentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/me/register': {
+      id: '/api/me/register'
+      path: '/api/me/register'
+      fullPath: '/api/me/register'
+      preLoaderRoute: typeof ApiMeRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/me/registration': {
+      id: '/api/me/registration'
+      path: '/api/me/registration'
+      fullPath: '/api/me/registration'
+      preLoaderRoute: typeof ApiMeRegistrationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/meet/detail': {
+      id: '/api/meet/detail'
+      path: '/api/meet/detail'
+      fullPath: '/api/meet/detail'
+      preLoaderRoute: typeof ApiMeetDetailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/parents/link': {
+      id: '/api/parents/link'
+      path: '/link'
+      fullPath: '/api/parents/link'
+      preLoaderRoute: typeof ApiParentsLinkRouteImport
+      parentRoute: typeof ApiParentsRoute
+    }
+    '/api/roadmap/comment': {
+      id: '/api/roadmap/comment'
+      path: '/comment'
+      fullPath: '/api/roadmap/comment'
+      preLoaderRoute: typeof ApiRoadmapCommentRouteImport
+      parentRoute: typeof ApiRoadmapRoute
+    }
+    '/api/swimmers/$id': {
+      id: '/api/swimmers/$id'
+      path: '/$id'
+      fullPath: '/api/swimmers/$id'
+      preLoaderRoute: typeof ApiSwimmersIdRouteImport
+      parentRoute: typeof ApiSwimmersRoute
+    }
+    '/api/tester/agree': {
+      id: '/api/tester/agree'
+      path: '/api/tester/agree'
+      fullPath: '/api/tester/agree'
+      preLoaderRoute: typeof ApiTesterAgreeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tester/feedback': {
+      id: '/api/tester/feedback'
+      path: '/api/tester/feedback'
+      fullPath: '/api/tester/feedback'
+      preLoaderRoute: typeof ApiTesterFeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tester/me': {
+      id: '/api/tester/me'
+      path: '/api/tester/me'
+      fullPath: '/api/tester/me'
+      preLoaderRoute: typeof ApiTesterMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tester/register': {
+      id: '/api/tester/register'
+      path: '/api/tester/register'
+      fullPath: '/api/tester/register'
+      preLoaderRoute: typeof ApiTesterRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tracker/data': {
+      id: '/api/tracker/data'
+      path: '/api/tracker/data'
+      fullPath: '/api/tracker/data'
+      preLoaderRoute: typeof ApiTrackerDataRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tracker/summary': {
+      id: '/api/tracker/summary'
+      path: '/api/tracker/summary'
+      fullPath: '/api/tracker/summary'
+      preLoaderRoute: typeof ApiTrackerSummaryRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
