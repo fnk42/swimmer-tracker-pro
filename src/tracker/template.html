@@ -317,9 +317,13 @@ details.sw .trend .rate{display:block}
 /* Event name, course, times and the trend each held their own grid column but
    nothing stopped them wrapping, so "200 Fly" became "200" / "Fly" and
    "22.7% faster" split in two. The name may wrap; the rest may not. */
-.evrow{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;
-  gap:var(--sp-md) var(--sp-lg);align-items:center;
-  font-size:var(--fs-sm);line-height:var(--lh-sm);
+.evhead{font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);
+  margin:0 0 4px;display:flex;align-items:center}
+.evrow .evtop{display:flex;align-items:baseline;gap:8px;min-width:0}
+.evrow .evtop .e{flex:0 1 auto}
+.evrow .evtop .trend{margin-left:auto;font-size:13px;min-width:0;text-align:right}
+.evrow .evsub{margin-top:2px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.evrow{font-size:var(--fs-sm);line-height:var(--lh-sm);
   padding:var(--sp-md) 0;border-bottom:1px solid var(--line)}
 .evrow .e,.evrow .c,.evrow .t,.evrow .trend{white-space:nowrap}
 .evrow .e{min-width:0;overflow:hidden;text-overflow:ellipsis}
@@ -1583,6 +1587,7 @@ const TIPS = {
   dashtime:  { t: 'Real times in one event at one pool length, so two swimmers can share the axis. The figure beside a name is total change, first race to last.', a: 'chart' },
   // On a meet card, with that meet's own count as the second sentence.
   pbrate1:   { t: 'The share of swims that were personal bests, a first-ever swim in an event included.', a: 'pb-rate' },
+  events:    { t: "Each event's change from the swimmer's first swim to their most recent, as a share of the first time. It is total change, not a yearly rate, so a longer career shows bigger numbers.", a: 'rate' },
   pbrate:    { t: 'The share of swims that were personal bests, the fastest that swimmer had ever swum in that event. A first-ever swim in an event counts as one.', a: 'pb-rate' },
   groups:    { t: 'Groups compare each swimmer with others the same age, so a swimmer can get faster and still sit in a lower group. About three in ten are always in the bottom one.', a: 'lower-group' },
   'g-fast':      { t: 'The top 10% of the club, once age is taken into account.', a: 'groups' },
@@ -3248,13 +3253,15 @@ function swimmerCard(s){
   const dists = ['Sprint','Middle','Distance']
     .filter(k => distMap[k])
     .map(k => `<span class="chip"><span class="dot d-${distMap[k]}"></span>${k}</span>`).join('');
+  // Two lines per event: what it is and how it moved, then the times behind
+  // it. The grid this replaces gave the times priority and squeezed the event
+  // name and the change to nothing on a phone.
   const evs = (s.events || []).map(e => `
     <div class="evrow">
-      <span class="e">${esc(e.event)}</span>
-      <span class="c">${e.course}</span>
-      <span class="t">${swimTime(e.first)} → ${swimTime(e.last)}${
-        year==='all'&&e.firstDate?` <span style="opacity:.62">(${e.firstDate} → ${e.lastDate})</span>`:''}</span>
-      <span class="trend ${trendCls(e.pct)}">${pct(e.pct)}<span class="basis">first to last</span></span>
+      <div class="evtop"><span class="e">${esc(e.event)}</span><span class="c">${e.course}</span>
+        <span class="trend ${trendCls(e.pct)}">${pct(e.pct)}</span></div>
+      <div class="evsub">${swimTime(e.first)} \u2192 ${swimTime(e.last)}${
+        year==='all'&&e.firstDate?` · ${monYr(e.firstDate)} \u2013 ${monYr(e.lastDate)}`:''}</div>
     </div>`).join('');
   const num = (v, suf) => v === null || v === undefined ? '—' : (v + (suf||''));
   // A bar next to each trend, scaled against 25% — roughly the largest honest
@@ -3397,8 +3404,7 @@ function swimmerCard(s){
       </div>`:''}
       ${chart}
       ${coach}
-      ${evs?`<div class="evlist"><h4 style="font-size:11px;font-weight:700;letter-spacing:1.1px;
-        text-transform:uppercase;color:var(--muted);margin:0 0 4px">Event by event — total change from their first swim to their most recent</h4>${evs}</div>`:''}
+      ${evs?`<div class="evlist"><h4 class="evhead">Event by event${ib('events', 'event by event')}</h4>${evs}</div>`:''}
       ${off}
     </div>
   </details>`;
