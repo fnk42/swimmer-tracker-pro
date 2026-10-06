@@ -410,6 +410,9 @@ details.sw .trend .rate{display:block}
   background:var(--surface);color:var(--muted);font:inherit;font-size:13px;cursor:pointer;
   box-shadow:var(--shadow-sm)}
 .notebtn:hover{color:var(--ink);border-color:var(--electric)}
+/* The form bar carries no text: an 18% segment cannot hold "18% below". */
+.fb-cap{margin:5px 0 0;font-size:12px;color:var(--muted)}
+.fb-cap .a{color:var(--ok-t);font-weight:600}.fb-cap .b{color:var(--alert-t);font-weight:600}
 /* On a phone the content column is the whole width, so the note button
    would sit on whatever is under it. It slides away while you scroll down and
    comes back when you scroll up or stop, and the page ends with room for it. */
@@ -1113,7 +1116,11 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 .swlb li b{display:block;font-size:14.5px;font-weight:700;color:var(--ink);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .swlb li span{display:block;font-size:12.5px;color:var(--muted)}
-.swlb li[aria-selected="true"],.swlb li:hover{background:var(--ice)}
+/* The highlighted match is the blue band with white lettering that Follow a
+   swimmer uses, so the two pickers read as one control. */
+.swlb li:hover{background:var(--ice)}
+.swlb li[aria-selected="true"]{background:var(--electric)}
+.swlb li[aria-selected="true"] b,.swlb li[aria-selected="true"] span{color:#fff}
 .swlb li.none{cursor:default;color:var(--muted);font-size:13.5px;padding:11px}
 .swlb li.none:hover{background:none}
 .pw-span{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;
@@ -2733,35 +2740,17 @@ function twoSection(){
           <span>${esc(axisLabel(cats[0]))}</span>
           <span>${esc(axisLabel(cats[cats.length - 1]))}</span></div></div>
       </div>
-      ${twFlat ? `<ul class="dnote"><li class="dn-thin">Broken down by stroke, <b>their
-        whole-career average</b> is flat at zero for everyone \u2014 that baseline is the mean of
-        every race of an event, so averaging the differences back up over all of them returns
-        zero however the swimmer has gone. Showing <b>where they started</b> instead.</li></ul>`
-        : ''}
+
       <!-- "One dot = one meet…" lives in the info button on the section title. -->
       <p class="dkey">
         <span><svg width="36" height="9" aria-hidden><line x1="1" y1="4.5" x2="35" y2="4.5"
           stroke="currentColor" stroke-width="2.4"/></svg>
-          racing this stroke regularly</span>
+          racing regularly</span>
         <span><svg width="36" height="9" aria-hidden><line x1="1" y1="4.5" x2="35" y2="4.5"
           stroke="currentColor" stroke-width="2.4" stroke-dasharray="3 4" opacity=".6"/></svg>
-          <b>more than six months between races</b> — the line joins either side without
-          claiming anything in the gap</span>
+          six months or more between races</span>
       </p>
-      <p class="tw-note">${esc(TW_BASE[twBaseUsed][1])}
-        Each race is compared with the same swimmer in the same event, then averaged, so a
-        sprinter and a distance swimmer can share one axis and neither is scored on being the
-        quicker swimmer. A dashed stretch spans ${twBy === 'meet' ? 'meets they did not enter'
-          : twBy === 'season' ? 'a season they did not race' : 'a stroke they did not swim'},
-        joining the races either side without claiming anything in between.
-        ${series.length > 1 ? `Both lines are measured against their own baseline, never against
-        each other — where they rise and fall together, that is usually the meet rather
-        than the swimmers.` : ''}
-        ${aBand ? `A comparison can only be made inside one age group: this box offers
-        <b>${esc(aBand)}</b> and nobody else. Children of different ages improve at very
-        different rates by nature${bandNorm != null
-          ? ` — the ${esc(aBand)} median is ${pct(bandNorm)} a year` : ''}, so two ages on one
-        axis would say more about the ages than the swimmers.` : ''}</p>
+
     </div></div>
     `}
   </section>`;
@@ -3908,9 +3897,9 @@ function render(){
     const showWorstSt = c.worstStroke && c.bestStroke && c.worstStroke.k !== c.bestStroke.k;
     const showWorstAg = c.worstAge && c.bestAge && c.worstAge.k !== c.bestAge.k;
     const bar = c.above===null ? '' : `<div class="formbar">
-      ${c.above>0?`<span class="fb-above" style="width:${c.above}%">${c.above>11?c.above+'% at or above form':''}</span>`:''}
-      ${c.below>0?`<span class="fb-below" style="width:${c.below}%">${c.below>11?c.below+'% below':''}</span>`:''}
-    </div>`;
+      ${c.above>0?`<span class="fb-above" style="width:${c.above}%"></span>`:''}
+      ${c.below>0?`<span class="fb-below" style="width:${c.below}%"></span>`:''}
+    </div><p class="fb-cap"><span class="a">${c.above}% at or above form</span>${c.below>0?` · <span class="b">${c.below}% below</span>`:''}</p>`;
     const d = new Date(c.date + 'T00:00:00');
     const badge = isNaN(d) ? '' : `<span class="cbadge" aria-hidden="true">
       <b>${d.getDate()}</b><i>${MON[d.getMonth()]}</i></span>`;
@@ -4722,9 +4711,10 @@ function wireSearch(){
       .filter(d => d.dataset.name.includes(term));
     lb.innerHTML = hits.length ? hits.map((d, i) => `<li role="option" id="swopt-${i}"
         aria-selected="false" data-name="${esc(d.dataset.aname)}"><b>${esc(d.dataset.aname)}</b>
-        <span>${esc(d.dataset.band)}${d.dataset.rate ? ' · ' + esc(d.dataset.rate) : ' · not yet rated'}</span></li>`).join('')
+        <span>${esc(d.dataset.band)}</span></li>`).join('')
       : `<li class="none" role="option" aria-disabled="true">No swimmers match \u201c${esc(q.value.trim())}\u201d</li>`;
     lb.hidden = false; q.setAttribute('aria-expanded', 'true'); swActive = -1;
+    if (hits.length) mark(0);   // the first match is the one Enter takes, shown as Follow shows it
     fit();
   };
   // The list never runs under the bottom of the screen or the phone keyboard:
@@ -4761,7 +4751,13 @@ function wireSearch(){
   lb.onclick = e => { const li = e.target.closest('li[data-name]'); if (li) choose(li.dataset.name); };
   const choose = name => {
     close(); clearTimeout(swDebounce);
-    q.value = name; fQ = name.toLowerCase(); filter();
+    q.value = name; fQ = name.toLowerCase();
+    // Follow a swimmer follows the search: the same child, without picking twice.
+    if (twNames.includes(name) && twA !== name) {
+      twA = name; if (twB === twA) twB = '';
+      render();                       // redraws Follow; the search box keeps fQ
+      const q2 = document.getElementById('swq'); if (q2) q2.value = name;  // as written, not lower-cased
+    } else filter();
     const card = [...document.querySelectorAll('#list details.sw')].find(d => d.dataset.aname === name);
     if (!card) return;
     const grp = card.closest('details.grp'); if (grp) grp.open = true;
