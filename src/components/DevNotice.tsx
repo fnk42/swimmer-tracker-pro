@@ -1,12 +1,12 @@
-import { GOLDEN_PIPIT_PHONE, GOLDEN_PIPIT_PHONE_DISPLAY } from "@/lib/links";
-
 // Said once, in the same words, on every door.
 //
-// Families are being asked to put real money and a child's health details into
-// something that is a fortnight old. Saying so is not an apology — it sets the
-// expectation that a bump is a bump rather than a sign the club has lost their
-// payment, and it gives them a person to ring instead of a form to abandon.
-// The number is a tel: link because most of them are on a phone.
+// Families are being asked to put real money and a child's details into
+// something new. Saying so sets the expectation that a bump is a bump rather
+// than a sign the club has lost their payment. "Report an issue" opens the note
+// form, which arrives with the page it was sent from. No personal phone number:
+// these pages are shared on WhatsApp, and a public page is not the place for one.
+export const REPORT_ISSUE_EVENT = "nextgen:report-issue";
+
 export function DevNotice({ dark = true }: { dark?: boolean }) {
   return (
     <p
@@ -17,18 +17,17 @@ export function DevNotice({ dark = true }: { dark?: boolean }) {
           : "border-amber-300/70 bg-amber-50 text-amber-900")
       }
     >
-      This is a new web app undergoing development. Expect some bumps along the road until it is
-      done. Reach out to F. Njenga (
-      <a
-        href={`tel:${GOLDEN_PIPIT_PHONE}`}
+      This app is in active development.{" "}
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new Event(REPORT_ISSUE_EVENT))}
         className={
-          "font-semibold underline-offset-4 hover:underline " +
+          "font-semibold underline underline-offset-4 " +
           (dark ? "text-[#FFC24B]" : "text-amber-900")
         }
       >
-        {GOLDEN_PIPIT_PHONE_DISPLAY}
-      </a>
-      ) for troubleshooting queries.
+        Report an issue
+      </button>
     </p>
   );
 }

@@ -2,8 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   GOLDEN_PIPIT_URL,
   GOLDEN_PIPIT_EMAIL,
-  GOLDEN_PIPIT_PHONE,
-  GOLDEN_PIPIT_PHONE_DISPLAY,
 } from "@/lib/links";
 import { useEffect, useState } from "react";
 import { useMe, useRequestCode, useVerifyCode } from "@/lib/api";
@@ -459,13 +457,6 @@ function PortalLanding() {
             className="underline-offset-4 hover:text-white/70 hover:underline"
           >
             {GOLDEN_PIPIT_EMAIL}
-          </a>
-          <span className="px-2 text-white/25">·</span>
-          <a
-            href={`tel:${GOLDEN_PIPIT_PHONE}`}
-            className="underline-offset-4 hover:text-white/70 hover:underline"
-          >
-            {GOLDEN_PIPIT_PHONE_DISPLAY}
           </a>
         </span>
       </footer>

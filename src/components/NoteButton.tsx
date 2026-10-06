@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { REPORT_ISSUE_EVENT } from "@/components/DevNotice";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +18,13 @@ export function NoteButton() {
   const [open, setOpen] = useState(false);
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // The development notice's "Report an issue" opens this same form.
+  useEffect(() => {
+    const open = () => setOpen(true);
+    window.addEventListener(REPORT_ISSUE_EVENT, open);
+    return () => window.removeEventListener(REPORT_ISSUE_EVENT, open);
+  }, []);
 
   async function send() {
     const text = body.trim();

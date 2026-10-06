@@ -334,6 +334,8 @@ details[open] .chev{transform:rotate(45deg)}
   background:var(--surface);color:var(--muted);font:inherit;font-size:13px;cursor:pointer;
   box-shadow:var(--shadow-sm)}
 .notebtn:hover{color:var(--ink);border-color:var(--electric)}
+.devlink{font:inherit;font-weight:600;color:inherit;background:none;border:0;padding:0 2px;
+  text-decoration:underline;text-underline-offset:3px;cursor:pointer;min-height:24px}
 @media (max-width:560px){ .notebtn span{display:none} .notebtn{padding:0 13px} }
 .notewrap{position:fixed;inset:0;z-index:70;background:rgba(7,20,39,.55);
   display:flex;align-items:center;justify-content:center;padding:20px}
@@ -1389,13 +1391,13 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 </header>
 
 <div class="shell" id="shell">
-  <!-- Same words as the Machakos side. Testers are being asked to judge
-       something half-built; saying so is what makes a bump a bump rather than
-       a reason to stop looking. -->
+  <!-- Same words as the other pages. Saying it is still being built is what
+       makes a bump a bump rather than a reason to stop looking. No personal
+       number: a public page shared on WhatsApp is not the place for one, and a
+       report through the note form arrives with the page it was sent from. -->
   <p class="devnotice">
-    This is a new web app undergoing development. Expect some bumps along the road until it is
-    done. Reach out to F. Njenga (<a href="tel:+254726178216">0726&nbsp;178&nbsp;216</a>) for
-    troubleshooting queries.
+    This app is in active development.
+    <button type="button" class="devlink" onclick="document.getElementById('notebtn').click()">Report an issue</button>
   </p>
   <main id="app"></main>
 </div>
@@ -1411,7 +1413,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
         target="_blank" rel="noopener noreferrer"><b>Golden Pipit Solutions</b></a></span>
     <span class="gpcontact">
       <a href="mailto:hello@goldenpipitsolutions.com">hello@goldenpipitsolutions.com</a>
-      <a href="tel:+254726178216">0726&nbsp;178&nbsp;216</a>
     </span>
   </div>
 </footer>
