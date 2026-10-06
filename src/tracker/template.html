@@ -98,7 +98,8 @@
 /* Belt and braces against Android text inflation: with the viewport meta above
    this should never trigger, but a single block wider than the screen brings it
    back and every font size on the page changes independently. */
-html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;
+  scroll-padding-top:calc(var(--stick2,0px) + var(--fbarh,0px) + 8px)}
 /* A select sizes itself to its longest option unless told otherwise. */
 select{max-width:100%;min-width:0;text-overflow:ellipsis}
 label:has(> select){max-width:100%;min-width:0}
@@ -280,7 +281,8 @@ details[open] .chev{transform:rotate(45deg)}
 /* No background tint. The translucent navy panel read as a dark blue rectangle
    sitting on the hero rather than as part of it; the hairline above and the
    cyan underline below are enough to mark the strip. */
-.tabnav{position:relative;z-index:2;border-top:1px solid rgba(255,255,255,.10)}
+.tabnav{position:sticky;top:var(--stick,0px);z-index:50;background:#071427;
+  border-top:1px solid rgba(255,255,255,.10)}
 .tabwrap{max-width:1140px;margin:0 auto;padding-inline:20px;display:flex;gap:2px;
   overflow-x:auto;scrollbar-width:none}
 .tabwrap::-webkit-scrollbar{display:none}
@@ -670,7 +672,7 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
 /* Above the filter bar, not level with it. Both were z-index 40, so the
    filters — later in the document — slid over the navigation and the bar
    looked as though it had scrolled away. */
-.pbar{background:rgba(7,20,39,.82);backdrop-filter:blur(14px);
+.pbar{background:#071427;
   border-bottom:1px solid rgba(255,255,255,.10);
   position:sticky;top:env(safe-area-inset-top,0px);z-index:60}
 .pbar .in{max-width:1180px;margin:0 auto;padding:0 20px;height:56px;
@@ -986,11 +988,10 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 /* One line, and dropdowns rather than eleven chips laid out in the open.
    The chips were a row of buttons per filter — three stacked bands of
    options, permanently expanded, above every page. */
-.fbar{position:sticky;top:var(--stick,0px);z-index:40;display:flex;
+.fbar{position:sticky;top:var(--stick2,var(--stick,0px));z-index:40;display:flex;
   flex-wrap:wrap;gap:10px 18px;align-items:center;
   margin:16px 0 4px;padding:12px 14px;
-  background:color-mix(in srgb, var(--surface) 94%, transparent);
-  backdrop-filter:saturate(140%) blur(8px);
+  background:var(--surface);
   border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow-sm)}
 .fb-grp{display:flex;align-items:center;gap:8px;min-width:0}
 .fb-lab{font-size:10px;font-weight:700;letter-spacing:.9px;text-transform:uppercase;
@@ -1268,14 +1269,14 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
    Reading a gala means scrolling past a lot of names, and by the tenth one you
    have forgotten which age group you filtered to — or you want your own child
    back without scrolling to the top. It sticks under the tab bar. */
-.filters{position:sticky;top:var(--stick,0px);z-index:30;background:var(--bg);
+.filters{position:sticky;top:var(--stick2,var(--stick,0px));z-index:30;background:var(--bg);
   padding-block:12px;margin-top:12px;
   /* full-bleed background so rows do not show through at the edges */
   box-shadow:0 0 0 20px var(--bg), 0 10px 14px -12px rgba(15,28,46,.30)}
 
 /* Same idea inside a meet: the event you are reading stays on screen while you
    scroll its results, so a time always has a heading above it. */
-.ev > summary{position:sticky;top:var(--stick,0px);z-index:20;background:var(--surface)}
+.ev > summary{position:sticky;top:var(--stick2,var(--stick,0px));z-index:20;background:var(--surface)}
 
 @media (max-width:560px){
   /* A sticky bar that eats a third of a phone screen is worse than scrolling,
@@ -1373,7 +1374,10 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
     <div class="years" role="tablist" id="years"></div>
   </div>
 
-  <!-- The five views, joined to the hero rather than in a rail beside the
+</header>
+  <!-- The views. Outside the hero so it can stick under the portal bar as one
+       header unit (P0.3); it carries the hero's own background so it still reads
+       as the bottom edge of the hero. Was: the five views, joined to the hero rather than in a rail beside the
        content. Labels are short so all five fit at 390px without a sideways
        swipe; the section headings still carry 01-05, so the diagnostic order
        is not lost. Keeps the #sidenav id the routing and scope code already
@@ -1388,7 +1392,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
       <a href="#/method"     data-page="method">Method</a>
     </div>
   </nav>
-</header>
 
 <div class="shell" id="shell">
   <!-- Same words as the other pages. Saying it is still being built is what
@@ -4494,6 +4497,23 @@ function applyScope(){
   });
 }
 
+// The header unit is the portal bar plus the tab strip; it sticks as one.
+// Anything else sticky on a page (its filter bar) hangs below it, and
+// scroll-padding keeps an in-page scroll from stopping under either.
+function measureStick(){
+  const root = document.documentElement.style;
+  const bar = document.getElementById('pbar');
+  const nav = document.getElementById('sidenav');
+  const h1 = bar && !bar.hidden ? bar.getBoundingClientRect().height : 0;
+  const h2 = nav ? nav.getBoundingClientRect().height : 0;
+  root.setProperty('--stick2', (h1 + h2) + 'px');
+  const fb = [...document.querySelectorAll('#app section[data-page]:not([hidden]) .fbar, #app section[data-page]:not([hidden]) .filters')]
+    .find(el => el.offsetParent !== null);
+  root.setProperty('--fbarh', (fb ? fb.getBoundingClientRect().height : 0) + 'px');
+}
+window.addEventListener('resize', measureStick);
+window.addEventListener('orientationchange', () => setTimeout(measureStick, 250));
+
 function showPage(p){
   page = PAGES.includes(p) ? p : PAGES[0];
   document.querySelectorAll('#app section[data-page]').forEach(sec => {
@@ -4502,6 +4522,7 @@ function showPage(p){
   document.querySelectorAll('#sidenav a').forEach(a => {
     a.setAttribute('aria-current', String(a.dataset.page === page));
   });
+  requestAnimationFrame(measureStick);
 
   // The tab strip scrolls sideways on a phone, and at 390px "Actions" sits off
   // the right edge — so opening it left the tab you were on invisible. Nudge
@@ -4656,6 +4677,7 @@ function portalBar(me){
   const setStick = () => {
     const h = bar && !bar.hidden ? bar.getBoundingClientRect().height : 0;
     document.documentElement.style.setProperty('--stick', h + 'px');
+    measureStick();
   };
   setStick();
   window.addEventListener('resize', setStick);
