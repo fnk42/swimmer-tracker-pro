@@ -36,7 +36,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   // The router already funnels every render failure here, so this is the one
   // place browser errors need reporting from. No-op without VITE_SENTRY_DSN.
