@@ -137,6 +137,31 @@ h1,h2,h3{text-wrap:balance;margin:0}
 
 section{padding-block:34px}
 .sec-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+/* Info button: an 18px circle, with a 44px tap area from a pseudo-element. */
+.ib{position:relative;display:inline-grid;place-items:center;width:18px;height:18px;margin-left:6px;
+  padding:0;border-radius:50%;border:1.5px solid currentColor;background:none;color:var(--muted);
+  font:700 11px/1 Georgia,'Times New Roman',serif;font-style:italic;cursor:pointer;vertical-align:1px;
+  flex:none;letter-spacing:0;text-transform:none}
+.ib::after{content:"";position:absolute;inset:-13px}
+.ib:hover,.ib[aria-expanded="true"]{color:var(--electric-deep)}
+.ib:focus-visible{outline:2px solid var(--electric);outline-offset:2px}
+.tip{position:fixed;z-index:90;max-width:280px;padding:12px;background:var(--surface);color:var(--ink);
+  border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(10,27,51,.22);
+  font-size:13.5px;line-height:1.5;opacity:0;transform:translateY(4px);
+  transition:opacity .15s ease,transform .15s ease}
+.tip.show{opacity:1;transform:none}
+.tip.above{transform:translateY(-4px)}.tip.above.show{transform:none}
+.tip p{margin:0}
+.tip a{display:inline-block;margin-top:8px;font-weight:600;font-size:13px;color:var(--electric-deep);
+  text-decoration:none;min-height:24px}
+.tip a:hover{text-decoration:underline}
+.tip:focus{outline:none}
+.tip .caret{position:absolute;width:10px;height:10px;background:var(--surface);transform:rotate(45deg);
+  border-left:1px solid var(--line);border-top:1px solid var(--line);top:-6px}
+.tip.above .caret{top:auto;bottom:-6px;border:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+@media (prefers-reduced-motion:reduce){ .tip{transition:none;transform:none} }
+
+
 /* One link per section to the question that explains it, in /faq. */
 .faq-link{margin-left:auto;align-self:center;font-size:12.5px;font-weight:600;text-decoration:none;
   color:var(--electric-deep);border:1px solid var(--line);border-radius:999px;padding:4px 11px;
@@ -1004,7 +1029,7 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 .tws-nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tws-track{position:relative;height:9px;border-radius:999px;background:var(--ice)}
 .tws-track i{position:absolute;top:0;bottom:0;border-radius:999px}
-.tws-t{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;color:var(--muted);
+.tws-t{font-size:11.5px;color:var(--muted);
   white-space:nowrap}
 .tws-note{margin:2px 0 0;font-size:11.5px;color:var(--muted);line-height:1.5}
 @media (max-width:700px){
@@ -1498,6 +1523,34 @@ const CLS = {fast:'Fast progression', improving:'Improving', stable:'Stable',
 // declining swimmers — most of them are still getting faster, just by less
 // than their age group. It is shown per swimmer instead, and only when that
 // swimmer's own time actually went the wrong way.
+// Info buttons. Each says at most two sentences and links to its question in
+// /faq. The paragraphs these replaced ran ten lines before the first number.
+const TIPS = {
+  rate:      { t: "How fast a swimmer's times are coming down, per year. It is a line through every race in each event, then the middle value across their events.", a: 'rate' },
+  // On a swimmer card: one button for the rate and the line under it, so two
+  // buttons are not stacked 20px apart with overlapping tap areas.
+  ratecard:  { t: "How fast this swimmer's times are coming down each year; the line below compares it with others the same age.", a: 'rate' },
+  benchmark: { t: 'The typical yearly rate for NextGen swimmers of the same age, over the same period.', a: 'benchmark' },
+  vsform:    { t: "Each swim at this meet against that swimmer's best before the day, then the middle value. Green is \u22122% or better, amber up to +0.6%, red beyond that.", a: 'vs-form' },
+  pts:       { t: 'How far \u201cvs form\u201d moved since the previous meet, in percentage points. A minus number is better: the team swam closer to their bests.', a: 'vs-form' },
+  rated:     { t: 'A swimmer is rated once they have at least 2 races in the same event and pool length, 60 or more days apart. Below that, a trend would be a guess.', a: 'rated' },
+  // Beside the span: one sentence, so the comparison note keeps it to two.
+  ratedspan: { t: 'Rated means at least 2 races in the same event and pool length, 60 or more days apart.', a: 'rated' },
+  pbrate:    { t: 'The share of swims that were personal bests, the fastest that swimmer had ever swum in that event. A first-ever swim in an event counts as one.', a: 'pb-rate' },
+  groups:    { t: 'Groups compare each swimmer with others the same age, so a swimmer can get faster and still sit in a lower group. About three in ten are always in the bottom one.', a: 'lower-group' },
+  'g-fast':      { t: 'The top 10% of the club, once age is taken into account.', a: 'groups' },
+  'g-improving': { t: 'The next 30%: improving more than is typical for their age.', a: 'groups' },
+  'g-stable':    { t: 'The middle 30%: improving at about the rate their age group manages.', a: 'groups' },
+  'g-review':    { t: 'The bottom 30%: usually still getting faster, by less than their age group. A list of who to look at first, not a verdict.', a: 'groups' },
+  chart:     { t: 'A line that falls is a swimmer getting faster. Each line is one stroke at one distance and pool length.', a: 'chart' },
+  follow:    { t: "Each dot is one meet (or season, or stroke) against the swimmer's own baseline. 0% is the baseline; \u22125% is five per cent quicker.", a: 'chart' },
+};
+/** An info button. `extra` is one more sentence specific to this spot. */
+function ib(key, label, extra){
+  return `<button type="button" class="ib" data-tip="${key}"${extra ? ` data-extra="${esc(extra)}"` : ''}
+    aria-label="About ${esc(label)}" aria-expanded="false" aria-haspopup="dialog">i</button>`;
+}
+
 const GROUPS = [
   {k:'fast',      slug:'fast',      t:'🚀 Fast improvement',
    d:'the biggest gains in the club, once age is taken into account'},
@@ -2294,9 +2347,7 @@ function meetSection(){
   return `
   <section class="wrap" id="s0b" data-page="meets">
     <div class="sec-head"><span class="sec-num">00</span><h2>How a meet went</h2><a class="faq-link" href="/faq#vs-form">FAQ</a></div>
-    <p class="sec-sub">One meet at a time. Every race that day as its own column, measured
-      against whichever baseline you pick — so you can ask whether a swim was a best,
-      whether it was good for that swimmer, or whether it was good for their age.</p>
+    <p class="sec-sub">Every race at one meet, against your baseline.</p>
 
     <div class="dfilters">
       <label>Meet<select id="msMeet">${meets.map(m => `<option value="${esc(m.id)}"${
@@ -2516,8 +2567,7 @@ function twoSection(){
       <span class="tws-nm" style="color:${s.colour}">${esc(shortName(s.name))}</span>
       <span class="tws-track"><i style="left:${l.toFixed(1)}%;width:${Math.max(1.5, w).toFixed(1)}%;
         background:${s.colour}"></i></span>
-      <span class="tws-t">${s.from.slice(0, 7)} → ${s.to.slice(0, 7)} · ${months} mo ·
-        ${s.races} races · at ${s.pts.length} of the ${cats.length} ${UNIT} shown</span>
+      <span class="tws-t" title="${months} months · at ${s.pts.length} of the ${cats.length} ${UNIT} shown">${monYr(s.from)} \u2013 ${monYr(s.to)} · ${s.races} race${s.races === 1 ? '' : 's'}</span>
     </div>`;
   }).join('')}<p class="tws-note">${series.length > 1
     ? `These are the windows each swimmer has actually been racing in. Where the bars do not
@@ -2592,10 +2642,8 @@ function twoSection(){
   const others = all.filter(n => n !== a);
   return `
   <section class="wrap" id="s0c" data-page="swimmers">
-    <div class="sec-head"><span class="sec-num">00</span><h2>Follow a swimmer</h2><a class="faq-link" href="/faq#chart">FAQ</a></div>
-    <p class="sec-sub">One swimmer through their seasons, their meets or their strokes, with a
-      second alongside if you want the comparison. How long each has been racing is shown first,
-      because that is what makes two lines comparable or not.</p>
+    <div class="sec-head"><span class="sec-num">00</span><h2>Follow a swimmer${ib('follow', 'the Follow a swimmer chart')}</h2><a class="faq-link" href="/faq#chart">FAQ</a></div>
+    <p class="sec-sub">One swimmer over time, with another alongside.</p>
 
     <div class="dfilters">
       <!-- Typed, not scrolled. A select with 125 names means hunting an
@@ -2637,7 +2685,6 @@ function twoSection(){
       stroke they do swim.</p>` : `
     <div class="dbody solo"><div class="dmain">
       ${spanBars}
-      ${DOWN_IS_FASTER}
       <div class="dchart dchart-big">
         <div class="dc-y"><span>+${axisFmt(vhi + pad)}%<i>slower</i></span>
           <span>${axisFmt(vlo - pad)}%<i>faster</i></span></div>
@@ -2662,14 +2709,7 @@ function twoSection(){
         every race of an event, so averaging the differences back up over all of them returns
         zero however the swimmer has gone. Showing <b>where they started</b> instead.</li></ul>`
         : ''}
-      <p class="dc-hint" style="margin-top:13px"><span class="dc-arrow">●</span><span>
-        <b>One dot = one ${twBy === 'meet' ? 'meet' : twBy === 'season' ? 'season' : 'stroke'}${
-          twBy === 'stroke' ? '' : `, ${esc(twStroke)} only`}.</b>
-        It is how that swimmer swam ${twBy === 'meet' ? 'on that day'
-          : twBy === 'season' ? 'over that season' : 'at that stroke'},
-        across their ${twBy === 'stroke' ? '' : esc(twStroke) + ' '}races,
-        against <b>${esc(TW_BASE[twBaseUsed][0])}</b>.
-        <b>0% is the baseline; −5% means five per cent quicker than it.</b></span></p>
+      <!-- "One dot = one meet…" lives in the info button on the section title. -->
       <p class="dkey">
         <span><svg width="36" height="9" aria-hidden><line x1="1" y1="4.5" x2="35" y2="4.5"
           stroke="currentColor" stroke-width="2.4"/></svg>
@@ -2902,7 +2942,7 @@ function dashSinceSolo(P1){
       y2="${(P + f * (H - 2 * P)).toFixed(1)}" class="tw-grid"/>`).join('');
 
   const dates = lines.flatMap(L => L.dates || []).sort();
-  return `${DOWN_IS_FASTER}
+  return `
     ${dates.length ? `<p class="dspan"><b>${esc(P1.b)}</b> · ${dates[0].slice(0, 4)} to
       ${dates[dates.length - 1].slice(0, 4)} · ${lines.length} swimmers ·
       first race to latest, ${Math.round(mx)} months at the widest</p>` : ''}
@@ -3053,7 +3093,7 @@ function dashLineChart(WR, normalised){
 
   const fmt = v => normalised ? (v > 0 ? '+' : '') + v.toFixed(0) + '%' : clockAxis(v);
   const ds = all.map(p => p.d).sort();
-  return `${DOWN_IS_FASTER}
+  return `
     <p class="dspan">${ds[0].slice(0, 4)} to ${ds[ds.length - 1].slice(0, 4)} ·
       ${series.length} swimmer${series.length === 1 ? '' : 's'} ·
       ${normalised ? 'each from their own first race in the window'
@@ -3240,7 +3280,7 @@ function swimmerCard(s){
       <div class="cvgrid">
         ${cvTrend('Last 3 months', s.t3)}
         ${cvTrend('Last 6 months', s.t6)}
-        <div class="cvitem"><div class="k">PB rate</div>
+        <div class="cvitem"><div class="k">PB rate${ib('pbrate', 'the PB rate')}</div>
           <div class="v">${num(s.pbRate,'%')}${s.pbEligible
             ? ` <span style="font-size:11px;font-weight:500;color:var(--muted)">${s.pbs} of ${s.pbEligible}</span>` : ''}</div>
           ${s.pbRate===null?'':`<div class="cvbar"><i class="${s.pbRate>=50?'ok':''}"
@@ -3295,7 +3335,7 @@ function swimmerCard(s){
   const chart = chartable.length ? `
     <div class="twblock">
       <div class="twhead">
-        <h4>How their times have moved</h4>
+        <h4>How their times have moved${ib('chart', 'the progress chart')}</h4>
         ${dgroups.length ? `<div class="modeseg" role="group" aria-label="Group charts by">
           <button type="button" data-mode="distance"
             aria-pressed="${chartMode === 'distance'}">By distance</button>
@@ -3341,7 +3381,7 @@ function swimmerCard(s){
       <!-- No class pill here: the swimmer already sits inside that group's
            drawer, so repeating "Fast progression" on every row said nothing. -->
       <span class="trend ${trendCls(s.trend)}"><span class="rate">${s.trend===null?'—':pct(s.trend).replace('% ','%/yr ')}${
-        s.trend !== null && s.trend > 0 ? '<span class="declining">Declining</span>' : ''}<span class="basis">yearly rate</span></span>${
+        s.trend !== null && s.trend > 0 ? '<span class="declining">Declining</span>' : ''}<span class="basis">yearly rate</span>${ib('ratecard', 'the yearly rate', s.ageAdj===null||s.ageAdj===undefined ? '' : 'This one is measured against the ' + normNote(s) + '.')}</span>${
         s.ageAdj===null||s.ageAdj===undefined?''
           :`<span class="norm">${esc(vsNorm(s.ageAdj, s.band))}</span>`}${
         (s.ageAdj!==null&&s.ageAdj!==undefined) || s.rateRaces || (!hasAssessment && s.pbRate!==null && s.pbRate!==undefined)
@@ -3500,10 +3540,8 @@ function render(){
       ${SEASONS.length > 1 && FS.lo !== FS.hi ? `<button id="pwCmp" type="button"
         aria-pressed="${pwCompare}">Compare ${FS.lo} vs ${FS.hi}</button>` : ''}
       <span class="cov"><b>${fActive() ? fClassCounts.rated : covered}</b> of ${
-        fActive() ? FS.swimmers : (Y.swimmers||[]).length} swimmers have
-        enough races across ${FS.lo === FS.hi ? FS.lo : `${FS.lo}\u2013${FS.hi}`} to be
-        rated${SEASONS.length > 1 ? `. Comparing the two seasons is a stricter test: a swimmer
-        needs enough races <em>inside each one</em>` : ''}. Change the span in the bar above.</span>
+        fActive() ? FS.swimmers : (Y.swimmers||[]).length} swimmers rated${ib('ratedspan', 'rated',
+        SEASONS.length > 1 ? 'Comparing two seasons is stricter: a swimmer needs enough races inside each one.' : '')}</span>
     </div>`;
 
   // Season vs season. Coach-only: this ranks children against each other,
@@ -3854,20 +3892,20 @@ function render(){
         <div><h3>${esc(c.name)}${c.course?`<span class="ccourse ${c.course==='LCM'?'lc':''}">${esc(c.course)}</span>`:''} <span class="opener" aria-hidden>results &rsaquo;</span></h3>
           <div class="when"><span>${c.date}</span><span>${c.swimmers} swimmers</span>${
             ''}<span>${c.swims} swims</span><span>${c.podiums} podium${c.podiums===1?'':'s'}</span></div></div>
-        ${c.median!==null?`<span class="pill ${c.median<=-2?'p-improving':c.median<=0.6?'p-stable':'p-review'}">${pctShort(c.median)} vs form</span>`:''}
+        ${c.median!==null?`<span class="pillwrap"><span class="pill ${c.median<=-2?'p-improving':c.median<=0.6?'p-stable':'p-review'}">${pctShort(c.median)} vs form</span>${ib('vsform', 'vs form')}</span>`:''}
       </div>
       ${bar}
       ${c.pbRate===null?'':`<div class="pbbar" role="img"
         aria-label="${c.pbRate}% of swims were personal bests"><i style="width:${c.pbRate}%"></i></div>`}
       <div class="compstats">
-        <div class="cs"><div class="k">PB rate</div><div class="v">${c.pbRate===null?'—':c.pbRate+'%'}
+        <div class="cs"><div class="k">PB rate${ib('pbrate', 'the PB rate')}</div><div class="v">${c.pbRate===null?'—':c.pbRate+'%'}
           <small>${c.pbs} of ${c.pbEligible ?? c.swims} eligible swims</small></div></div>
         ${kv(c.bestStroke,'Best stroke')}
         ${showWorstSt?kv(c.worstStroke,lowLabel(c.worstStroke,'stroke')):''}
         ${kv(c.bestDist,'Best distance')}
         ${kv(c.bestAge,'Best age group')}
         ${showWorstAg?kv(c.worstAge,lowLabel(c.worstAge,'age group')):''}
-        ${c.vsPrev!==null?`<div class="cs"><div class="k">vs previous meet</div>
+        ${c.vsPrev!==null?`<div class="cs"><div class="k">vs previous meet${ib('pts', 'vs previous meet')}</div>
           <div class="v ${c.vsPrev<0?'t-up':c.vsPrev>0?'t-down':'t-flat'}">${c.vsPrev>0?'+':''}${c.vsPrev} pts</div></div>`:''}
       </div>
       ${c.cut?`<p class="recorded">Recorded by the timing system as
@@ -3978,9 +4016,8 @@ function render(){
   document.getElementById('app').innerHTML = `
   <section class="wrap" id="s1" data-page="analytics">
     <div class="sec-head"><span class="sec-num">01</span><h2>Is it working?</h2><a class="faq-link" href="/faq#groups">FAQ</a></div>
-    <p class="sec-sub">${FS.swimmers} swimmers · ${FS.swims} races · ${FS.nMeets} meet${
-      FS.nMeets===1?'':'s'}, ${FS.lo===FS.hi?FS.lo:FS.lo+' to '+FS.hi}. Every result checked
-      against the official times.</p>
+    <p class="sec-sub">${Number(FS.swimmers).toLocaleString('en-GB')} swimmers · ${Number(FS.swims).toLocaleString('en-GB')} races · ${FS.nMeets} meet${
+      FS.nMeets===1?'':'s'} · ${FS.lo===FS.hi?FS.lo:FS.lo+'\u2013'+FS.hi}</p>
     ${filterBar(false)}
     ${fNote(FS)}
     ${SCOPE==='family' ? `<p class="scopenote"><strong>Club-wide view.</strong>
@@ -4005,7 +4042,7 @@ function render(){
         <div class="l">Personal bests</div><div class="d">${fActive()
           ? 'still standing, in this selection' : (year==='all'?'career':'within '+year)}</div></div>
       <div class="tile"><div class="n">${fActive() ? FS.rated.length : s.rated}</div>
-        <div class="l">Rated</div><div class="d">${fActive()
+        <div class="l">Rated${ib('rated', 'rated')}</div><div class="d">${fActive()
           ? `of ${FS.swimmers} here · ${FS.swimmers - FS.rated.length} lack repeat swims`
           : `in ${esc(RATED_IN)} · ${s.unrated} lack repeat swims`}</div></div>
     </div>
@@ -4053,7 +4090,7 @@ function render(){
 
   <section class="wrap" id="s2" data-page="age-groups">
     <div class="sec-head"><span class="sec-num">02</span><h2>Which age group?</h2><a class="faq-link" href="/faq#benchmark">FAQ</a></div>
-    <p class="sec-sub">Where the squad is gaining, and where it has stalled.</p>
+    <p class="sec-sub">Where the squad gains, and where it stalls.</p>
     ${filterBar(false)}
     ${fNote(FS)}
     <div class="toggrow">
@@ -4064,7 +4101,7 @@ function render(){
     </div>
     <div class="tblwrap" style="margin-top:12px"><table>
       <thead><tr><th>${ageMode==='year'?'Age':'Age band'}</th><th class="num">Swimmers</th><th class="num">Swims</th>
-        <th class="num" title="Podiums won by these swimmers, wherever they were entered">Podiums</th><th class="num">Median change</th>
+        <th class="num" title="Podiums won by these swimmers, wherever they were entered">Podiums</th><th class="num">Median change${ib('benchmark', 'the benchmark')}</th>
         <th class="num">Improving / Stable / Review</th></tr></thead>
       <tbody>${ageRows}</tbody></table></div>
 
@@ -4076,21 +4113,14 @@ function render(){
       <tbody>${sexRows}</tbody></table></div>
 
     ${watchCards?`<h3 style="margin-top:28px;font-size:15px;font-weight:700">Swimmers to look at</h3>
-    <p class="sec-sub" style="margin-top:4px">Worth a coach's attention, pulled
-      out of the club automatically.</p>
+    <p class="sec-sub" style="margin-top:4px">Flagged automatically for a coach's attention.</p>
     <div class="watch">${watchCards}</div>`:''}
   </section>
 
   <section class="wrap" id="s3" data-page="swimmers">
-    <div class="sec-head"><span class="sec-num">03</span><h2>Which swimmers?</h2><a class="faq-link" href="/faq#rate">FAQ</a></div>
-        <p class="sec-sub">Tap a group, then a swimmer, for their strokes, distances and every event
-      they have raced twice. Or just search a name.</p>
-    <p class="sec-sub" style="margin-top:8px"><strong>How the groups work.</strong> These groups
-      compare how fast a swimmer is <em>improving</em> with how fast others of the same age
-      improve. They do not say who is quickest in the pool. Young swimmers gain far more each year
-      than older ones${normSpread} &mdash; so a swimmer can be getting faster every season and still sit in the
-      bottom group. The figure beside each name is their own rate; the line under it says how that
-      compares with their age group. <a href="#/method" class="mlink">How this is worked out &rsaquo;</a></p>
+    <div class="sec-head"><span class="sec-num">03</span><h2>Which swimmers?${ib('groups', 'how the groups work')}</h2><a class="faq-link" href="/faq#rate">FAQ</a></div>
+        <p class="sec-sub">Tap a group, then a swimmer, or search a name.</p>
+    
     ${filterBar(true)}
     ${fNote(FS)}
     ${pwin}
@@ -4102,7 +4132,7 @@ function render(){
         <summary>
           <span class="chev"></span>
           <span class="gn">${members.length}</span>
-          <span><span class="gt">${g.t}</span><span class="gd">${g.d}</span></span>
+          <span><span class="gt">${g.t}${TIPS['g-' + g.slug] ? ib('g-' + g.slug, g.t.replace(/^[^A-Za-z]+/, '')) : ''}</span><span class="gd">${g.d}</span></span>
           <span class="gcount" data-gcount="${g.k}">${members.length} swimmer${members.length===1?'':'s'}</span>
         </summary>
         <div class="grpbody"><div class="swimmers">${members.map(swimmerCard).join('')}</div>
@@ -4114,16 +4144,14 @@ function render(){
 
   <section class="wrap" id="s4" data-page="meets">
     <div class="sec-head"><span class="sec-num">04</span><h2>Did it show on the day?</h2><a class="faq-link" href="/faq#vs-form">FAQ</a></div>
-    <p class="sec-sub">Did the training show up on the day. Tap a meet for every race in it.</p>
+    <p class="sec-sub">Tap a meet for every race in it.</p>
     ${compSeasons}
   </section>
   ${meetSection()}
 
   <section class="wrap" id="s6" data-page="method">
     <div class="sec-head"><span class="sec-num">06</span><h2>How these numbers are made</h2><a class="faq-link" href="/faq">FAQ</a></div>
-    <p class="sec-sub">Every figure on the other five pages comes from the rules below. They are
-      written down so you can disagree with them. Where one of these numbers contradicts your own
-      record, your record is right and we want to hear about it.</p>
+    <p class="sec-sub">Every figure comes from the rules below.</p>
 
     <div class="mblock">
       <h3>Where the results come from</h3>
@@ -4157,7 +4185,7 @@ function render(){
       <h3>How improvement is measured</h3>
       <p>A swimmer&rsquo;s rate is a straight line fitted through <em>every</em> race they swam in
         the period, in one event at one pool length, expressed as a percentage of their own average
-        time per year. Negative is faster.</p>
+        time per year.</p>
       <div class="formula">rate  =  least-squares slope through (date, time)
       &divide; that swimmer&rsquo;s mean time
       &times; 365.25         &rarr;  % per year, negative = faster
@@ -4300,14 +4328,10 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
 
   <section class="wrap" id="s5" data-page="decisions">
     <div class="sec-head"><span class="sec-num">05</span><h2>So what now?</h2><a class="faq-link" href="/faq#groups">FAQ</a></div>
-    <p class="sec-sub">Meets tell you what happened. This tells you what to do about it.
-      Every swimmer with enough races to judge sits in one of three calls &mdash;
-      ${rated} of ${s.swimmers} right now, the rest having not yet raced the same event
-      and course twice.</p>
+    <p class="sec-sub">What to do next · ${rated} of ${s.swimmers} rated</p>
     <div class="calls">${calls}</div>
     ${looks?`<p class="subhead">Where to look first</p>
-    <p class="sec-sub" style="margin-top:6px">Age groups by the share of their swimmers
-      in the Change call.</p>
+    <p class="sec-sub" style="margin-top:6px">Age groups by share in the Change call.</p>
     <div class="looks">${looks}</div>`:''}
   </section>`;
 
@@ -4713,6 +4737,64 @@ function wireSearch(){
       }
     });
   }
+}
+
+// The one info popover. Tap a button to open it; tap outside, Escape or the
+// same button to close. Focus moves into it and back to the button after.
+(function infoTips(){
+  let pop = null, owner = null;
+  const make = () => {
+    pop = document.createElement('div');
+    pop.className = 'tip'; pop.id = 'tip-pop'; pop.setAttribute('role', 'dialog');
+    pop.tabIndex = -1; pop.hidden = true;
+    pop.innerHTML = '<span class="caret" aria-hidden="true"></span><p id="tip-text"></p><a href="/faq">More in FAQ \u2192</a>';
+    document.body.appendChild(pop);
+  };
+  const close = (refocus) => {
+    if (!pop || pop.hidden) return;
+    pop.classList.remove('show'); pop.hidden = true;
+    if (owner) { owner.setAttribute('aria-expanded', 'false'); owner.removeAttribute('aria-describedby');
+      if (refocus) owner.focus({ preventScroll: true }); }
+    owner = null;
+  };
+  const open = btn => {
+    if (!pop) make();
+    const tip = TIPS[btn.dataset.tip]; if (!tip) return;
+    close(false); owner = btn;
+    pop.querySelector('p').textContent = tip.t + (btn.dataset.extra ? ' ' + btn.dataset.extra : '');
+    pop.querySelector('a').href = '/faq#' + tip.a;
+    pop.hidden = false; pop.classList.remove('above', 'show'); pop.style.left = '0px'; pop.style.top = '0px';
+    const b = btn.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+    const vw = document.documentElement.clientWidth, vh = window.innerHeight, m = 8, gap = 10;
+    let left = Math.min(Math.max(m, b.left + b.width / 2 - w / 2), vw - w - m);
+    let top = b.bottom + gap;
+    if (top + h > vh - m && b.top - gap - h > m) { top = b.top - gap - h; pop.classList.add('above'); }
+    pop.style.left = left + 'px'; pop.style.top = top + 'px';
+    pop.querySelector('.caret').style.left = Math.min(w - 18, Math.max(8, b.left + b.width / 2 - left - 5)) + 'px';
+    btn.setAttribute('aria-expanded', 'true'); btn.setAttribute('aria-describedby', 'tip-text');
+    requestAnimationFrame(() => pop.classList.add('show'));
+    pop.focus({ preventScroll: true });
+  };
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.ib');
+    if (btn) {
+      // Inside a <summary> or a tappable meet card, the button must not also
+      // open the drawer or the meet.
+      e.preventDefault(); e.stopPropagation();
+      if (owner === btn) close(true); else open(btn);
+      return;
+    }
+    if (pop && !pop.hidden && !pop.contains(e.target)) close(false);
+  }, true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && pop && !pop.hidden) close(true); });
+  window.addEventListener('scroll', () => close(false), { passive: true });
+  window.addEventListener('resize', () => close(false));
+})();
+
+/** "2025-11-03" -> "Nov 2025". */
+function monYr(iso){
+  const d = new Date(String(iso).slice(0, 10) + 'T00:00:00');
+  return isNaN(d) ? String(iso) : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getFullYear();
 }
 
 function filter(){
