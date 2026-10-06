@@ -99,6 +99,9 @@
    this should never trigger, but a single block wider than the screen brings it
    back and every font size on the page changes independently. */
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+/* A select sizes itself to its longest option unless told otherwise. */
+select{max-width:100%;min-width:0;text-overflow:ellipsis}
+label:has(> select){max-width:100%;min-width:0}
 
 body{margin:0;background:var(--bg);color:var(--ink);
   font-family:'Sora',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.6;
@@ -699,8 +702,10 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
 .pbar .roadbtn:hover{background:#FFB94A;color:#0F1C2E}
 .pbar .rbadge{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;
   border-radius:999px;background:rgba(15,28,46,.82);color:#fff;font-size:11px;font-weight:700}
-@media (max-width:640px){ .pbar .roadbtn{padding:7px 10px;font-size:0;gap:5px}
-  .pbar .roadbtn span[aria-hidden]{font-size:15px} .pbar .rbadge{font-size:11px} }
+/* On a phone the bar holds the club, the active section and Events. "Ideas &
+   progress" was what pushed it to 471px and the whole page sideways for every
+   admin; it is still one tap away in the Events menu ("What we are building"). */
+@media (max-width:640px){ .pbar a.t.roadbtn{display:none} }
 .pbar .out{font-size:12px;color:#8FA9C4;background:none;border:0;cursor:pointer;
   padding:7px 4px;margin-left:6px;font-family:inherit}
 .pbar .out:hover{color:#fff}
@@ -968,6 +973,7 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
   .ms-pb{grid-column:1 / -1;order:4}
   .tws-row{grid-template-columns:minmax(0,1fr);gap:4px}
   .tws-track{grid-column:1}
+  .tws-t{white-space:normal;min-width:0}
 }
 
 /* the one filter bar, shared by Analytics, Ages and Swimmers.
@@ -1248,6 +1254,7 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 .formula{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;
   background:var(--sunken);border:1px solid var(--line);border-radius:10px;padding:13px 15px;
   margin-top:11px;overflow-x:auto;white-space:pre;color:var(--ink);line-height:1.7}
+.tscroll{overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}
 .mtab{width:100%;border-collapse:collapse;margin-top:11px;font-size:14px;max-width:560px}
 .mtab th{text-align:left;font-size:10.5px;letter-spacing:.9px;text-transform:uppercase;
   color:var(--muted);font-weight:700;padding:7px 10px;border-bottom:1px solid var(--line)}
@@ -4122,9 +4129,9 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
         coaching. Ranking a 16-year-old against an 8-year-old on raw improvement would tell you only
         who is younger. So each swimmer is compared with the median rate for their <em>own</em> age
         band, measured over the same period you are looking at.</p>
-      ${normRows ? `<table class="mtab"><thead><tr><th>Age band</th>
+      ${normRows ? `<div class="tscroll"><table class="mtab"><thead><tr><th>Age band</th>
         <th style="text-align:right">Typical improvement</th>
-        <th style="text-align:right">Swimmers</th></tr></thead><tbody>${normRows}</tbody></table>
+        <th style="text-align:right">Swimmers</th></tr></thead><tbody>${normRows}</tbody></table></div>
       <p style="margin-top:11px;font-size:13.5px;color:var(--muted)">Measured over
         ${esc(RATED_IN)}. A band with fewer than ${MIN_BAND_N} rated swimmers borrows the
         club-wide median instead of making one up from three people.</p>` : ''}
