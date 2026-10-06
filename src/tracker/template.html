@@ -4611,6 +4611,15 @@ function tabFade(){
 }
 
 function showPage(p){
+  // A meet's results replace the dashboard in #app, so after opening one there
+  // are no sections left to switch between: every tab changed the address and
+  // left the results on screen. Put the dashboard back first; render() comes
+  // back here with the sections in place.
+  if (!document.querySelector('#app section[data-page]') && typeof DATA !== 'undefined' && DATA) {
+    page = PAGES.includes(p) ? p : PAGES[0];
+    render();
+    return;
+  }
   page = PAGES.includes(p) ? p : PAGES[0];
   document.querySelectorAll('#app section[data-page]').forEach(sec => {
     sec.hidden = sec.dataset.page !== page;
@@ -5001,7 +5010,18 @@ async function openMeet(id){
     }
   }
   renderMeet(meetCache[id]);
+  // A step in the history, so the phone's back button closes the results and
+  // returns to the meet list instead of skipping to an earlier tab.
+  history.pushState({ meet: id }, '', location.href);
 }
+window.addEventListener('popstate', () => {
+  if (!document.querySelector('#app section[data-page]') && document.querySelector('#app .here')) {
+    closeMeet();
+    // The browser restores its own scroll after popstate; put the list back
+    // where the reader was once it has.
+    requestAnimationFrame(() => window.scrollTo({ top: meetReturn, behavior: 'auto' }));
+  }
+});
 
 function renderMeet(m){
   const app = document.getElementById('app');
