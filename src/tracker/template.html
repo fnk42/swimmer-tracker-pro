@@ -1006,15 +1006,20 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
 .fbar select{font:inherit;font-size:12.5px;padding:5px 8px;border-radius:8px;
   border:1px solid var(--line);background:var(--surface);color:var(--ink)}
 .fb-arr{color:var(--muted);font-size:12px}
-/* The name typed here is the thing being looked for, so it is set like the
-   swimmer's name in Follow a swimmer rather than like placeholder grey. */
-.fb-search{flex:1 1 320px;min-width:220px}
-.fb-search .f-q{width:100%;min-width:0;font:inherit;font-size:14px;font-weight:700;
-  color:var(--ink);padding:8px 12px;
-  border-radius:9px;border:1px solid var(--line);background:var(--surface)}
-.fb-search .f-q:focus{outline:2px solid var(--electric);outline-offset:1px;
+/* Search: its own full-width row above the filter card, flush with the
+   content column. The name typed here is the thing being looked for, so it is
+   set like a swimmer's name rather than like placeholder grey. It used to sit
+   inside the filter grid, in the 62px label column, which is why it showed
+   as "Sea". */
+.fsearch{margin:16px 0 0}
+.fsearch .f-q{display:block;width:100%;min-width:0;box-sizing:border-box;min-height:44px;
+  font:inherit;font-size:15px;font-weight:700;color:var(--ink);padding:10px 14px;
+  border-radius:11px;border:1px solid var(--line);background:var(--surface);
+  box-shadow:var(--shadow-sm)}
+.fsearch .f-q:focus{outline:2px solid var(--electric);outline-offset:1px;
   border-color:var(--electric)}
-.fb-search .f-q::placeholder{font-weight:500;color:var(--muted)}
+.fsearch .f-q::placeholder{font-weight:500;color:var(--muted)}
+.fsearch + .fbar{margin-top:10px}
 .pw-span{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;
   font-weight:700;color:var(--ink)}
 .fb-clear{appearance:none;border:0;background:none;font:inherit;font-size:12px;
@@ -1033,12 +1038,11 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
   border-radius:9px;border:1px solid var(--line);background:var(--surface);
   color:var(--ink);font-weight:600}
 @media (max-width:700px){
-  .fbar{grid-template-columns:minmax(0,1fr);gap:8px;padding:10px}
+  .fbar{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;padding:10px}
   .fb-grp{display:grid;grid-template-columns:62px minmax(0,1fr);gap:8px}
   .fb-chips{display:none}
   .fb-sel{width:100%}
   .fb-span select{flex:1 1 0}
-  .fb-search{grid-column:1 / -1}
   .fb-clear{grid-column:1 / -1;text-align:left}
   .fbar select{width:100%}
 }
@@ -2125,7 +2129,11 @@ function filterBar(withSearch){
   // season selects on Ages and Swimmers were never bound at all. Changing one
   // did nothing, and the next render reset it to the first season — which is
   // what "the span reverts to 2022" was.
-  return `<div class="fbar">
+  // Search is a different action from filtering, so it is not one of the
+  // label-and-control rows. It sits above the filter card, full width.
+  return `${withSearch ? `<div class="fsearch">
+      <input class="f-q" type="search" placeholder="Search a swimmer by name\u2026"
+        aria-label="Search a swimmer by name" value="${esc(fQ)}"></div>` : ''}<div class="fbar">
     <span class="fb-grp"><span class="fb-lab">Age</span>
       <span class="fb-wrap">
         <span class="fb-chips f-band">
@@ -2157,8 +2165,6 @@ function filterBar(withSearch){
         <span class="fb-arr" aria-hidden>&rarr;</span>
         <select class="f-to" aria-label="To season">${ys.map(y => opt(y, hi)).join('')}</select>
       </span></span>
-    ${withSearch ? `<span class="fb-grp fb-search">
-      <input class="f-q" type="search" placeholder="Search name\u2026" value="${esc(fQ)}"></span>` : ''}
     ${fActive() ? `<button type="button" class="fb-clear">Clear filters</button>` : ''}
   </div>`;
 }
@@ -4466,7 +4472,7 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
     const b = e.target.closest('button'); if (!b) return;
     setRange(b.dataset.lo, b.dataset.hi);
   };
-  document.querySelectorAll('.fbar .f-q').forEach(el => el.oninput = e => {
+  document.querySelectorAll('.fsearch .f-q').forEach(el => el.oninput = e => {
     fQ = e.target.value.toLowerCase(); filter();
   });
   filter();
