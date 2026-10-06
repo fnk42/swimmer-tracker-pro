@@ -350,6 +350,16 @@ details.sw .trend .rate{display:block}
 .tabwrap{max-width:1140px;margin:0 auto;padding-inline:20px;display:flex;gap:2px;
   overflow-x:auto;scrollbar-width:none}
 .tabwrap::-webkit-scrollbar{display:none}
+/* The tab row scrolls sideways on a phone; a fade at the edge says there is
+   more ("Actions" showed as "Ac" with nothing to say it continued). */
+.tabwrap{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scroll-snap-type:x proximity}
+.tabwrap a{scroll-snap-align:start}
+.tabwrap.more-r{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent);
+  mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent)}
+.tabwrap.more-l{-webkit-mask-image:linear-gradient(to left,#000 calc(100% - 36px),transparent);
+  mask-image:linear-gradient(to left,#000 calc(100% - 36px),transparent)}
+.tabwrap.more-l.more-r{-webkit-mask-image:linear-gradient(to right,transparent,#000 36px,#000 calc(100% - 36px),transparent);
+  mask-image:linear-gradient(to right,transparent,#000 36px,#000 calc(100% - 36px),transparent)}
 .tabnav a{flex:0 0 auto;padding:0 14px;font-size:13.5px;line-height:1.2;
   color:rgba(255,255,255,.62);text-decoration:none;white-space:nowrap;
   border-bottom:2px solid transparent;transition:color .14s,border-color .14s;
@@ -400,6 +410,13 @@ details.sw .trend .rate{display:block}
   background:var(--surface);color:var(--muted);font:inherit;font-size:13px;cursor:pointer;
   box-shadow:var(--shadow-sm)}
 .notebtn:hover{color:var(--ink);border-color:var(--electric)}
+/* On a phone the content column is the whole width, so the note button
+   would sit on whatever is under it. It slides away while you scroll down and
+   comes back when you scroll up or stop, and the page ends with room for it. */
+.notebtn{transition:transform .2s ease,opacity .2s ease}
+.notebtn.away{transform:translateY(90px);opacity:0;pointer-events:none}
+@media (max-width:700px){ #shell{padding-bottom:76px} }
+@media (prefers-reduced-motion:reduce){ .notebtn{transition:none} }
 .devlink{font:inherit;font-weight:600;color:inherit;background:none;border:0;padding:0 2px;
   text-decoration:underline;text-underline-offset:3px;cursor:pointer;min-height:24px}
 @media (max-width:560px){ .notebtn span{display:none} .notebtn{padding:0 13px} }
@@ -687,10 +704,15 @@ details.sw .trend .rate{display:block}
 details.grp{background:var(--surface);border:1px solid var(--line);border-radius:16px;
   overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:10px}
 details.grp[open]{border-color:var(--electric)}
-details.grp > summary{padding:16px 18px;display:grid;grid-template-columns:auto auto 1fr auto;
+details.grp > summary{padding:14px 16px;display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;
   gap:14px;align-items:center;cursor:pointer}
 details.grp > summary:hover{background:var(--sunken)}
-details.grp .gn{font-family:'Anton',sans-serif;font-size:26px;line-height:1;min-width:34px}
+details.grp .gn{font-family:'Anton',sans-serif;font-size:24px;line-height:1;min-width:30px;text-align:right}
+details.grp .gdot{width:12px;height:12px;border-radius:50%;background:var(--electric);align-self:start;margin-top:5px}
+details.grp.g-fast .gdot{background:#7C4DFF}details.grp.g-improving .gdot{background:var(--ok)}
+details.grp.g-stable .gdot{background:var(--gold)}details.grp.g-review .gdot{background:var(--alert)}
+details.grp.g-unrated .gdot{background:#9AACBF}
+details.grp .gtxt{min-width:0}
 /* both are inline spans in one cell; without display:block the label and its
    description run together ("Progressing fastbiggest gains...") */
 details.grp .gt{display:block;font-size:15px;font-weight:700}
@@ -706,7 +728,7 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
      columns the four children wrapped onto three rows, so the chevron sat
      alone and "63 swimmers" landed underneath as what looked like a second,
      different figure. The big number already says it, so it goes. */
-  details.grp > summary{grid-template-columns:auto auto minmax(0,1fr);row-gap:6px}
+  details.grp > summary{grid-template-columns:auto minmax(0,1fr) auto auto;column-gap:11px}
   details.grp .gcount{display:none}
 }
 
@@ -1462,7 +1484,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
        looks for. -->
   <nav class="tabnav" id="sidenav" aria-label="Views">
     <div class="tabwrap">
-      <a href="#/analytics"  data-page="analytics">Analytics</a>
+      <a href="#/analytics"  data-page="analytics">Overview</a>
       <a href="#/age-groups" data-page="age-groups">Ages</a>
       <a href="#/swimmers"   data-page="swimmers">Swimmers</a>
       <a href="#/meets"      data-page="meets">Meets</a>
@@ -1552,13 +1574,13 @@ function ib(key, label, extra){
 }
 
 const GROUPS = [
-  {k:'fast',      slug:'fast',      t:'🚀 Fast improvement',
+  {k:'fast',      slug:'fast',      t:'Fast improvement',
    d:'the biggest gains in the club, once age is taken into account'},
-  {k:'improving', slug:'improving', t:'🟢 Good improvement',
+  {k:'improving', slug:'improving', t:'Good improvement',
    d:'more progress than the typical swimmer their age'},
-  {k:'stable',    slug:'stable',    t:'🟡 Steady improvement',
+  {k:'stable',    slug:'stable',    t:'Steady improvement',
    d:'about the rate their age group manages'},
-  {k:'review',    slug:'review',    t:'🟠 Slowest improvement',
+  {k:'review',    slug:'review',    t:'Slowest improvement',
    d:'still getting faster in most cases, by less than their age group — worth a look'},
   {k:'unrated',   slug:'unrated',   t:'Not enough data',
    d:'not enough racing yet to measure a trend — each swimmer says why'},
@@ -1621,6 +1643,13 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':
   const body = document.getElementById('notebody');
   const msg = document.getElementById('notemsg');
   if (!btn) return;
+  let lastY = window.scrollY, idle = null;
+  window.addEventListener('scroll', () => {
+    if (window.innerWidth > 700) return;
+    const y = window.scrollY, down = y > lastY + 4, up = y < lastY - 4;
+    if (down) btn.classList.add('away'); else if (up) btn.classList.remove('away');
+    lastY = y; clearTimeout(idle); idle = setTimeout(() => btn.classList.remove('away'), 900);
+  }, { passive: true });
   const close = () => { wrap.hidden = true; msg.textContent = ''; };
   btn.onclick = () => { wrap.hidden = false; body.focus(); };
   document.getElementById('notecancel').onclick = close;
@@ -4128,12 +4157,15 @@ function render(){
     <div id="list" style="margin-top:18px">${SW_GROUPS.map(g=>{
       const members = Y.swimmers.filter(s => g.band ? s.band === g.k : s.cls === g.k);
       if(!members.length) return '';
+      // One row: colour dot, title (with its info button), count, chevron.
+      // The count is said once; the description sits under the title.
       return `<details class="grp g-${esc(g.slug)}" data-grp="${esc(g.k)}">
         <summary>
+          <span class="gdot" aria-hidden="true"></span>
+          <span class="gtxt"><span class="gt">${g.t}${TIPS['g-' + g.slug] ? ib('g-' + g.slug, g.t) : ''}</span><span class="gd">${g.d}</span></span>
+          <span class="gn" aria-label="${members.length} swimmers">${members.length}</span>
           <span class="chev"></span>
-          <span class="gn">${members.length}</span>
-          <span><span class="gt">${g.t}${TIPS['g-' + g.slug] ? ib('g-' + g.slug, g.t.replace(/^[^A-Za-z]+/, '')) : ''}</span><span class="gd">${g.d}</span></span>
-          <span class="gcount" data-gcount="${g.k}">${members.length} swimmer${members.length===1?'':'s'}</span>
+          <span class="gcount" data-gcount="${g.k}" hidden>${members.length} swimmer${members.length===1?'':'s'}</span>
         </summary>
         <div class="grpbody"><div class="swimmers">${members.map(swimmerCard).join('')}</div>
           <div class="grpempty" data-empty="${g.k}" hidden>No swimmer in this group matches the filters.</div>
@@ -4602,6 +4634,15 @@ function measureStick(){
 window.addEventListener('resize', measureStick);
 window.addEventListener('orientationchange', () => setTimeout(measureStick, 250));
 
+function tabFade(){
+  const w = document.querySelector('#sidenav .tabwrap'); if (!w) return;
+  const set = () => { w.classList.toggle('more-l', w.scrollLeft > 4);
+    w.classList.toggle('more-r', w.scrollLeft + w.clientWidth < w.scrollWidth - 4); };
+  if (!w.dataset.fade) { w.dataset.fade = '1'; w.addEventListener('scroll', set, { passive: true });
+    window.addEventListener('resize', set); }
+  set();
+}
+
 function showPage(p){
   page = PAGES.includes(p) ? p : PAGES[0];
   document.querySelectorAll('#app section[data-page]').forEach(sec => {
@@ -4611,6 +4652,7 @@ function showPage(p){
     a.setAttribute('aria-current', String(a.dataset.page === page));
   });
   requestAnimationFrame(measureStick);
+  requestAnimationFrame(tabFade);
 
   // The tab strip scrolls sideways on a phone, and at 390px "Actions" sits off
   // the right edge — so opening it left the tab you were on invisible. Nudge
