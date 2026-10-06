@@ -412,6 +412,9 @@ details.sw .trend .rate{display:block}
 .notebtn:hover{color:var(--ink);border-color:var(--electric)}
 /* The form bar carries no text: an 18% segment cannot hold "18% below". */
 .fb-cap{margin:5px 0 0;font-size:12px;color:var(--muted)}
+/* What used to be a paragraph under a chart: one line, and the detail behind
+   an info button. */
+.tw-how{margin:8px 0 0;font-size:12.5px;color:var(--muted);display:flex;align-items:center}
 .fb-cap .a{color:var(--ok-t);font-weight:600}.fb-cap .b{color:var(--alert-t);font-weight:600}
 /* On a phone the content column is the whole width, so the note button
    would sit on whatever is under it. It slides away while you scroll down and
@@ -1565,6 +1568,15 @@ const TIPS = {
   rated:     { t: 'A swimmer is rated once they have at least 2 races in the same event and pool length, 60 or more days apart. Below that, a trend would be a guess.', a: 'rated' },
   // Beside the span: one sentence, so the comparison note keeps it to two.
   ratedspan: { t: 'Rated means at least 2 races in the same event and pool length, 60 or more days apart.', a: 'rated' },
+  agechart:  { t: "The middle yearly rate of each age band, set side by side. Each swimmer's own group is judged against their band, not the club.", a: 'benchmark' },
+  seasonbest:{ t: 'The middle season-best of swimmers who were that age at the time. It is a different set of children each season, so a line can move because the group changed.', a: 'chart' },
+  seasonrate:{ t: 'The middle yearly rate within each season, for swimmers who were that age at the time. It is a different set of children each season.', a: 'chart' },
+  meetcols:  { t: "Each swim is set against that swimmer's own baseline and sorted quickest first. A swimmer can win a race and still be down on their own average.", a: 'vs-form' },
+  panels:    { t: "Each swimmer starts at their own first race, and the thick line is their age band's middle; down is faster. The figure beside a name is total change, not a yearly rate.", a: 'chart' },
+  dashline:  { t: "Each line starts at the swimmer's first swim in the period, so it shows how far each has come, not who is quickest. The figure beside a name is total change, not a yearly rate.", a: 'chart' },
+  dashtime:  { t: 'Real times in one event at one pool length, so two swimmers can share the axis. The figure beside a name is total change, first race to last.', a: 'chart' },
+  // On a meet card, with that meet's own count as the second sentence.
+  pbrate1:   { t: 'The share of swims that were personal bests, a first-ever swim in an event included.', a: 'pb-rate' },
   pbrate:    { t: 'The share of swims that were personal bests, the fastest that swimmer had ever swum in that event. A first-ever swim in an event counts as one.', a: 'pb-rate' },
   groups:    { t: 'Groups compare each swimmer with others the same age, so a swimmer can get faster and still sit in a lower group. About three in ten are always in the bottom one.', a: 'lower-group' },
   'g-fast':      { t: 'The top 10% of the club, once age is taken into account.', a: 'groups' },
@@ -2040,9 +2052,7 @@ function dashAgesChart(WR){
       <span class="ab-val ${trendCls(r.med)}">${pctShort(r.med)}/yr</span>
       <span class="ab-n">${r.n} rated${r.n < 6 ? ' ⚠' : ''}</span>
     </div>`).join('')}</div>
-    <p class="tw-note">Median improvement per year, by age band. Bands are compared with each
-      other here; a swimmer's own group on the Swimmers page is judged against their band, not
-      against the club.</p>`;
+    <p class="tw-how">How to read this${ib('agechart', 'how to read this chart')}</p>`;
 }
 
 /* ---- charts that hold the age bands still ------------------------------
@@ -2118,17 +2128,7 @@ function dashBandSeasons(){
     </div>
     <p class="dc-legend">${rows.map(r =>
       `<span class="dk" style="background:${BAND_COLOURS[r.b]}"></span>${esc(r.b)}`).join('')}</p>
-    <p class="tw-note">${isTime
-      ? `Median season-best in the ${esc(dashBench.replace('|', ' '))}, for the swimmers who were
-         that age <em>at the time of the race</em>. <strong>Read this one carefully:</strong> it is a
-         different set of children each season, so a line can move because the group got quicker
-         or because who was in it changed. The rate view below is not exposed to that.`
-      : `Median improvement per year measured <em>within</em> each season, for the swimmers who
-         were that age at the time. Because each season is rated on its own races, a band can be
-         compared with itself a year earlier even though the children in it have changed.`}
-      Bands need ${BS.minN} swimmers in a season to be drawn; gaps are seasons below that.
-      ${BS.noDob} of ${BS.named} swimmers have no birth date in their registration and sit
-      outside this chart.</p>`;
+    <p class="tw-how">How to read this${ib(isTime ? 'seasonbest' : 'seasonrate', 'how to read this chart')}</p>`;
 }
 
 /** The swimmers behind the "rated" count, each set against the median for
@@ -2414,13 +2414,8 @@ function meetSection(){
         ${esc(baseName)}; the centre line is that baseline exactly.
         ${bests} of them still stand as that swimmer’s personal best.</span></p>` : ''}
       ${body}
-      <p class="tw-note">${esc(baseWhy)} Columns are sorted quickest-first against the baseline,
-        not by finishing position — a swimmer can win a race and still be down on their own
-        average, and can come last and have swum the best race of their life.</p>
-      <p class="tw-note"><b>Personal best</b> means this is still the quickest that swimmer has
-        ever gone in the event, counting every race in the archive since. Exactly one race per
-        swimmer and event can carry it. Where a swimmer has raced an event only once, that swim
-        is their personal best by default.</p>
+      <p class="tw-how">How to read this${ib('meetcols', 'how to read this chart')}</p>
+      
     </div></div>
   </section>`;
 }
@@ -2988,13 +2983,7 @@ function dashSinceSolo(P1){
           ).join('')}
       </svg></div>
     </div>
-    <p class="tw-note">Every rated ${esc(P1.b)} swimmer, each starting at their own first race
-      rather than at a date, so a child who joined in 2023 and one who joined this year lie on
-      top of each other. The thick line is the band median — a swimmer below it is improving
-      faster than half their age group, above it slower. Down is faster. The axis runs 0 to
-      ${Math.round(mx)} months from a swimmer's first race. The figure beside each name is that
-      swimmer's total change across the whole line, not their rate per year. Names are
-      shortened; hover one for the full name.</p>`;
+    <p class="tw-how">How to read this${ib('panels', 'how to read this chart')}</p>`;
 }
 
 /** Several bands at once: names would collide, so each band gets a panel. */
@@ -3023,13 +3012,7 @@ function dashSinceGrid(panels){
       </svg>
     </figure>`;
   }).join('')}</div>
-    <p class="tw-note">Every rated swimmer, each one starting at their own first race rather than
-      at a date — so a child who joined in 2023 and one who joined this year lie on top of each
-      other instead of at opposite ends of the chart. Faint line per swimmer, solid line the band
-      median. Down is faster. The axis runs 0 to ${Math.round(mx)} months from a swimmer's first
-      race; vertical scale is shared by all ${panels.length} panels, so the panels are comparable
-      with each other. <strong>Pick a single age band above</strong> to see the same chart full
-      size with every swimmer named.</p>`;
+    <p class="tw-how">How to read this${ib('panels', 'how to read this chart')}</p>`;
 }
 
 /** Selected swimmers over time — real seconds, or normalised from their own
@@ -3138,15 +3121,7 @@ function dashLineChart(WR, normalised){
           monthLabel(all.map(p => p.d).sort()[0])}</span>
           <span>${monthLabel(all.map(p => p.d).sort().slice(-1)[0])}</span></div></div>
     </div>
-    <p class="tw-note">${normalised
-      ? 'Each line starts at that swimmer\u2019s own first swim in the period, so swimmers racing '
-        + 'different events can be compared on how far they have come. It says nothing about who is quickest.'
-      : 'Real times in one event at one pool length, which is the only way two swimmers\u2019 '
-        + 'seconds can honestly share an axis.'}
-      The figure on the right of each name is that swimmer\u2019s total change across the
-      whole line, first race in view to last: \u221233% reads as
-      &ldquo;a third quicker across this period&rdquo;. That is not the same as the per-year
-      rate in the list below, which spreads the same change over the time it took.</p>`;
+    <p class="tw-how">How to read this${ib(normalised ? 'dashline' : 'dashtime', 'how to read this chart')}</p>`;
 }
 
 /** A distance group: one chart, one line per stroke. */
@@ -3364,9 +3339,7 @@ function swimmerCard(s){
       ${(byDist ? dgroups.length : chartable.length) > 1
         ? `<div class="evchips" data-sw="${swIdx}">${chips}</div>` : ''}
       <div class="chartbox" data-sw="${swIdx}">${first}</div>
-      <p class="tw-note">A falling line means the time is coming down. Children get
-        faster as they grow as well as through training, so some of every fall is age.
-        25m and 50m races are kept apart — they are not comparable.</p>
+      
     </div>` : '';
   const off = offclub.length
     ? `<div class="offclub"><strong>Also raced for:</strong> ${offclub.map(esc).join(', ')}.
@@ -3913,16 +3886,9 @@ function render(){
         ${c.median!==null?`<span class="pillwrap"><span class="pill ${c.median<=-2?'p-improving':c.median<=0.6?'p-stable':'p-review'}">${pctShort(c.median)} vs form</span>${ib('vsform', 'vs form')}</span>`:''}
       </div>
       ${bar}
-      ${c.pbRate===null?'':`<div class="pbbar" role="img"
-        aria-label="${c.pbRate}% of swims were personal bests"><i style="width:${c.pbRate}%"></i></div>`}
+
       <div class="compstats">
-        <div class="cs"><div class="k">PB rate${ib('pbrate', 'the PB rate')}</div><div class="v">${c.pbRate===null?'—':c.pbRate+'%'}
-          <small>${c.pbs} of ${c.pbEligible ?? c.swims} eligible swims</small></div></div>
-        ${kv(c.bestStroke,'Best stroke')}
-        ${showWorstSt?kv(c.worstStroke,lowLabel(c.worstStroke,'stroke')):''}
-        ${kv(c.bestDist,'Best distance')}
-        ${kv(c.bestAge,'Best age group')}
-        ${showWorstAg?kv(c.worstAge,lowLabel(c.worstAge,'age group')):''}
+        <div class="cs"><div class="k">PB rate${ib('pbrate1', 'the PB rate', `At this meet, ${c.pbs} of ${c.pbEligible ?? c.swims} eligible swims were personal bests.`)}</div><div class="v">${c.pbRate===null?'—':c.pbRate+'%'}</div></div>
         ${c.vsPrev!==null?`<div class="cs"><div class="k">vs previous meet${ib('pts', 'vs previous meet')}</div>
           <div class="v ${c.vsPrev<0?'t-up':c.vsPrev>0?'t-down':'t-flat'}">${c.vsPrev>0?'+':''}${c.vsPrev} pts</div></div>`:''}
       </div>
