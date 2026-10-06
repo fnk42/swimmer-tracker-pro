@@ -232,6 +232,39 @@ summary:focus-visible{outline:2px solid var(--electric);outline-offset:-2px}
 details[open] .chev{transform:rotate(45deg)}
 .sw-name{font-weight:600;font-size:14.5px}
 .sw-meta{font-size:12px;color:var(--muted);margin-top:1px}
+/* The swimmer card's header. A phone gets rows; two columns from 640px. */
+details.sw > summary{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,max-content);
+  grid-template-areas:"head head" "meta trend";gap:4px 16px;align-items:start}
+details.sw .sw-head{grid-area:head;display:flex;align-items:center;gap:10px;min-width:0}
+details.sw .sw-head .sw-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+details.sw .sw-head .chev{flex:none;margin-left:auto;margin-right:4px}
+details.sw .sw-meta{grid-area:meta;display:flex;flex-wrap:wrap;column-gap:6px;row-gap:0}
+details.sw .sw-meta > span{white-space:nowrap}
+details.sw .sw-meta i,.prov i{font-style:normal;opacity:.55}
+details.sw .trend{grid-area:trend;min-width:0;max-width:300px}
+details.sw .trend .rate{display:block}
+.prov{display:flex;flex-wrap:wrap;justify-content:flex-end;column-gap:5px;font-size:10.5px;
+  font-weight:500;color:var(--dim);margin-top:3px}
+.prov > span{white-space:nowrap}
+.prov .borrowed,.prov .thin{color:var(--gold-t,#A66500)}
+@media (max-width:639px){
+  details.sw > summary{grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"head" "meta" "trend";gap:3px;padding:13px 15px}
+  details.sw .trend{text-align:left;margin-top:7px}
+  details.sw .trend .rate{font-size:17px;line-height:1.25}
+  details.sw .trend .rate .basis{display:inline;margin-left:8px;vertical-align:2px}
+  details.sw .trend .norm{font-size:12px;margin-top:1px}
+  details.sw .sw-meta{font-size:11.5px;column-gap:4px}
+  .prov{justify-content:flex-start}
+  /* Which benchmark a swimmer is measured against is in the benchmark's info
+     button on a phone. It stays on the card when it is the club-wide one
+     (borrowed), because that changes what the comparison means. */
+  .prov .own,.prov .own + i{display:none}
+  /* "slower" in red already says it; the badge pushed the label to a line of
+     its own. */
+  details.sw .trend .rate .declining{display:none}
+  details.sw .trend .rate .basis{white-space:nowrap}
+}
 .pill{font-size:11px;font-weight:700;padding:4px 11px;border-radius:999px;white-space:nowrap}
 .p-fast{background:rgba(124,77,255,.15);color:#6A3DE8}
 .p-improving{background:rgba(31,182,122,.15);color:var(--ok-t)}
@@ -819,10 +852,7 @@ details.ev .evmeta{margin-left:auto;font-family:'IBM Plex Mono',ui-monospace,mon
   .filters input#fq{width:100%;box-sizing:border-box;min-height:44px}
   .filters .count{text-align:left}
 
-  /* Name on line one, everything else small and muted on line two, the number
-     hard right. */
-  details.sw > summary{grid-template-columns:18px minmax(0,1fr) auto;gap:8px;
-    padding:11px 12px;align-items:center;min-height:44px}
+  /* The swimmer card's own phone layout (rows) is with its other rules. */
   .sw-name{font-size:14.5px}
   .sw-meta{font-size:11.5px;line-height:1.35}
   .trend{font-size:14px;min-width:0;text-align:right}
@@ -3292,24 +3322,29 @@ function swimmerCard(s){
     data-aname="${esc(s.name)}"
     data-rate="${s.trend===null?'':esc(pct(s.trend).replace('% ','%/yr '))}">
     <summary>
-      <span class="chev"></span>
-      <span>
-        <span class="sw-name">${esc(s.name)}</span>
-        <span class="sw-meta">${esc(s.band)} · ${s.swims} swims · ${s.meets} meet${s.meets===1?'':'s'}${
-          s.podiums?' · '+s.podiums+' podium'+(s.podiums===1?'':'s'):''}${
-          !hasAssessment && s.pbRate!==null && s.pbRate!==undefined
-            ? ' · '+s.pbRate+'% personal bests' : ''}${
-          s.status==='former'?' · former member':''}</span>
-      </span>
+      <!-- Rows, not columns, on a phone: the name on one line with the chevron
+           at its right; the meta as separate items that wrap whole; then the
+           rate, the age-group comparison and where the figure comes from. The
+           two-column grid squeezed the name to "Njenga," / "Daniel" and the
+           meta to one word per line. Two columns return at 640px. -->
+      <span class="sw-head"><span class="sw-name">${esc(s.name)}</span><span class="chev"></span></span>
+      <span class="sw-meta">${[esc(s.band), s.swims + ' swims', s.meets + ' meet' + (s.meets===1?'':'s'),
+          s.podiums ? s.podiums + ' podium' + (s.podiums===1?'':'s') : '',
+          s.status==='former' ? 'former member' : '']
+          .filter(Boolean).map(x => `<span>${x}</span>`).join('<i aria-hidden="true">·</i>')}</span>
       <!-- No class pill here: the swimmer already sits inside that group's
            drawer, so repeating "Fast progression" on every row said nothing. -->
-      <span class="trend ${trendCls(s.trend)}">${s.trend===null?'—':pct(s.trend).replace('% ','%/yr ')}${
-        s.trend !== null && s.trend > 0 ? '<span class="declining">Declining</span>' : ''}<span class="basis">yearly rate</span>${
+      <span class="trend ${trendCls(s.trend)}"><span class="rate">${s.trend===null?'—':pct(s.trend).replace('% ','%/yr ')}${
+        s.trend !== null && s.trend > 0 ? '<span class="declining">Declining</span>' : ''}<span class="basis">yearly rate</span></span>${
         s.ageAdj===null||s.ageAdj===undefined?''
-          :`<span class="norm">${esc(vsNorm(s.ageAdj, s.band))}</span>
-             <span class="basis${s.normOwn?'':' borrowed'}">${esc(normNote(s))}</span>`}${
-        s.rateRaces ? `<span class="evid${s.rateRaces<=3?' thin':''}">from ${s.rateRaces} race${
-          s.rateRaces===1?'':'s'} across ${s.rateSeries} event${s.rateSeries===1?'':'s'}</span>` : ''}</span>
+          :`<span class="norm">${esc(vsNorm(s.ageAdj, s.band))}</span>`}${
+        (s.ageAdj!==null&&s.ageAdj!==undefined) || s.rateRaces || (!hasAssessment && s.pbRate!==null && s.pbRate!==undefined)
+          ? `<span class="prov">${[
+              s.ageAdj===null||s.ageAdj===undefined ? '' : `<span class="${s.normOwn?'own':'borrowed'}">${esc(normNote(s))}</span>`,
+              s.rateRaces ? `<span class="${s.rateRaces<=3?'thin':''}">from ${s.rateRaces} race${
+                s.rateRaces===1?'':'s'} across ${s.rateSeries} event${s.rateSeries===1?'':'s'}</span>` : '',
+              !hasAssessment && s.pbRate!==null && s.pbRate!==undefined ? `<span class="pbr" title="${s.pbRate}% of races were personal bests">${s.pbRate}% PBs</span>` : '']
+              .filter(Boolean).join('<i aria-hidden="true">·</i>')}</span>` : ''}</span>
     </summary>
     <div class="sw-body">
       ${none}
