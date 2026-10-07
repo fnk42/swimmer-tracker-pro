@@ -1595,7 +1595,7 @@ const TIPS = {
   'g-stable':    { t: 'The middle 30%: improving at about the rate their age group manages.', a: 'groups' },
   'g-review':    { t: 'The bottom 30%: usually still getting faster, by less than their age group. A list of who to look at first, not a verdict.', a: 'groups' },
   chart:     { t: 'A line that falls is a swimmer getting faster. Each line is one stroke at one distance and pool length.', a: 'chart' },
-  follow:    { t: "Each dot is one meet (or season, or stroke) against the swimmer's own baseline. 0% is the baseline; \u22125% is five per cent quicker.", a: 'chart' },
+  follow:    { t: "Each dot is one meet (or season, or stroke) against the swimmer's own baseline, and the grey line is the typical swimmer their age, measured the same way. 0% is the baseline; \u22125% is five per cent quicker.", a: 'chart' },
 };
 /** An info button. `extra` is one more sentence specific to this spot. */
 function ib(key, label, extra){
@@ -2444,7 +2444,6 @@ function meetSection(){
    before you see who has come further. */
 
 let twA = '';               // swimmer names; '' = pick one
-let twB = '';
 let twBy = 'meet';          // meet | season | stroke
 // What zero means on the chart. Defaults to the swimmer's own debut, which is
 // fixed on the day and so cannot move under them.
@@ -2508,7 +2507,7 @@ function twoSection(){
     const n = {};
     for (const r of (MS.rows || [])) {
       const nm = MS.swimmers[r[1]];
-      if (nm !== (twA || '') && nm !== twB) continue;
+      if (nm !== (twA || '')) continue;
       const k = strokeOf((MS.events[r[2]] || '').split('|')[0]);
       if (k) n[k] = (n[k] || 0) + 1;
     }
@@ -2526,15 +2525,13 @@ function twoSection(){
   // A swimmer chosen before the filter narrowed may no longer be in it.
   const a = (twA && all.includes(twA)) ? twA : all[0];
 
-  // The band of the swimmer on the left decides who the right may offer.
+  // One child, set against their own age group. Children are never put side
+  // by side: what a parent or coach is shown is this swimmer against the
+  // typical swimmer their age (Felix, 7 Oct 2026). "Compare with" is gone.
   const bandOf = new Map((DATA.years.all.swimmers || []).map(s => [s.name, s.band]));
   const aBand = bandOf.get(a) || null;
-  twNamesB = aBand ? all.filter(n => n !== a && bandOf.get(n) === aBand) : [];
-  const bandNorm = ((DATA.years.all.bands || {}).norms || {})[aBand] ?? null;
-  // A comparison left over from a different band goes, rather than quietly
-  // drawing the thing this is meant to prevent.
-  if (twB && !twNamesB.includes(twB)) twB = '';
-  const picked = [a, twB].filter(Boolean);
+  twNamesB = [];
+  const picked = [a];
   if (!picked.length) return '';
 
   const meetById = new Map(MS.meets.map(m => [m.id, m]));
@@ -2577,6 +2574,33 @@ function twoSection(){
   }).filter(s => s.pts.length);
 
   if (!series.length) return `<p class="nodata">Nothing to plot for this swimmer.</p>`;
+
+  // The age group, measured exactly as the swimmer is: every other swimmer in
+  // the band, the same baseline and stroke, grouped the same way, and the
+  // middle of them taken at each point this swimmer has. A point needs three
+  // of them, so it is never one other child under another name.
+  if (aBand && series[0].pts.length) {
+    const bc = MS.cols.indexOf(twBaseUsed);
+    const keys = new Set(series[0].pts.map(p => p.k));
+    const per = new Map();                         // key -> Map(swimmer -> values)
+    for (const r of MS.rows) {
+      const nm = MS.swimmers[r[1]];
+      if (nm === a || bandOf.get(nm) !== aBand || r[bc] === null) continue;
+      const m = meetById.get(r[0]); if (!m) continue;
+      if (m.date.slice(0, 4) < SC.lo || m.date.slice(0, 4) > SC.hi) continue;
+      const st = strokeOf((MS.events[r[2]] || '').split('|')[0]);
+      if (twBy !== 'stroke' && st !== twStroke) continue;
+      const k = twBy === 'season' ? m.date.slice(0, 4) : twBy === 'stroke' ? st : m.id;
+      if (!keys.has(k)) continue;
+      const g = per.get(k) || new Map(); const v = g.get(nm) || []; v.push(r[bc]); g.set(nm, v); per.set(k, g);
+    }
+    const med = xs => { const z = [...xs].sort((x, y) => x - y), h = z.length >> 1; return z.length % 2 ? z[h] : (z[h - 1] + z[h]) / 2; };
+    const bpts = series[0].pts.map(p => {
+      const g = per.get(p.k); if (!g || g.size < 3) return null;
+      return { k: p.k, label: p.label, date: p.date, mean: med([...g.values()].map(v => v.reduce((x, y) => x + y, 0) / v.length)), n: g.size };
+    }).filter(Boolean);
+    if (bpts.length) series.push({ name: aBand + ' typical', isBand: true, colour: '#8FA3B8', pts: bpts, races: 0 });
+  }
   // The chosen swimmer has no race at all under these filters — nearly always
   // a stroke they do not swim. Say which, and leave every control in place so
   // the next click is a stroke change rather than a reload.
@@ -2598,10 +2622,11 @@ function twoSection(){
   const UNIT = twBy === 'meet' ? 'meets' : twBy === 'season' ? 'seasons' : 'strokes';
 
   // ---- the span bars, drawn before anything else -------------------------
-  const lo = series.map(s => s.from).sort()[0];
-  const hi = series.map(s => s.to).sort().slice(-1)[0];
+  const own = series.filter(s => !s.isBand);     // the age group has no window of its own
+  const lo = own.map(s => s.from).sort()[0];
+  const hi = own.map(s => s.to).sort().slice(-1)[0];
   const t0 = new Date(lo).getTime(), t1 = new Date(hi).getTime() || t0 + 1;
-  const spanBars = `<div class="twspan">${series.map(s => {
+  const spanBars = `<div class="twspan">${own.map(s => {
     const l = (new Date(s.from).getTime() - t0) / (t1 - t0 || 1) * 100;
     const w = (new Date(s.to).getTime() - new Date(s.from).getTime()) / (t1 - t0 || 1) * 100;
     const months = Math.round((new Date(s.to) - new Date(s.from)) / 2629800000);
@@ -2611,11 +2636,7 @@ function twoSection(){
         background:${s.colour}"></i></span>
       <span class="tws-t" title="${months} months · at ${s.pts.length} of the ${cats.length} ${UNIT} shown">${monYr(s.from)} \u2013 ${monYr(s.to)} · ${s.races} race${s.races === 1 ? '' : 's'}</span>
     </div>`;
-  }).join('')}<p class="tws-note">${series.length > 1
-    ? `These are the windows each swimmer has actually been racing in. Where the bars do not
-       line up, the two have not had the same amount of time to improve, and the lines below
-       should be read with that in mind.`
-    : `The window this swimmer has been racing in.`}</p></div>`;
+  }).join('')}</div>`;
 
   // ---- the lines ---------------------------------------------------------
   const axisLabel = c => twBy === 'meet' ? c.date.slice(0, 7)
@@ -2657,6 +2678,13 @@ function twoSection(){
   const body = series.map(s => {
     const pts = s.pts.map(p => ({ i: catKeys.indexOf(p.k), v: p.mean, d: p.date }))
       .filter(p => p.i >= 0).sort((x, y) => x.i - y.i);
+    if (s.isBand) {
+      const d = pts.map((p, k) => `${k ? 'L' : 'M'}${X(p.i).toFixed(1)} ${Y(p.v).toFixed(1)}`).join(' ');
+      return `<path d="${d}" fill="none" stroke="${s.colour}" stroke-width="2"
+          stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` +
+        pts.map(p => `<circle cx="${X(p.i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="2.6"
+          fill="var(--surface)" stroke="${s.colour}" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`).join('');
+    }
     const segs = [];
     for (let k = 1; k < pts.length; k++) {
       const a = pts[k - 1], b = pts[k];
@@ -2677,7 +2705,7 @@ function twoSection(){
 
   const { labs, fs } = stackLabels(series.map(s => {
     const last = s.pts[s.pts.length - 1];
-    return { name: shortName(s.name), colour: s.colour,
+    return { name: s.isBand ? s.name : shortName(s.name), colour: s.colour,
              y: Y(last.mean), ty: Y(last.mean), x: X(catKeys.indexOf(last.k)) };
   }), H, 15);
 
@@ -2685,7 +2713,7 @@ function twoSection(){
   return `
   <section class="wrap" id="s0c" data-page="swimmers">
     <div class="sec-head"><span class="sec-num">00</span><h2>Follow a swimmer${ib('follow', 'the Follow a swimmer chart')}</h2><a class="faq-link" href="/faq#chart">FAQ</a></div>
-    <p class="sec-sub">One swimmer over time, with another alongside.</p>
+    <p class="sec-sub">One swimmer over time, against their age group.</p>
 
     <div class="dfilters">
       <!-- Typed, not scrolled. A select with 125 names means hunting an
@@ -2701,16 +2729,7 @@ function twoSection(){
           value="${esc(a)}" data-prev="${esc(a)}">
         <ul class="twopts" id="twAbox" role="listbox" hidden></ul>
       </span></label>
-      <label>Compare with<span class="twcb">
-        <input class="twpick" id="twB" type="text" role="combobox" aria-expanded="false"
-          aria-autocomplete="list" aria-controls="twBbox" autocomplete="off"
-          spellcheck="false" ${twNamesB.length ? '' : 'disabled'}
-          placeholder="${twNamesB.length
-            ? esc(aBand ? aBand + ' only' : '\u2014 nobody \u2014')
-            : 'nobody else in this age group'}"
-          value="${esc(twB)}" data-prev="${esc(twB)}">
-        <ul class="twopts" id="twBbox" role="listbox" hidden></ul>
-      </span></label>
+
       <span class="twmsg" id="twmsg" role="status"></span>
       <label>Measured against<select id="twBase">${Object.entries(TW_BASE).map(([k, v]) =>
         `<option value="${k}"${twBase === k ? ' selected' : ''}>${esc(v[0])}</option>`).join('')}
@@ -2749,6 +2768,9 @@ function twoSection(){
 
       <!-- "One dot = one meet…" lives in the info button on the section title. -->
       <p class="dkey">
+        ${series.some(x => x.isBand) ? `<span><svg width="36" height="9" aria-hidden><line x1="1" y1="4.5" x2="35" y2="4.5"
+          stroke="#8FA3B8" stroke-width="2"/></svg>
+          typical ${esc(aBand)} swimmer</span>` : ''}
         <span><svg width="36" height="9" aria-hidden><line x1="1" y1="4.5" x2="35" y2="4.5"
           stroke="currentColor" stroke-width="2.4"/></svg>
           racing regularly</span>
@@ -4545,8 +4567,8 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
 
   // Writes to the shared filter, so a stroke chosen on this chart stays
   // chosen on the bar above and on every other page.
-  pickName('twA', v => { twA = v; if (twB === twA) twB = ''; }, false);
-  pickName('twB', v => { twB = v; }, true, () => twNamesB);  // empty means nobody
+  pickName('twA', v => { twA = v; }, false);
+
   bind('twBy',   e => { twBy = e.target.value; render(); });
   bind('twBase', e => { twBase = e.target.value; render(); });
 
@@ -4766,7 +4788,7 @@ function wireSearch(){
     q.value = name; fQ = name.toLowerCase();
     // Follow a swimmer follows the search: the same child, without picking twice.
     if (twNames.includes(name) && twA !== name) {
-      twA = name; if (twB === twA) twB = '';
+      twA = name;
       render();                       // redraws Follow; the search box keeps fQ
       const q2 = document.getElementById('swq'); if (q2) q2.value = name;  // as written, not lower-cased
     } else filter();
