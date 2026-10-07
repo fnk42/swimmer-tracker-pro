@@ -323,6 +323,11 @@ details.sw .trend .rate{display:block}
 .evrow .evtop .e{flex:0 1 auto}
 .evrow .evtop .trend{margin-left:auto;font-size:13px;min-width:0;text-align:right}
 .evrow .evsub{margin-top:2px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+/* A time that opens its meet. Underlined like a link; padded so a thumb finds it. */
+.tlink{appearance:none;border:0;background:none;font:inherit;color:var(--electric-deep);
+  text-decoration:underline;text-underline-offset:2px;cursor:pointer;padding:6px 2px;margin:-6px 0}
+/* The swim that was tapped to get here. */
+.row.mine{background:var(--ice);box-shadow:inset 3px 0 0 var(--electric)}
 .evrow{font-size:var(--fs-sm);line-height:var(--lh-sm);
   padding:var(--sp-md) 0;border-bottom:1px solid var(--line)}
 .evrow .e,.evrow .c,.evrow .t,.evrow .trend{white-space:nowrap}
@@ -1058,6 +1063,8 @@ details.ev .evmeta{margin-left:auto;font-size:12px;color:var(--muted);white-spac
 .ms-v.bad{color:var(--muted)}
 .ms-pb{font-size:10.5px;white-space:nowrap}
 .ms-best{color:var(--electric-deep);font-weight:700}
+.ms-age{display:block;color:var(--muted);font-size:10.5px}
+.ms-best + .ms-age{margin-top:1px}
 
 /* how long each swimmer has actually been racing */
 .twspan{margin:0 0 15px;padding:12px 14px;background:var(--sunken);border:1px solid var(--line);
@@ -1169,6 +1176,10 @@ details.ev .evmeta{margin-left:auto;font-size:12px;color:var(--muted);white-spac
   min-width:230px;max-width:100%}
 /* Whose chart this is, said in the club's blue — the same fill the selected
    swimmer wears everywhere else. */
+/* "Search another swimmer": a link in a sentence, but a button, because a
+   #hash here is a route and would leave the page. */
+.tw-change{appearance:none;border:0;background:none;padding:0;font:inherit;font-weight:600;
+  color:var(--electric-deep);text-decoration:underline;cursor:pointer}
 #twA{border-color:var(--electric);box-shadow:inset 3px 0 0 var(--electric)}
 .twpick:focus{outline:2px solid var(--electric);outline-offset:1px;border-color:var(--electric)}
 .twpick::placeholder{color:var(--muted)}
@@ -1491,7 +1502,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
     <div class="eyebrow">NextGen Analytics</div>
     <h1 class="display">Athlete <span style="color:var(--cyan)">Development</span></h1>
     <p id="herosub">Every race, every season.</p>
-    <div class="years" role="tablist" id="years"></div>
   </div>
 
 </header>
@@ -1571,7 +1581,7 @@ const TIPS = {
   rate:      { t: "How fast a swimmer's times are coming down, per year. It is a line through every race in each event, then the middle value across their events.", a: 'rate' },
   // On a swimmer card: one button for the rate and the line under it, so two
   // buttons are not stacked 20px apart with overlapping tap areas.
-  ratecard:  { t: "How fast this swimmer's times are coming down each year; the line below compares it with others the same age.", a: 'rate' },
+  ratecard:  { t: "How fast this swimmer's times are coming down each year; the line below sets it against the typical swimmer their age.", a: 'rate' },
   benchmark: { t: 'The typical yearly rate for NextGen swimmers of the same age, over the same period.', a: 'benchmark' },
   vsform:    { t: "Each swim at this meet against that swimmer's best before the day, then the middle value. Green is \u22122% or better, amber up to +0.6%, red beyond that.", a: 'vs-form' },
   pts:       { t: 'How far \u201cvs form\u201d moved since the previous meet, in percentage points. A minus number is better: the team swam closer to their bests.', a: 'vs-form' },
@@ -1581,7 +1591,7 @@ const TIPS = {
   agechart:  { t: "The middle yearly rate of each age band, set side by side. Each swimmer's own group is judged against their band, not the club.", a: 'benchmark' },
   seasonbest:{ t: 'The middle season-best of swimmers who were that age at the time. It is a different set of children each season, so a line can move because the group changed.', a: 'chart' },
   seasonrate:{ t: 'The middle yearly rate within each season, for swimmers who were that age at the time. It is a different set of children each season.', a: 'chart' },
-  meetcols:  { t: "Each swim is set against that swimmer's own baseline and sorted quickest first. A swimmer can win a race and still be down on their own average.", a: 'vs-form' },
+  meetcols:  { t: "Each swim against that swimmer's previous race in the same event; a bar to the left is quicker. Age median: the same swim against the middle time for their age.", a: 'vs-form' },
   panels:    { t: "Each swimmer starts at their own first race, and the thick line is their age band's middle; down is faster. The figure beside a name is total change, not a yearly rate.", a: 'chart' },
   dashline:  { t: "Each line starts at the swimmer's first swim in the period, so it shows how far each has come, not who is quickest. The figure beside a name is total change, not a yearly rate.", a: 'chart' },
   dashtime:  { t: 'Real times in one event at one pool length, so two swimmers can share the axis. The figure beside a name is total change, first race to last.', a: 'chart' },
@@ -1589,13 +1599,13 @@ const TIPS = {
   pbrate1:   { t: 'The share of swims that were personal bests, a first-ever swim in an event included.', a: 'pb-rate' },
   events:    { t: "Each event's change from the swimmer's first swim to their most recent, as a share of the first time. It is total change, not a yearly rate, so a longer career shows bigger numbers.", a: 'rate' },
   pbrate:    { t: 'The share of swims that were personal bests, the fastest that swimmer had ever swum in that event. A first-ever swim in an event counts as one.', a: 'pb-rate' },
-  groups:    { t: 'Groups compare each swimmer with others the same age, so a swimmer can get faster and still sit in a lower group. About three in ten are always in the bottom one.', a: 'lower-group' },
-  'g-fast':      { t: 'The top 10% of the club, once age is taken into account.', a: 'groups' },
-  'g-improving': { t: 'The next 30%: improving more than is typical for their age.', a: 'groups' },
-  'g-stable':    { t: 'The middle 30%: improving at about the rate their age group manages.', a: 'groups' },
-  'g-review':    { t: 'The bottom 30%: usually still getting faster, by less than their age group. A list of who to look at first, not a verdict.', a: 'groups' },
+  groups:    { t: 'Each group is a fixed line against what is typical for the swimmer\u2019s age. Swimmers are not ranked, so any number can be in any group.', a: 'groups' },
+  'g-fast':      { t: 'Improving 6%/yr or more faster than is typical for their age.', a: 'groups' },
+  'g-improving': { t: 'Improving 2 to 6%/yr faster than is typical for their age.', a: 'groups' },
+  'g-stable':    { t: 'Within 2%/yr of what is typical for their age.', a: 'groups' },
+  'g-review':    { t: 'More than 2%/yr below what is typical for their age. Usually still getting faster; worth a look, not a verdict.', a: 'groups' },
   chart:     { t: 'A line that falls is a swimmer getting faster. Each line is one stroke at one distance and pool length.', a: 'chart' },
-  follow:    { t: "Each dot is one meet (or season, or stroke) against the swimmer's own baseline, and the grey line is the typical swimmer their age, measured the same way. 0% is the baseline; \u22125% is five per cent quicker.", a: 'chart' },
+  follow:    { t: "Each dot is one meet: how much faster than their first swim in each event. The grey line is the typical swimmer their age, measured the same way. \u22125% is five per cent quicker.", a: 'chart' },
 };
 /** An info button. `extra` is one more sentence specific to this spot. */
 function ib(key, label, extra){
@@ -1603,15 +1613,22 @@ function ib(key, label, extra){
     aria-label="About ${esc(label)}" aria-expanded="false" aria-haspopup="dialog">i</button>`;
 }
 
+// The development groups are FIXED LINES against each swimmer's own age
+// group, in %/yr (negative = improving faster than typical). They used to be
+// percentile cuts through the club, which put three in ten children in the
+// bottom group whatever they did. Children are not compared with each other
+// (Felix, 7 Oct 2026). Must match ATH in NextGen/tools/analytics.py.
+const GROUP_LINES = { fast: -6, improving: -2, stable_hi: 2 };
+
 const GROUPS = [
-  {k:'fast',      slug:'fast',      t:'Fast improvement',
-   d:'the biggest gains in the club, once age is taken into account'},
-  {k:'improving', slug:'improving', t:'Good improvement',
-   d:'more progress than the typical swimmer their age'},
-  {k:'stable',    slug:'stable',    t:'Steady improvement',
-   d:'about the rate their age group manages'},
-  {k:'review',    slug:'review',    t:'Slowest improvement',
-   d:'still getting faster in most cases, by less than their age group — worth a look'},
+  {k:'fast',      slug:'fast',      t:'Well ahead for their age',
+   d:'6%/yr or more faster than is typical for their age'},
+  {k:'improving', slug:'improving', t:'Ahead for their age',
+   d:'2 to 6%/yr faster than is typical for their age'},
+  {k:'stable',    slug:'stable',    t:'In line with their age',
+   d:'within 2%/yr of what is typical for their age'},
+  {k:'review',    slug:'review',    t:'Below typical for their age',
+   d:'more than 2%/yr below what is typical for their age, usually still getting faster — worth a look'},
   {k:'unrated',   slug:'unrated',   t:'Not enough data',
    d:'not enough racing yet to measure a trend — each swimmer says why'},
 ];
@@ -1799,8 +1816,8 @@ function windowRating(lo, hi){
     x.ageNorm = n;
     x.ageAdj = (x.trend !== null && n !== null) ? Math.round((x.trend-n)*100)/100 : null;
   }
-  const adj = out.filter(x => x.ageAdj !== null).map(x => x.ageAdj).sort((a,b)=>a-b);
-  const TH = { fast: pctileOf(adj,10), improving: pctileOf(adj,40), stable_hi: pctileOf(adj,70) };
+  const adj = out.filter(x => x.ageAdj !== null).map(x => x.ageAdj);
+  const TH = GROUP_LINES;
   for (const x of out) {
     x.cls = x.ageAdj === null ? 'unrated'
       : x.ageAdj <= TH.fast ? 'fast'
@@ -1854,7 +1871,6 @@ const DGROUPS = [];  // [swimmerIndex] -> the same series grouped by distance+co
 const CHIP_CAP = 8;
 let chipsBound = false;
 // The progress window. null means "use the season chip as-is".
-let pwFrom = null, pwTo = null, pwCompare = false;
 // Charts group by distance by default — all of a swimmer's 50s on one set of
 // axes — with the original single-event view a tap away.
 let chartMode = 'distance';
@@ -2338,17 +2354,13 @@ function fNote(sc){
 
 /* ---- how a meet went ---------------------------------------------------
    A meet is one moment, and a moment has no slope. So this is a column per
-   swim rather than a line: every race at the chosen meet, measured against
-   whichever baseline answers the question being asked. */
+   swim rather than a line: every race at the chosen meet, against that
+   swimmer's previous race in the same event, with the median for their age
+   beside it (Felix, 7 Oct 2026). No choice of baseline: one comparison a
+   parent makes without being told how. */
 
 let msMeet = '';            // '' = the most recent meet
-let msBase = 'vsPB';        // vsPB | vsAvg | vsBand
 let msBand = '';
-const MS_BASE = {
-  vsPB:   ['their own previous best', 'Against the best that swimmer had ever done in this event before this meet. Blank where it was their first go at it, because there was nothing to beat.'],
-  vsAvg:  ['their own average',       'Against that swimmer’s mean time in this event across every race of it. This is the one that says whether the day was good FOR THEM: a swimmer can miss a best and still swim well above their own average.'],
-  vsBand: ['the median for their age','Against the median time for their age band in that event, taken at the age they were on the day. Blank where too few swimmers of that age have raced it for a median to mean anything.'],
-};
 
 function meetSection(){
   const MS = DATA.meetSwims;
@@ -2357,50 +2369,61 @@ function meetSection(){
   const mid = msMeet || (meets[0] && meets[0].id) || '';
   const meet = meets.find(m => m.id === mid) || meets[0];
   if (!meet) return '';
-  const col = MS.cols.indexOf(msBase);
+  const col = MS.cols.indexOf('vsLast');
+  const ageCol = MS.cols.indexOf('vsBand');
+  const firstCol = MS.cols.indexOf('first');
+  if (col < 0) return '';
 
-  let rows = MS.rows.filter(r => r[0] === meet.id && r[col] !== null);
-  const total = MS.rows.filter(r => r[0] === meet.id).length;
+  // Every timed swim, including first goes: those have nothing before them,
+  // so they are listed and say so instead of disappearing.
+  let rows = MS.rows.filter(r => r[0] === meet.id);
   if (msBand) {
     rows = rows.filter(r => {
       const s = (DATA.years.all.swimmers || []).find(x => x.name === MS.swimmers[r[1]]);
       return s && s.band === msBand;
     });
   }
-  rows.sort((a, b) => a[col] - b[col]);
+  // By name, not quickest first. Each swim is measured against that swimmer's
+  // own baseline; sorting them fastest-first turned the chart into a ranking
+  // of children, which is not what this app shows (Felix, 7 Oct 2026).
+  // First swims last: with nothing before them they have no bar, and at a
+  // meet full of new events they buried the swims that do.
+  rows.sort((a, b) => (a[col] === null) - (b[col] === null)
+    || String(MS.swimmers[a[1]]).localeCompare(String(MS.swimmers[b[1]]))
+    || String(MS.events[a[2]]).localeCompare(String(MS.events[b[2]])));
 
-  const [baseName, baseWhy] = MS_BASE[msBase];
-  const missing = total - MS.rows.filter(r => r[0] === meet.id && r[col] !== null).length;
+  const pctTxt = v => `${v < 0 ? '\u2212' : '+'}${Math.abs(v).toFixed(1)}%`;
   const body = !rows.length
-    ? `<p class="nodata">No swim at this meet can be measured against ${baseName}.</p>`
+    ? `<p class="nodata">No swim at this meet in this age group.</p>`
     : (() => {
-        const mx = Math.max(...rows.map(r => Math.abs(r[col])), 1);
+        const mx = Math.max(...rows.map(r => r[col] === null ? 0 : Math.abs(r[col])), 1);
         return `<div class="mscols">${rows.map(r => {
-          const v = r[col], w = Math.max(1.5, 50 * Math.abs(v) / mx);
+          const v = r[col], age = ageCol < 0 ? null : r[ageCol];
+          const w = v === null ? 0 : Math.max(1.5, 50 * Math.abs(v) / mx);
           return `<div class="mscol">
             <span class="ms-nm">${esc(shortName(MS.swimmers[r[1]]))}<i>${
               esc(MS.events[r[2]].replace('|', ' '))}</i></span>
-            <span class="ms-bar"><i class="ms-mid"></i><i class="ms-fill ${v < 0 ? 'ok' : 'off'}"
-              style="${v < 0 ? 'right:50%' : 'left:50%'};width:${w.toFixed(1)}%"></i></span>
-            <span class="ms-v ${v < 0 ? 'good' : 'bad'}">${v < 0 ? '−' : '+'}${
-              Math.abs(v).toFixed(1)}%</span>
-            <span class="ms-pb">${r[9] ? '<b class="ms-best">Personal best</b>' : ''}</span>
+            <span class="ms-bar"><i class="ms-mid"></i>${v === null ? '' : `<i class="ms-fill ${v < 0 ? 'ok' : 'off'}"
+              style="${v < 0 ? 'right:50%' : 'left:50%'};width:${w.toFixed(1)}%"></i>`}</span>
+            <span class="ms-v ${v === null ? 'bad' : v < 0 ? 'good' : 'bad'}">${v === null ? 'First swim' : pctTxt(v)}</span>
+            <span class="ms-pb">${r[9] ? '<b class="ms-best">Personal best</b>' : ''}${
+              age !== null && age !== undefined ? `<span class="ms-age">age median ${pctTxt(age)}</span>` : ''}</span>
           </div>`;
         }).join('')}</div>`;
       })();
 
-  const faster = rows.filter(r => r[col] < 0).length;
+  const compared = rows.filter(r => r[col] !== null);
+  const faster = compared.filter(r => r[col] < 0).length;
+  const firsts = rows.length - compared.length;
   const bests = rows.filter(r => r[9]).length;
   return `
   <section class="wrap" id="s0b" data-page="meets">
     <div class="sec-head"><span class="sec-num">00</span><h2>How a meet went</h2><a class="faq-link" href="/faq#vs-form">FAQ</a></div>
-    <p class="sec-sub">Every race at one meet, against your baseline.</p>
+    <p class="sec-sub">Every race at one meet, against that swimmer's previous race.</p>
 
     <div class="dfilters">
       <label>Meet<select id="msMeet">${meets.map(m => `<option value="${esc(m.id)}"${
         m.id === meet.id ? ' selected' : ''}>${esc(meetName(m.name))} · ${dmy(m.date)}</option>`).join('')}</select></label>
-      <label>Measured against<select id="msBase">${Object.entries(MS_BASE).map(([k, v]) =>
-        `<option value="${k}"${msBase === k ? ' selected' : ''}>${esc(v[0])}</option>`).join('')}</select></label>
       <label>Age<select id="msBand"><option value="">All ages</option>
         ${BAND_ORDER.map(b => `<option value="${esc(b)}"${msBand === b ? ' selected' : ''}
           >${esc(b)}</option>`).join('')}</select></label>
@@ -2411,19 +2434,17 @@ function meetSection(){
         ${meet.swimmers} swimmers · ${meet.clubN} swims${meet.untimed || meet.withdrawn
           ? ` (${meet.n} timed${meet.untimed ? `, ${meet.untimed} DQ or no-show` : ''}${
               meet.withdrawn ? `, ${meet.withdrawn} time withdrawn` : ''})` : ''}</p>
-      ${missing || meet.untimed || meet.withdrawn ? `<ul class="dnote"><li class="dn-unrated">${
+      ${meet.untimed || meet.withdrawn ? `<ul class="dnote"><li class="dn-unrated">${
         meet.untimed ? `${meet.untimed} of the ${meet.clubN} swims that day were a
         disqualification or a no-show, so carry no time to compare. ` : ''}${
         meet.withdrawn ? `${meet.withdrawn} swim${meet.withdrawn === 1 ? '' : 's'} ${
         meet.withdrawn === 1 ? 'was' : 'were'} raced and counted, but the time the meet recorded
         was impossible and the club has withdrawn it, so nothing is measured from
-        ${meet.withdrawn === 1 ? 'it' : 'them'}. ` : ''}${
-        missing ? `${missing} of the ${total} timed swims cannot be measured this way and are
-        not shown.` : ''} ${esc(baseWhy.split('. ').slice(-1)[0])}</li></ul>` : ''}
-      ${rows.length ? `<p class="dc-hint"><span class="dc-arrow">←</span><span>
-        <b>Bars to the left are faster.</b> ${faster} of ${rows.length} shown swims came in under
-        ${esc(baseName)}; the centre line is that baseline exactly.
-        ${bests} of them still stand as that swimmer’s personal best.</span></p>` : ''}
+        ${meet.withdrawn === 1 ? 'it' : 'them'}.` : ''}</li></ul>` : ''}
+      ${compared.length ? `<p class="dc-hint"><span class="dc-arrow">←</span><span>
+        <b>Bars to the left are faster than their previous race.</b> ${faster} of ${compared.length}
+        swims were.${firsts ? ` ${firsts} ${firsts === 1 ? 'was a first swim' : 'were first swims'} in the event.` : ''}
+        ${bests} ${bests === 1 ? 'was a personal best' : 'were personal bests'}.</span></p>` : ''}
       ${body}
       <p class="tw-how">How to read this${ib('meetcols', 'how to read this chart')}</p>
       
@@ -2432,19 +2453,17 @@ function meetSection(){
 }
 
 
-/* ---- one swimmer, or two side by side ----------------------------------
-   Follow a swimmer by season, by meet or by stroke, and put a second one
-   beside them.
-
-   The trap here is that two swimmers almost never start at the same time. A
-   chart that silently lines up "race 1" against "race 1" makes a 2023 joiner
-   and a 2026 joiner look like they are being compared, when one of them has
-   had three extra years to improve. So the spans are drawn as bars above the
-   chart before the lines are drawn at all: you see who has been at it longer
-   before you see who has come further. */
+/* ---- Progress: one swimmer over time --------------------------------------
+   One swimmer, meet by meet, against their own first swims, with the typical
+   swimmer their age drawn in grey. A span bar above the chart says how long
+   they have been racing before the line says how far they have come. */
 
 let twA = '';               // swimmer names; '' = pick one
-let twBy = 'meet';          // meet | season | stroke
+// Progress is drawn one way only: meet by meet, against where the swimmer
+// started. The pickers for the swimmer, the baseline and the breakdown went
+// (Felix, 7 Oct 2026): search chooses the swimmer, and the rest explained
+// itself less well than one fixed chart does.
+const twBy = 'meet';
 // What zero means on the chart. Defaults to the swimmer's own debut, which is
 // fixed on the day and so cannot move under them.
 //
@@ -2453,28 +2472,10 @@ let twBy = 'meet';          // meet | season | stroke
 // end below it, and across the 85 swimmers with four or more meets the first
 // meet averaged +6.97% and the last -4.56%. The most eye-catching thing on the
 // chart was arithmetic.
-let twBase = 'vsFirst';
+const twBase = 'vsFirst';
 // The names the two pickers may offer, set by twoSection() on every render so
 // the list always matches whatever the filter bar has narrowed it to.
 let twNames = [];
-// Who the "Compare with" box may offer: only swimmers in the same age band as
-// the one already chosen.
-//
-// Two children of different ages are not comparable on anything this chart
-// draws. An 8-and-under improves about -23%/yr as a matter of course and a
-// 15-17 about -8%, so putting the two on one axis invites a parent to read the
-// steeper line as the better swimmer when it is mostly the younger one. Both
-// lines are already measured against their own baseline rather than each
-// other, but a caption does not undo what two lines on a chart imply.
-let twNamesB = [];
-const TW_BASE = {
-  vsFirst: ['where they started',
-            'Every race against that swimmer\u2019s own FIRST time in the same event. Zero is the day they debuted, so a falling line is genuinely a swimmer getting faster than they were. Nothing later can move the baseline.'],
-  vsPrior: ['how they had been going',
-            'Every race against that swimmer\u2019s average in the same event BEFORE this meet. Zero is exactly as well as they had been swimming, so below the line is a better day than their form suggested. The baseline moves with them, which is why it shows form rather than progress.'],
-  vsAvg:   ['their whole-career average',
-            'Every race against that swimmer\u2019s mean across every race of the event, early and late. Useful for ranking meets against each other, and MISLEADING as a trend: the mean includes races not yet swum, so an improving swimmer starts above it and ends below it whatever they do.'],
-};
 const TW_COLOURS = ['#2C7BE5', '#C2761B'];
 
 function twoSection(){
@@ -2484,16 +2485,21 @@ function twoSection(){
   // offering the whole club in the picker under a bar reading "11-12 ·
   // Breast only" is the same contradiction the tiles had.
   const SC = fScope();
-  // "Broken down by stroke" against "their whole-career average" can only ever
-  // draw a flat line at zero, and not by accident: the baseline IS the mean of
-  // every race of that event, so averaging the deviations back up over all of
-  // them returns zero by construction. Measured across the club it does —
-  // Njenga Sierra reads +0.002% on Back, +0.001% on Breast, -0.003% on IM.
-  //
-  // So the combination is refused rather than drawn. A chart that is always
-  // flat teaches the reader nothing except to distrust the page.
-  const twFlat = (twBy === 'stroke' && twBase === 'vsAvg');
-  const twBaseUsed = twFlat ? 'vsFirst' : twBase;
+  const twBaseUsed = twBase;
+  let all = (DATA.years.all.swimmers || []).filter(s => (s.events || []).length)
+    .map(s => s.name).sort();
+  // The filters above decide WHAT is drawn — which stroke, which seasons —
+  // never WHO. Narrowing this list by them took Sierra out of it the moment
+  // butterfly was chosen, and the line below then fell back to all[0]:
+  // somebody else's child, drawn under the name you had typed. Every swimmer
+  // stays pickable, and a stroke they do not swim is said in words.
+  twNames = all;
+  if (!all.length) return `<p class="nodata">No swimmer matches the filters above.</p>`;
+  // Whoever search last chose; otherwise the viewer's own child; otherwise
+  // the first name, for a coach who has not searched yet.
+  const mine = (DATA.myAthletes || []).find(n => all.includes(n));
+  const a = (twA && all.includes(twA)) ? twA : (mine || all[0]);
+
   // ONE STROKE AT A TIME. A dot used to average every event a swimmer raced
   // that day, so Dr Boit's 100 Fly at -2.9% and 100 Free at -7.0% became a
   // single -5.0% that is neither. Fly and Free are different skills and a
@@ -2507,30 +2513,18 @@ function twoSection(){
     const n = {};
     for (const r of (MS.rows || [])) {
       const nm = MS.swimmers[r[1]];
-      if (nm !== (twA || '')) continue;
+      if (nm !== a) continue;
       const k = strokeOf((MS.events[r[2]] || '').split('|')[0]);
       if (k) n[k] = (n[k] || 0) + 1;
     }
     return Object.entries(n).sort((x, y) => y[1] - x[1])[0]?.[0] || 'Free';
   })();
-  let all = (DATA.years.all.swimmers || []).filter(s => (s.events || []).length)
-    .map(s => s.name).sort();
-  // The filters above decide WHAT is drawn — which stroke, which seasons —
-  // never WHO. Narrowing this list by them took Sierra out of it the moment
-  // butterfly was chosen, and the line below then fell back to all[0]:
-  // somebody else's child, drawn under the name you had typed. Every swimmer
-  // stays pickable, and a stroke they do not swim is said in words.
-  twNames = all;
-  if (!all.length) return `<p class="nodata">No swimmer matches the filters above.</p>`;
-  // A swimmer chosen before the filter narrowed may no longer be in it.
-  const a = (twA && all.includes(twA)) ? twA : all[0];
 
   // One child, set against their own age group. Children are never put side
   // by side: what a parent or coach is shown is this swimmer against the
   // typical swimmer their age (Felix, 7 Oct 2026). "Compare with" is gone.
   const bandOf = new Map((DATA.years.all.swimmers || []).map(s => [s.name, s.band]));
   const aBand = bandOf.get(a) || null;
-  twNamesB = [];
   const picked = [a];
   if (!picked.length) return '';
 
@@ -2712,38 +2706,13 @@ function twoSection(){
   const others = all.filter(n => n !== a);
   return `
   <section class="wrap" id="s0c" data-page="swimmers">
-    <div class="sec-head"><span class="sec-num">00</span><h2>Follow a swimmer${ib('follow', 'the Follow a swimmer chart')}</h2><a class="faq-link" href="/faq#chart">FAQ</a></div>
-    <p class="sec-sub">One swimmer over time, against their age group.</p>
+    <div class="sec-head"><span class="sec-num">00</span><h2>Progress${ib('follow', 'the Progress chart')}</h2><a class="faq-link" href="/faq#chart">FAQ</a></div>
+    <p class="sec-sub"><b>${esc(a)}</b> · ${esc(twStroke)}, meet by meet, against where they
+      started.${aBand ? ` Grey is the typical ${esc(aBand)} swimmer.` : ''}
+      <button type="button" class="tw-change">Search another swimmer</button></p>
 
-    <div class="dfilters">
-      <!-- Typed, not scrolled. A select with 125 names means hunting an
-           alphabetical list for a child you can already name.
-           A <datalist> was the first attempt and was no better: Chrome does
-           not narrow it as you type, so it was the same scroll behind a
-           different control. This is a real combobox — the list below the box
-           IS the filtered matches, and the keyboard drives it. -->
-      <label>Swimmer<span class="twcb">
-        <input class="twpick" id="twA" type="text" role="combobox" aria-expanded="false"
-          aria-autocomplete="list" aria-controls="twAbox" autocomplete="off"
-          spellcheck="false" placeholder="Type a name\u2026"
-          value="${esc(a)}" data-prev="${esc(a)}">
-        <ul class="twopts" id="twAbox" role="listbox" hidden></ul>
-      </span></label>
-
-      <span class="twmsg" id="twmsg" role="status"></span>
-      <label>Measured against<select id="twBase">${Object.entries(TW_BASE).map(([k, v]) =>
-        `<option value="${k}"${twBase === k ? ' selected' : ''}>${esc(v[0])}</option>`).join('')}
-      </select></label>
-      <label>Broken down by<select id="twBy">
-        <option value="meet"${twBy === 'meet' ? ' selected' : ''}>Meet</option>
-        <option value="season"${twBy === 'season' ? ' selected' : ''}>Season</option>
-        <option value="stroke"${twBy === 'stroke' ? ' selected' : ''}>Stroke</option>
-      </select></label>
-    </div>
-
-    ${twEmpty ? `<p class="nodata" style="margin-top:14px">${twEmpty} Change the stroke in the
-      filter bar at the top, or choose <b>Stroke</b> under \u201cBroken down by\u201d to see every
-      stroke they do swim.</p>` : `
+    ${twEmpty ? `<p class="nodata" style="margin-top:14px">${twEmpty} Choose another stroke in the
+      filter bar.</p>` : `
     <div class="dbody solo"><div class="dmain">
       ${spanBars}
       <div class="dchart dchart-big">
@@ -3053,8 +3022,7 @@ function dashSinceGrid(panels){
 function dashLineChart(WR, normalised){
   const idx = careerIndex();
   const [wantEv, wantCo] = dashEvent.split('|');
-  const lo = (pwFrom || (year === 'all' ? YEARS.filter(y => y !== 'all').sort()[0] : year)) + '-01-01';
-  const hi = (pwTo   || (year === 'all' ? YEARS.filter(y => y !== 'all').sort().slice(-1)[0] : year)) + '-12-31';
+  const lo = fSpan()[0] + '-01-01', hi = fSpan()[1] + '-12-31';
 
   const series = [...dashPinned].map((name, i) => {
     const evs = idx.get(name) || [];
@@ -3258,9 +3226,12 @@ let fQ = '';
 let ageMode = 'band';          // 'band' | 'year' — how section 02 aggregates
 let ageLo = null, ageHi = null; // inclusive single-year range for section 03
 
+// No year buttons: the season range (start and end) is the only period
+// control (Felix, 7 Oct 2026). A range of one season uses that season's own
+// precomputed block; anything wider uses every season, re-rated in the
+// browser for the range.
 function tabs(){
-  document.getElementById('years').innerHTML = YEARS
-    .map(y => `<button class="yr" role="tab" data-y="${y}" aria-selected="${y===year}">${YLABEL(y)}</button>`).join('');
+  year = (fFrom && fFrom === fTo && DATA.years[fFrom]) ? fFrom : 'all';
 }
 
 /** A swimmer's events inside the chosen seasons. The card's chart and its
@@ -3288,6 +3259,28 @@ function spanEvents(s){
   return out;
 }
 
+/** A time on a swimmer's card, as a link to the meet it was swum at. Matched
+    on swimmer, event, pool and time through meetSwims; a time with no match
+    (a race from before they joined, say) stays plain text. */
+let swimMeetIdx = null;
+function meetOfSwim(name, e, secs){
+  const MS = DATA.meetSwims;
+  if (!MS || secs === undefined) return null;
+  if (!swimMeetIdx) {
+    swimMeetIdx = new Map();
+    for (const r of MS.rows) swimMeetIdx.set(`${MS.swimmers[r[1]]}|${MS.events[r[2]]}|${r[3]}`, r[0]);
+  }
+  return swimMeetIdx.get(`${name}|${e.event}|${e.course}|${Math.round(secs * 100) / 100}`) || null;
+}
+function timeLink(name, e, p, shown){
+  const id = p && meetOfSwim(name, e, p.t);
+  if (!id) return swimTime(shown);
+  const m = DATA.meetSwims.meets.find(x => x.id === id);
+  return `<button type="button" class="tlink" data-meet-id="${esc(id)}" data-ev="${esc(e.event)}"
+    data-co="${esc(e.course)}" data-sw="${esc(name)}"
+    aria-label="${esc(swimTime(shown))}, ${esc(m ? meetName(m.name) : 'the meet')}: open the results">${swimTime(shown)}</button>`;
+}
+
 function swimmerCard(s){
   // Every tier-2 and coach field has to be treated as possibly absent. That is
   // the whole mechanism in src/lib/tiers.ts: the payload is shaped by OMITTING
@@ -3303,11 +3296,13 @@ function swimmerCard(s){
   // Two lines per event: what it is and how it moved, then the times behind
   // it. The grid this replaces gave the times priority and squeezed the event
   // name and the change to nothing on a phone.
+  const P = e => e.points || [];
   const evs = spanEvents(s).map(e => `
     <div class="evrow">
       <div class="evtop"><span class="e">${esc(e.event)}</span><span class="c">${e.course}</span>
         <span class="trend ${trendCls(e.pct)}">${pct(e.pct)}</span></div>
-      <div class="evsub">${swimTime(e.first)} \u2192 ${swimTime(e.last)}${
+      <div class="evsub">${timeLink(s.name, e, P(e)[0], e.first)} \u2192 ${
+        timeLink(s.name, e, P(e)[P(e).length - 1], e.last)}${
         year==='all'&&e.firstDate?` · ${monYr(e.firstDate)} \u2013 ${monYr(e.lastDate)}`:''}</div>
     </div>`).join('');
   const num = (v, suf) => v === null || v === undefined ? '—' : (v + (suf||''));
@@ -3465,6 +3460,7 @@ function render(){
   // further up the function and read it, and a `const` below them put it in
   // its own temporal dead zone — every filter click threw silently and the
   // figures simply never moved.
+  tabs();
   const FS = fScope();
   let Y = DATA.years[year];
   // A chosen window re-rates every swimmer in the browser: their rate, their
@@ -3503,7 +3499,7 @@ function render(){
       n_improving: c.fast + c.improving,   // as the spread bar expects
       n_stable: c.stable,
       n_review: c.review,
-      window: (pwFrom || pwTo) ? `${lo}\u2013${hi}` : null } };
+      window: (fFrom || fTo) ? (lo === hi ? lo : `${lo}\u2013${hi}`) : null } };
   }
   const s = Y.summary;
 
@@ -3559,112 +3555,9 @@ function render(){
   // swimmer. Fall back to age band, which is tier 1 and is how the club talks
   // about squads anyway. The slug exists because a band like "8 & under" is
   // not a usable CSS class.
-  // ---- progress window, comparison and leaderboards ----------------------
-  const SEASONS = YEARS.filter(y => y !== 'all').sort();
-  const ratedIn = y => ((DATA.years[y] || {}).summary || {}).rated || 0;
-  // The club's first season holds two races by one swimmer, so nobody can have
-  // a rate inside it and a comparison starting there is empty by construction.
-  // Default to the first season that actually has rated swimmers.
-  const firstUsable = SEASONS.find(y => ratedIn(y) > 0) || SEASONS[0];
-  const wFrom = pwFrom || (year === 'all' ? firstUsable : year);
-  const wTo   = pwTo   || (year === 'all' ? SEASONS[SEASONS.length - 1] : year);
-  // The count rides on the option, so a season that cannot be compared says so
-  // before it is picked rather than after.
-  const opts = (sel) => SEASONS.map(y =>
-    `<option value="${y}"${y===sel?' selected':''}>${y} \u00b7 ${
-      ratedIn(y) ? ratedIn(y) + ' rated' : 'too few races'}</option>`).join('');
-  const rateOfWindow = (lo, hi) => {
-    const r = windowRating(lo + '-01-01', hi + '-12-31');
-    return new Map(r.rows.map(x => [x.name, x]));
-  };
-  const coachHere = Object.keys(Y.watch || {}).length > 0;
-  const covered = WR ? WR.rated : (Y.swimmers || []).filter(x => x.trend !== null).length;
-
-  // The from/to selects moved into the shared filter bar — two span controls
-  // on one page is two places to disagree. What stays is what the bar does
-  // not do: how many swimmers the span can rate, and the season-vs-season
-  // comparison, which is a stricter test than the rate and needs saying.
-  const pwin = `<div class="pwin">
-      <span class="lab">Progress measured</span>
-      <span class="pw-span">${FS.lo === FS.hi ? FS.lo : `${FS.lo} \u2192 ${FS.hi}`}</span>
-      ${SEASONS.length > 1 && FS.lo !== FS.hi ? `<button id="pwCmp" type="button"
-        aria-pressed="${pwCompare}">Compare ${FS.lo} vs ${FS.hi}</button>` : ''}
-      <span class="cov"><b>${fActive() ? fClassCounts.rated : covered}</b> of ${
-        fActive() ? FS.swimmers : (Y.swimmers||[]).length} swimmers rated${ib('ratedspan', 'rated',
-        SEASONS.length > 1 ? 'Comparing two seasons is stricter: a swimmer needs enough races inside each one.' : '')}</span>
-    </div>`;
-
-  // Season vs season. Coach-only: this ranks children against each other,
-  // which is a different act from showing each child their own line.
-  let cmp = '';
-  if (pwCompare && coachHere && FS.lo !== FS.hi) {
-    const wFrom = FS.lo, wTo = FS.hi;
-    const A = rateOfWindow(wFrom, wFrom), B = rateOfWindow(wTo, wTo);
-    const rows = [...A.keys()]
-      .filter(n => A.get(n).trend !== null && B.get(n)?.trend !== null)
-      .map(n => ({ n, a: A.get(n).trend, b: B.get(n).trend,
-                   band: A.get(n).band, d: B.get(n).trend - A.get(n).trend }))
-      .sort((x, y) => x.d - y.d);
-    cmp = rows.length ? `<div class="cmpwrap"><table class="cmp">
-      <thead><tr><th>Swimmer</th><th>Age</th><th style="text-align:right">${wFrom} %/yr</th>
-        <th style="text-align:right">${wTo} %/yr</th><th>Change</th></tr></thead>
-      <tbody>${rows.map(r => `<tr>
-        <td>${esc(r.n)}</td><td>${esc(r.band)}</td>
-        <td class="n">${signed(r.a)}</td><td class="n">${signed(r.b)}</td>
-        <td class="dir ${r.d < -1 ? 'up' : r.d > 1 ? 'down' : 'flat'}">${
-          r.d < -1 ? '&uarr; picking up' : r.d > 1 ? '&darr; slowing' : '&rarr; steady'}</td>
-      </tr>`).join('')}</tbody></table>
-      <p class="cmpnote">&minus; is faster. Only swimmers with ${MIN_RACES} or more races
-        in the same event and course, at least ${MIN_SPAN_DAYS} days apart, <em>inside each
-        season</em>, can be compared. That is a stricter test than the rate above, which may
-        use races from any season in the window.</p></div>`
-      : (() => {
-          // Say which season is the problem. "No swimmer has enough races in
-          // both" reads as a contradiction beside a count of 114 rated.
-          const thin = [wFrom, wTo].filter(y => ratedIn(y) === 0);
-          const why = thin.length
-            ? `${thin.join(' and ')} ${thin.length > 1 ? 'hold' : 'holds'} too few races for
-               anyone to be rated inside ${thin.length > 1 ? 'them' : 'it'} \u2014 ${
-               thin.map(y => {
-                 const q = DATA.years[y].summary || {};
-                 return `${y} has ${q.swims || 0} race${q.swims === 1 ? '' : 's'} by ${
-                   q.swimmers || 0} swimmer${q.swimmers === 1 ? '' : 's'}`;
-               }).join(', ')}.`
-            : `${ratedIn(wFrom)} swimmers are rated inside ${wFrom} and ${ratedIn(wTo)} inside
-               ${wTo}, but no one swimmer appears in both with the same event and course.`;
-          return `<p class="nodata">Nothing to compare between ${wFrom} and ${wTo}. ${why}
-            The rate shown elsewhere on this page measures across the whole window instead, which
-            is why ${covered} swimmers are rated there.</p>`;
-        })();
-  }
-
-  // Two leaderboards: raw rate, and rate against the swimmer's own age band.
-  // The second is the one that is fair to a 16-year-old.
-  let boards = '';
-  if (coachHere) {
-    // A swimmer needs more than one pair of swims to lead a leaderboard.
-    // The rating threshold is two races — deliberately, so a part-finished
-    // season is usable — but "most improved in the club" is a claim, and at
-    // two races the top of this board filled with single pairs that outranked
-    // swimmers with six. Rating: 2. Ranking: LB_MIN_RACES.
-    const LB_MIN_RACES = 4;
-    const rank = (list, key) => list
-      .filter(x => x[key] !== null && x[key] !== undefined && (x.races ?? x.rateRaces ?? 0) >= LB_MIN_RACES)
-      .sort((a, b) => a[key] - b[key]).slice(0, 8);
-    const pool = WR ? WR.rows : (Y.swimmers || []);
-    const raw = rank(pool, 'trend'), adj = rank(pool, 'ageAdj');
-    const li = (xs, fmt) => xs.map(x => `<li><b>${esc(x.name || x.n)}</b>
-      <span>${fmt(x)}</span></li>`).join('');
-    boards = `<div class="lbgrid">
-      <div class="lb"><h4>Most improved${wFrom===wTo?` in ${wTo}`:`, ${wFrom}&ndash;${wTo}`}
-        <span>fastest rate of improvement, any age &mdash; ${covered} rated,
-          ranked among those with 4+ races</span></h4>
-        <ol>${li(raw, x => pctShort(x.trend) + '/yr')}</ol></div>
-      <div class="lb"><h4>Most improved for their age
-        <span>against the norm for their own age band, 4+ races</span></h4>
-        <ol>${li(adj, x => (x.ageAdj <= 0 ? '' : '+') + x.ageAdj.toFixed(1) + ' vs ' + x.band)}</ol></div>
-    </div>`;
-  }
+  // No "Progress measured" strip and no season-vs-season table: the season
+  // range in the filter bar says the span, and the table ranked children.
+  // No leaderboards: they ranked children against each other.
 
   const SW_GROUPS = Y.swimmers.some(s => s.cls)
     ? GROUPS
@@ -3900,11 +3793,11 @@ function render(){
     // Same correction as GROUPS: these buckets key off the age-adjusted band,
     // so "regressing" never meant the swimmer got slower — it meant they
     // improved more slowly than their age group does.
-    ['fast','p','Fast improvement','improving much faster than others their age'],
+    ['fast','p','Well ahead for their age','6%/yr or more faster than is typical for their age'],
     ['risers','g','Rising from behind','fewer podiums, improving quickly'],
     ['plateau','a','Improvement has flattened','was improving quickly, now level'],
     ['stalled','a','Winning, but not improving','high podium rate, gains have levelled off'],
-    ['regressing','r','Slowest improvement','most still getting faster, by less than their age group'],
+    ['regressing','r','Below typical for their age','most still getting faster, by more than 2%/yr less than typical for their age'],
   ];
   const watchCards = wdef.filter(([k])=>(W[k]||[]).length).map(([k,c,title,why])=>`
     <div class="wcard ${c}"><h4>${title}</h4><div class="n">${W[k].length}</div>
@@ -4010,9 +3903,9 @@ function render(){
     ['i', '<span class="cdot" aria-hidden>&#128993;</span>Investigate', s.n_stable, ['stalled', 'plateau'], 'Stalled or plateaued',
      `Progress has flattened. Look at the swimmer, the age group and the programme
       before changing anything.`],
-    ['c', '<span class="cdot" aria-hidden>&#128308;</span>Change', s.n_review, ['regressing'], 'Slowest improvement for their age',
-     `These swimmers are still getting faster, but more slowly than others of
-      their age. Look at the swimmer, then the programme, before concluding
+    ['c', '<span class="cdot" aria-hidden>&#128308;</span>Change', s.n_review, ['regressing'], 'Below typical for their age',
+     `These swimmers are still getting faster, but more than 2%/yr more slowly
+      than is typical for their age. Look at the swimmer, then the programme, before concluding
       anything &mdash; a young beginner and a 16-year-old are not held to the
       same rate here.`],
   ].map(([cls, title, n, buckets, cap, what]) => `
@@ -4066,9 +3959,6 @@ function render(){
     ${SCOPE==='family' ? `<p class="scopenote"><strong>Club-wide view.</strong>
       Percentages, medians and counts for the squad as a whole. Individual swimmers
       are not listed: other families' results are theirs, not ours to publish.</p>` : ''}
-    ${year==='all' ? `<div class="caution" style="background:rgba(22,166,232,.10);border-color:rgba(22,166,232,.38)">
-      <strong style="color:var(--electric-deep)">This is every season together.</strong>
-      Progress is measured from a swimmer's first race to their most recent. For this term only, pick a year above.</div>` : ''}
     ${!s.reliable ? `<div class="caution"><strong>Read the trend with care.</strong>
       ${year}'s meets span only ${s.span_days} day${s.span_days===1?'':'s'}, and just ${s.rated} swimmers
       have repeat swims to compare. A development trend needs a season, not a fortnight — treat the
@@ -4094,22 +3984,19 @@ function render(){
       <h3>Development spread — ${fClassCounts.rated} rated swimmer${
         fClassCounts.rated === 1 ? '' : 's'} ${fActive()
           ? 'in this selection' : 'in ' + esc(RATED_IN)}</h3>
-      <p class="spreadnote">These groups are relative: the bottom one always holds about three in
-        ten, however well the club is doing.${(fBand || fStroke) ? ` The cut-lines are the whole
-        club's over ${FS.lo === FS.hi ? FS.lo : `${FS.lo}\u2013${FS.hi}`}, so this selection can
-        sit anywhere against them \u2014 that is the comparison, and three in ten is not
-        guaranteed within a slice.` : ''}
+      <p class="spreadnote">Each swimmer against what is typical for their age; any number can
+        be in any group.
         <a href="#/method" class="mlink">How this is worked out &rsaquo;</a></p>
       <div class="cbar">${cbar}</div>
       <div class="legend">
-        <span><span class="dot d-fast"></span><b>${fClassCounts.fast}</b> fast progression</span>
-        <span><span class="dot d-improving"></span><b>${fClassCounts.improving}</b> improving</span>
-        <span><span class="dot d-stable"></span><b>${fClassCounts.stable}</b> stable</span>
-        <span><span class="dot d-review"></span><b>${fClassCounts.review}</b> review</span>
+        <span><span class="dot d-fast"></span><b>${fClassCounts.fast}</b> well ahead for their age</span>
+        <span><span class="dot d-improving"></span><b>${fClassCounts.improving}</b> ahead</span>
+        <span><span class="dot d-stable"></span><b>${fClassCounts.stable}</b> in line</span>
+        <span><span class="dot d-review"></span><b>${fClassCounts.review}</b> below typical</span>
       </div>
       <p class="note" style="margin-top:12px;font-size:12.5px;color:var(--muted)">
-        Fast, improving and stable are measured against what NextGen swimmers actually do —
-        ${DATA.thresholds.n} comparable races, not a standard borrowed from another country.</p>
+        Each swimmer is measured against the typical NextGen swimmer their age. Any number of
+        swimmers can be in any group.</p>
     </div>
 
     <div class="grid2">
@@ -4166,8 +4053,6 @@ function render(){
     
     ${filterBar(true)}
     ${fNote(FS)}
-    ${pwin}
-    ${cmp}
     <div id="list" style="margin-top:18px">${SW_GROUPS.map(g=>{
       const members = Y.swimmers.filter(s => g.band ? s.band === g.k : s.cls === g.k);
       if(!members.length) return '';
@@ -4286,29 +4171,19 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
     </div>
 
     <div class="mblock">
-      <h3>How the groups are set &mdash; and why one is always the smallest</h3>
-      <p><strong>The groups are relative, by construction.</strong> They are not a standard anyone
-        passes or fails. Once every swimmer has a figure for how they compare with their age band,
-        those figures are sorted and cut at fixed positions:</p>
+      <h3>How the groups are set</h3>
+      <p>Each swimmer&rsquo;s yearly rate is set against the typical rate for their own age band.
+        The groups are fixed lines on that gap, not positions in a ranking:</p>
       <ul>
-        <li>the top <strong>10%</strong> &rarr; improving fastest for their age</li>
-        <li>the next <strong>30%</strong> &rarr; improving faster than their age</li>
-        <li>the middle <strong>30%</strong> &rarr; improving in line with their age</li>
-        <li>the bottom <strong>30%</strong> &rarr; improving slower than their age</li>
+        <li><strong>Well ahead for their age</strong> &rarr; 6%/yr or more faster than typical</li>
+        <li><strong>Ahead for their age</strong> &rarr; 2 to 6%/yr faster than typical</li>
+        <li><strong>In line with their age</strong> &rarr; within 2%/yr of typical</li>
+        <li><strong>Below typical for their age</strong> &rarr; more than 2%/yr below typical</li>
       </ul>
-      <div class="mnote"><b>The bottom group can never be empty.</b> Roughly three in ten rated
-        swimmers land there in every view, in every season, however well the whole club is doing.
-        If every swimmer in the club improved brilliantly, three in ten would still be in the bottom
-        group &mdash; because it means &ldquo;slowest of this set&rdquo;, not &ldquo;failing&rdquo;.
-        Read it as a list of who to look at first, never as a verdict on a child.</div>
-      ${WR ? `<p style="margin-top:15px">For the period on screen (${esc(RATED_IN)}), the cut-lines
-        fall at <strong>${WR.TH.fast.toFixed(1)}</strong>,
-        <strong>${WR.TH.improving.toFixed(1)}</strong> and
-        <strong>${WR.TH.stable_hi.toFixed(1)}</strong> percentage points relative to age band,
-        across ${WR.rated} rated swimmers.</p>` : ''}
-      <p>The consequence worth stating plainly: a swimmer can move between groups without their
-        swimming changing at all, because the other swimmers around them changed. Always read the
-        rate as well as the group.</p>
+      <div class="mnote"><b>No group has to be filled.</b> Swimmers are not compared with each
+        other, so if every swimmer improved well, every swimmer could be ahead. A swimmer only
+        moves group when their own rate, or what is typical for their age, changes. Read it as a
+        guide to who to look at first, never as a verdict on a child.</div>
     </div>
 
     <div class="mblock">
@@ -4464,8 +4339,13 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
     fBand = fStroke = ''; fFrom = fTo = ''; render();
   });
 
+  const twc = document.querySelector('.tw-change');
+  if (twc) twc.onclick = () => {
+    const q = document.getElementById('swq'); if (!q) return;
+    q.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    q.focus({ preventScroll: true });
+  };
   bind('msMeet', e => { msMeet = e.target.value; render(); });
-  bind('msBase', e => { msBase = e.target.value; render(); });
   bind('msBand', e => { msBand = e.target.value; render(); });
   // A typed name has to be one the archive knows, or the chart has nothing to
   // draw. An unrecognised entry reverts to what was there rather than
@@ -4567,31 +4447,6 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
 
   // Writes to the shared filter, so a stroke chosen on this chart stays
   // chosen on the bar above and on every other page.
-  pickName('twA', v => { twA = v; }, false);
-
-  bind('twBy',   e => { twBy = e.target.value; render(); });
-  bind('twBase', e => { twBase = e.target.value; render(); });
-
-  const pwF = document.getElementById('pwFrom'), pwT = document.getElementById('pwTo');
-  // Both ends start null, meaning "whatever the season chip implies". The old
-  // guard read a null far end as an inverted window and collapsed the other
-  // end onto it, so picking a From season silently set To to the same year and
-  // the comparison had nothing to compare. Take the value off the control the
-  // reader can see instead, and only clamp when the window is really inverted.
-  if (pwF) pwF.onchange = e => {
-    pwFrom = e.target.value;
-    if (!pwTo) pwTo = pwT ? pwT.value : pwFrom;
-    if (pwTo < pwFrom) pwTo = pwFrom;
-    render();
-  };
-  if (pwT) pwT.onchange = e => {
-    pwTo = e.target.value;
-    if (!pwFrom) pwFrom = pwF ? pwF.value : pwTo;
-    if (pwFrom > pwTo) pwFrom = pwTo;
-    render();
-  };
-  const pwC = document.getElementById('pwCmp');
-  if (pwC) pwC.onclick = () => { pwCompare = !pwCompare; render(); };
 
   // The single-year age presets went with the old Swimmers filter row; the
   // shared bar covers age by band. Guarded rather than assumed present: an
@@ -4945,11 +4800,6 @@ function filter(){
   if (c) c.textContent = filtering ? shown + ' of ' + total + ' swimmers' : total + ' swimmers';
 }
 
-document.getElementById('years').addEventListener('click', e => {
-  const b = e.target.closest('.yr'); if (!b) return;
-  year = b.dataset.y; ageLo=null; ageHi=null; fQ='';
-  tabs(); render(); window.scrollTo({top:0,behavior:'smooth'});
-});
 
 
 // Signed out. The portal has one front door — the landing and the sign-in both
@@ -5038,9 +4888,12 @@ let meetReturn = 0;
 
 function fmtTime(t){ return t || '—'; }
 
-async function openMeet(id){
+let meetFrom = 'meets', meetCard = '';
+async function openMeet(id, focus){
   const app = document.getElementById('app');
   meetReturn = window.scrollY;
+  meetFrom = page;
+  meetCard = focus ? focus.name : '';
 
   if (!meetCache[id]) {
     app.innerHTML = `<section class="wrap"><p class="sec-sub">Loading the results…</p></section>`;
@@ -5056,7 +4909,7 @@ async function openMeet(id){
       return;
     }
   }
-  renderMeet(meetCache[id]);
+  renderMeet(meetCache[id], focus);
   // A step in the history, so the phone's back button closes the results and
   // returns to the meet list instead of skipping to an earlier tab.
   history.pushState({ meet: id }, '', location.href);
@@ -5070,10 +4923,11 @@ window.addEventListener('popstate', () => {
   }
 });
 
-function renderMeet(m){
+function renderMeet(m, focus){
   const app = document.getElementById('app');
   const span = dmyRange(m.date, m.end);
 
+  const hit = e => focus && e.event === focus.event && (!e.course || e.course === focus.course);
   const events = m.events.map(e => {
     const rows = e.rows.map(r => {
       const pod = r.p && r.p <= 3;
@@ -5081,7 +4935,8 @@ function renderMeet(m){
         .filter(Boolean).join(' · ');
       // A time that is not a time is a status: DQ, NS, SCR.
       const isStatus = r.t && !/^[\d]/.test(r.t);
-      return `<div class="row">
+      const mine = hit(e) && r.n === focus.name;
+      return `<div class="row${mine ? ' mine' : ''}">
         <span class="pl ${pod ? 'pod' : ''}">${r.p ?? '—'}</span>
         <span class="who"><b>${esc(r.n)}</b>${meta ? `<small>${esc(meta)}</small>` : ''}</span>
         <span class="tm">${isStatus ? `<span class="st">${esc(r.t)}</span>` : esc(swimTime(r.t))}
@@ -5089,7 +4944,7 @@ function renderMeet(m){
       </div>`;
     }).join('');
     const pbs = e.rows.filter(r => r.pb).length;
-    return `<details class="ev">
+    return `<details class="ev"${hit(e) ? ' open' : ''}>
       <summary>
         <span class="evname">${esc(e.event)}</span>
         <span class="evmeta">${[e.course || '—', e.rows.length + ' swim' + (e.rows.length===1?'':'s'),
@@ -5102,7 +4957,7 @@ function renderMeet(m){
   app.innerHTML = `
   <section class="wrap">
     <nav class="crumbs" aria-label="Breadcrumb">
-      <button type="button" onclick="closeMeet()">Meets</button>
+      <button type="button" onclick="closeMeet()">${meetFrom === 'swimmers' ? 'Swimmers' : 'Meets'}</button>
       <span class="sep" aria-hidden>&rsaquo;</span>
       <span class="here">${esc(meetName(m.name))}</span>
     </nav>
@@ -5127,11 +4982,18 @@ function renderMeet(m){
   </section>`;
 
   window.scrollTo({ top: 0, behavior: 'auto' });
+  const mine = focus && app.querySelector('.row.mine');
+  if (mine) requestAnimationFrame(() => mine.scrollIntoView({ block: 'center' }));
 }
 
 function closeMeet(){
   render();
-  showPage('meets');
+  showPage(meetFrom || 'meets');
+  // Back to the card the time was tapped on, open, as it was left.
+  if (meetCard) {
+    const card = [...document.querySelectorAll('details.sw')].find(d => d.dataset.aname === meetCard);
+    if (card) card.open = true;
+  }
   // Put them back where they were in the list.
   window.scrollTo({ top: meetReturn, behavior: 'auto' });
 }
@@ -5139,6 +5001,12 @@ window.closeMeet = closeMeet;
 
 // Delegated, so it survives every re-render of the meets list.
 document.addEventListener('click', e => {
+  const t = e.target.closest?.('.tlink[data-meet-id]');
+  if (t) {
+    e.preventDefault();
+    openMeet(t.dataset.meetId, { event: t.dataset.ev, course: t.dataset.co, name: t.dataset.sw });
+    return;
+  }
   const card = e.target.closest?.('.comp[data-meet]');
   if (card) openMeet(card.dataset.meet);
 });
