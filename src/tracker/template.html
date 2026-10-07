@@ -3241,6 +3241,31 @@ function tabs(){
     .map(y => `<button class="yr" role="tab" data-y="${y}" aria-selected="${y===year}">${YLABEL(y)}</button>`).join('');
 }
 
+/** A swimmer's events inside the chosen seasons. The card's chart and its
+    event-by-event list drew every race whatever the seasons said; now an
+    event keeps only the races in range, and its first and latest time and
+    change are worked out from those. An event with none in range is left
+    out. Memoised per render, since 179 cards ask. */
+let spanEventsKey = '', spanEventsMemo = new Map();
+function spanEvents(s){
+  const [lo, hi] = fSpan();
+  const key = lo + '|' + hi;
+  if (key !== spanEventsKey) { spanEventsKey = key; spanEventsMemo = new Map(); }
+  if (spanEventsMemo.has(s.name)) return spanEventsMemo.get(s.name);
+  const out = (s.events || []).map(e => {
+    const all = e.points || [];
+    const pts = all.filter(p => { const y = String(p.d).slice(0, 4); return y >= lo && y <= hi; });
+    if (pts.length === all.length) return e;
+    if (!pts.length) return null;
+    const a = pts[0], z = pts[pts.length - 1];
+    return { ...e, points: pts, swims: pts.length, first: a.t, last: z.t,
+             firstDate: String(a.d).slice(0, 7), lastDate: String(z.d).slice(0, 7),
+             pct: pts.length > 1 ? Math.round((z.t - a.t) / a.t * 1000) / 10 : null };
+  }).filter(Boolean);
+  spanEventsMemo.set(s.name, out);
+  return out;
+}
+
 function swimmerCard(s){
   // Every tier-2 and coach field has to be treated as possibly absent. That is
   // the whole mechanism in src/lib/tiers.ts: the payload is shaped by OMITTING
@@ -3256,7 +3281,7 @@ function swimmerCard(s){
   // Two lines per event: what it is and how it moved, then the times behind
   // it. The grid this replaces gave the times priority and squeezed the event
   // name and the change to nothing on a phone.
-  const evs = (s.events || []).map(e => `
+  const evs = spanEvents(s).map(e => `
     <div class="evrow">
       <div class="evtop"><span class="e">${esc(e.event)}</span><span class="c">${e.course}</span>
         <span class="trend ${trendCls(e.pct)}">${pct(e.pct)}</span></div>
@@ -3302,7 +3327,7 @@ function swimmerCard(s){
   // Trend charts. Chips pick the event; one chart shows at a time, which is the
   // only version that works at 390px — a child can have 22 chartable series.
   // Most-raced event first, since that is the one with the most to say.
-  const chartable = (s.events || []).filter(e => (e.points || []).length >= MIN_RACES)
+  const chartable = spanEvents(s).filter(e => (e.points || []).length >= MIN_RACES)
     .slice().sort((a, b) => b.swims - a.swims || a.event.localeCompare(b.event))
     // The chart keeps the full career baseline including races swum for other
     // clubs, so it has to show where NextGen actually starts.
