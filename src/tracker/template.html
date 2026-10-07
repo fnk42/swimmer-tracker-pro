@@ -337,6 +337,15 @@ details.sw .trend .rate{display:block}
 .prof h4{font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);margin:0 0 9px}
 .chips{display:flex;gap:7px;flex-wrap:wrap}
 .chip{font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;background:var(--sunken);border:1px solid var(--line)}
+/* Where they sit in their age group: one line, a slim track, one note. */
+.agepos{margin:2px 0 14px}
+.agepos p{margin:0;font-size:14px}
+.agepos.none{color:var(--muted);font-size:13px;margin:2px 0 14px}
+.agepos .ap-track{position:relative;display:block;height:6px;margin:9px 0 7px;border-radius:999px;
+  background:linear-gradient(90deg,var(--ice),rgba(22,166,232,.35))}
+.agepos .ap-track i{position:absolute;top:50%;width:13px;height:13px;margin:-6.5px 0 0 -6.5px;border-radius:50%;
+  background:var(--electric);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--electric)}
+.agepos .ap-sub{font-size:12px;color:var(--muted)}
 /* The profile chips are names only, and all five fit one line on a phone. */
 .prof .chips{flex-wrap:nowrap;gap:5px}
 .prof .chip{font-size:11.5px;padding:4px 8px;white-space:nowrap}
@@ -1177,6 +1186,10 @@ details.ev .evmeta{margin-left:auto;font-size:12px;color:var(--muted);white-spac
 .swlb li.none:hover{background:none}
 .pw-span{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12.5px;
   font-weight:700;color:var(--ink)}
+.follownote{margin:10px 0 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  font-size:13px;font-weight:600;color:var(--electric-deep)}
+.follownote .fn-x{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--muted);
+  border-radius:999px;width:30px;height:30px;font:inherit;font-size:13px;cursor:pointer}
 .fb-clear{appearance:none;border:0;background:none;font:inherit;font-size:12px;
   font-weight:600;color:var(--electric-deep);text-decoration:underline;cursor:pointer;
   padding:0;white-space:nowrap}
@@ -2170,6 +2183,11 @@ function dashRatedList(rows){
 
 let fBand = '';             // '' = every age band
 let fStroke = '';           // '' = every stroke
+// The swimmer chosen in search, and the filters that choice set for them.
+// Choosing a swimmer narrows the age (and the stroke, if they race only one)
+// to theirs; ✕ or clearing the search puts back what was there before.
+let selSw = '';
+let autoBand = null, autoStroke = null;   // { prev } while the swimmer set it
 let fFrom = '', fTo = '';   // season span; '' at both ends = follow the year chip
 
 const STROKE_LIST = ['Free', 'Back', 'Breast', 'Fly', 'IM'];
@@ -2244,6 +2262,35 @@ function fScope(){
 }
 
 /** The bar itself. `withSearch` is for the Swimmers page only. */
+function followSwimmer(name){
+  const s = (DATA.years.all.swimmers || []).find(x => x.name === name);
+  selSw = name;
+  if (!s) return;
+  if (s.band && fBand !== s.band) {
+    if (!autoBand) autoBand = { prev: fBand };
+    fBand = s.band;
+  }
+  const strokes = new Set((s.events || []).map(e => strokeOf(e.event)).filter(Boolean));
+  if (strokes.size === 1) {
+    const only = [...strokes][0];
+    if (fStroke !== only) { if (!autoStroke) autoStroke = { prev: fStroke }; fStroke = only; }
+  }
+}
+function unfollowSwimmer(){
+  selSw = '';
+  if (autoBand) { fBand = autoBand.prev; autoBand = null; }
+  if (autoStroke) { fStroke = autoStroke.prev; autoStroke = null; }
+}
+/** "Showing 9-10, Daniel's age group ✕": the change the choice made, said and undoable. */
+function followNote(){
+  if (!selSw || (!autoBand && !autoStroke)) return '';
+  const first = (selSw.split(',')[1] || selSw).trim().split(/\s+/)[0];
+  const what = [autoBand ? `${esc(fBand)}, ${esc(first)}\u2019s age group` : '',
+                autoStroke ? `${esc(fStroke)} only, the one stroke ${esc(first)} races` : ''].filter(Boolean).join(' · ');
+  return `<p class="follownote">Showing ${what}
+    <button type="button" class="fn-x" aria-label="Show every age group again">\u2715</button></p>`;
+}
+
 function filterBar(withSearch){
   const ys = YEARS.filter(y => y !== 'all').sort();
   const [lo, hi] = fSpan();
@@ -3138,6 +3185,54 @@ function timeLink(name, e, p, shown){
     aria-label="${esc(swimTime(shown))}, ${esc(m ? meetName(m.name) : 'the meet')}: open the results">${swimTime(shown)}</button>`;
 }
 
+/** Where a swimmer's times sit among the rest of their age group, over the
+    chosen seasons. Each swim already carries its gap to the middle time for
+    the swimmer's age in that event (vsBand); a swimmer's figure is the median
+    of those gaps, and the line says what share of the others in their age
+    group they are quicker than, to the nearest tenth. Times, not yearly
+    rates: rates did not read clearly (Felix, 7 Oct 2026). Needs 3 such swims
+    from the swimmer and 6 placed swimmers in the group, or says nothing. */
+let agePosKey = '', agePosMemo = null;
+function agePos(name){
+  const MS = DATA.meetSwims;
+  if (!MS) return null;
+  const [lo, hi] = fSpan();
+  if (agePosKey !== lo + '|' + hi) {
+    agePosKey = lo + '|' + hi;
+    const vb = MS.cols.indexOf('vsBand');
+    const date = new Map(MS.meets.map(m => [m.id, m.date.slice(0, 4)]));
+    const per = new Map();
+    for (const r of MS.rows) {
+      if (r[vb] === null) continue;
+      const y = date.get(r[0]); if (!y || y < lo || y > hi) continue;
+      const nm = MS.swimmers[r[1]];
+      (per.get(nm) || per.set(nm, []).get(nm)).push(r[vb]);
+    }
+    const band = new Map((DATA.years.all.swimmers || []).map(x => [x.name, x.band]));
+    const score = new Map();
+    for (const [nm, v] of per) if (v.length >= 3 && band.get(nm)) score.set(nm, { m: med(v), n: v.length, band: band.get(nm) });
+    agePosMemo = score;
+  }
+  const me = agePosMemo.get(name);
+  if (!me) return null;
+  const others = [...agePosMemo.entries()].filter(([nm, x]) => nm !== name && x.band === me.band);
+  if (others.length + 1 < MIN_BAND_N) return null;
+  const quicker = others.filter(([, x]) => x.m > me.m).length / others.length;
+  return { band: me.band, n: me.n, tenths: Math.round(quicker * 10), frac: quicker };
+}
+function agePosLine(s){
+  const a = agePos(s.name);
+  const [lo, hi] = fSpan();
+  const when = lo === hi ? lo : `${lo}\u2013${hi}`;
+  if (!a) return `<p class="agepos none">Not enough races yet to place among the other ${esc(s.band || 'age group')} swimmers.</p>`;
+  const words = a.tenths >= 10 ? `Quicker than nearly all of the other ${esc(a.band)} swimmers`
+    : a.tenths <= 0 ? `Still catching up with the other ${esc(a.band)} swimmers`
+    : `Quicker than about ${a.tenths} in 10 of the other ${esc(a.band)} swimmers`;
+  return `<div class="agepos"><p><b>${words}.</b></p>
+    <span class="ap-track" aria-hidden="true"><i style="left:${(a.frac * 100).toFixed(0)}%"></i></span>
+    <p class="ap-sub">From ${a.n} races in ${when}, each set against the middle time for their age in that event.</p></div>`;
+}
+
 function swimmerCard(s){
   // Every tier-2 and coach field has to be treated as possibly absent. That is
   // the whole mechanism in src/lib/tiers.ts: the payload is shaped by OMITTING
@@ -3262,6 +3357,7 @@ function swimmerCard(s){
            parent (Felix, 7 Oct 2026). The name and the plain facts only. -->
     </summary>
     <div class="sw-body">
+      ${agePosLine(s)}
       ${(strokes||dists) ? `<div class="profile">
         ${strokes?`<div class="prof"><h4>Stroke profile</h4><div class="chips">${strokes}</div></div>`:''}
         ${dists?`<div class="prof"><h4>Distance profile</h4><div class="chips">${dists}</div></div>`:''}
@@ -3976,6 +4072,7 @@ function render(){
         <p class="sec-sub">Search a name, or tap a swimmer.</p>
     
     ${filterBar(true)}
+    ${followNote()}
     ${fNote(FS)}
     <!-- Every swimmer by name. The development groups are gone: "in line with
          their age" and the rest did not read clearly (Felix, 7 Oct 2026). -->
@@ -4233,22 +4330,30 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
     if (fFrom > fTo) fFrom = fTo;
     render();
   });
+  // A filter changed by hand is the reader's, no longer the swimmer's.
   document.querySelectorAll('.fbar .f-band button').forEach(b => b.onclick = () => {
-    fBand = b.dataset.band || ''; render();
+    fBand = b.dataset.band || ''; autoBand = null; render();
   });
   document.querySelectorAll('.fbar .f-stroke button').forEach(b => b.onclick = () => {
-    fStroke = b.dataset.stroke || ''; render();
+    fStroke = b.dataset.stroke || ''; autoStroke = null; render();
   });
   // The phone's selects carry the same state as the chips they replace.
   document.querySelectorAll('.fbar .f-band-sel').forEach(el => el.onchange = e => {
-    fBand = e.target.value; render();
+    fBand = e.target.value; autoBand = null; render();
   });
   document.querySelectorAll('.fbar .f-stroke-sel').forEach(el => el.onchange = e => {
-    fStroke = e.target.value; render();
+    fStroke = e.target.value; autoStroke = null; render();
   });
   document.querySelectorAll('.fbar .fb-clear').forEach(b => b.onclick = () => {
-    fBand = fStroke = ''; fFrom = fTo = ''; render();
+    fBand = fStroke = ''; fFrom = fTo = ''; autoBand = autoStroke = null; render();
   });
+  const fnx = document.querySelector('.follownote .fn-x');
+  if (fnx) fnx.onclick = () => {
+    if (autoBand) { fBand = autoBand.prev; autoBand = null; }
+    if (autoStroke) { fStroke = autoStroke.prev; autoStroke = null; }
+    render();
+    showSelected();
+  };
 
   const twc = document.querySelector('.tw-change');
   if (twc) twc.onclick = () => {
@@ -4371,6 +4476,10 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
   wireSearch();
   filter();
   showPage(page);
+  // The box shows the chosen name as written, not as lower-cased for matching.
+  const sq = document.getElementById('swq');
+  if (sq && selSw && sq.value.toLowerCase() === selSw.toLowerCase()) sq.value = selSw;
+  syncUrl();
 }
 
 // ---------------------------------------------------------------------------
@@ -4386,7 +4495,7 @@ let PAGES = ALL_PAGES;
 let page = routeFromHash();
 
 function routeFromHash(){
-  const h = (location.hash || '').replace(/^#\/?/, '');
+  const h = (location.hash || '').replace(/^#\/?/, '').split('?')[0];
   return PAGES.includes(h) ? h : PAGES[0];
 }
 
@@ -4472,10 +4581,75 @@ function showPage(p){
 // The click is handled directly now, so switching never depends on an event
 // arriving. hashchange stays for the back button and for a pasted link.
 function goTo(p){
-  if (location.hash !== '#/' + p) location.hash = '#/' + p;
+  saveScroll();
+  if (p !== page) history.pushState({ y: 0, autoBand, autoStroke }, '', urlFor(p));
   showPage(p);
   window.scrollTo({ top: 0, behavior: 'auto' });
 }
+
+// ---- the address holds the view ------------------------------------------
+// The tab, the swimmer chosen in search, and the filters live in the address
+// (#/swimmers?swimmer=Njenga%2C+Daniel&age=9-10&from=2025&to=2026), so a
+// reload or a shared link shows what the sender saw. A tab is a history
+// entry; a filter change replaces the current one, so back does not step
+// through every click. Each entry remembers its scroll position.
+history.scrollRestoration = 'manual';
+function urlFor(p){
+  const q = new URLSearchParams();
+  if (selSw) q.set('swimmer', selSw);
+  if (fBand) q.set('age', fBand);
+  if (fStroke) q.set('stroke', fStroke);
+  if (fFrom) q.set('from', fFrom);
+  if (fTo) q.set('to', fTo);
+  const qs = q.toString();
+  return location.pathname + location.search + '#/' + p + (qs ? '?' + qs : '');
+}
+// What the address cannot say: which filters the chosen swimmer set, and
+// what they replaced. Kept on the history entry, so back brings the
+// "Showing 8 & under, Lisa's age group ✕" note back with the filter.
+const entryState = () => ({ ...(history.state || {}), y: window.scrollY, autoBand, autoStroke });
+function syncUrl(){
+  // Not while a meet's results are open: that view has its own entry.
+  if (!document.querySelector('#app section[data-page]')) return;
+  history.replaceState(entryState(), '', urlFor(page));
+}
+/** The filters and swimmer named in the address. Unknown values are ignored. */
+function readUrl(){
+  const h = (location.hash || '').replace(/^#\/?/, '');
+  const i = h.indexOf('?');
+  const q = new URLSearchParams(i < 0 ? '' : h.slice(i + 1));
+  const ys = YEARS.filter(y => y !== 'all');
+  const one = (k, ok) => { const v = q.get(k) || ''; return ok(v) ? v : ''; };
+  fBand = one('age', v => BAND_ORDER.includes(v));
+  fStroke = one('stroke', v => STROKE_LIST.includes(v));
+  fFrom = one('from', v => ys.includes(v));
+  fTo = one('to', v => ys.includes(v));
+  if (fFrom && fTo && fFrom > fTo) [fFrom, fTo] = [fTo, fFrom];
+  if (fFrom && !fTo) fTo = ys[0]; if (fTo && !fFrom) fFrom = ys[ys.length - 1];
+  const st = history.state || {};
+  autoBand = st.autoBand && fBand ? st.autoBand : null;
+  autoStroke = st.autoStroke && fStroke ? st.autoStroke : null;
+  const sw = q.get('swimmer') || '';
+  selSw = (DATA.years.all.swimmers || []).some(x => x.name === sw) ? sw : '';
+  fQ = selSw.toLowerCase();
+  if (selSw) twA = selSw;
+}
+/** After a render from the address: the chosen swimmer's card open, and the
+    search box saying who. */
+function showSelected(){
+  const q = document.getElementById('swq'); if (q && selSw) q.value = selSw;
+  const card = selSw && [...document.querySelectorAll('#list details.sw')].find(d => d.dataset.aname === selSw);
+  if (card) card.open = true;
+  return card;
+}
+let scrollSaveT = null;
+function saveScroll(){
+  if (!document.querySelector('#app section[data-page]')) return;
+  history.replaceState(entryState(), '', location.href);
+}
+window.addEventListener('scroll', () => {
+  clearTimeout(scrollSaveT); scrollSaveT = setTimeout(saveScroll, 150);
+}, { passive: true });
 
 document.getElementById('sidenav').addEventListener('click', e => {
   const a = e.target.closest('a[data-page]');
@@ -4490,7 +4664,9 @@ function openSwimmer(name){
   if (!PAGES.includes('swimmers')) return;
   if (twNames.includes(name)) twA = name;
   fQ = name.toLowerCase();
-  if (location.hash !== '#/swimmers') location.hash = '#/swimmers';
+  followSwimmer(name);
+  saveScroll();
+  if (page !== 'swimmers') history.pushState({ y: 0, autoBand, autoStroke }, '', urlFor('swimmers'));
   page = 'swimmers';
   render();
   const q = document.getElementById('swq'); if (q) q.value = name;
@@ -4576,6 +4752,14 @@ function wireSearch(){
   }
   q.oninput = () => {
     clearTimeout(swDebounce);
+    // Emptying the box lets go of the chosen swimmer and puts back the
+    // filters their choice set. The box is redrawn by render, so focus is
+    // handed back to it.
+    if (selSw && !q.value.trim()) {
+      fQ = ''; unfollowSwimmer(); render();
+      const q2 = document.getElementById('swq'); if (q2) q2.focus({ preventScroll: true });
+      return;
+    }
     swDebounce = setTimeout(() => { fQ = q.value.toLowerCase(); filter(); open(); }, 200);
   };
   q.onfocus = () => { lift(); if (q.value.trim().length >= 2) setTimeout(open, 250); };
@@ -4591,12 +4775,12 @@ function wireSearch(){
   const choose = name => {
     close(); clearTimeout(swDebounce);
     q.value = name; fQ = name.toLowerCase();
-    // Follow a swimmer follows the search: the same child, without picking twice.
-    if (twNames.includes(name) && twA !== name) {
-      twA = name;
-      render();                       // redraws Follow; the search box keeps fQ
-      const q2 = document.getElementById('swq'); if (q2) q2.value = name;  // as written, not lower-cased
-    } else filter();
+    // Progress and the filters follow the search: the same child, their age
+    // group, without picking twice.
+    if (twNames.includes(name)) twA = name;
+    followSwimmer(name);
+    render();
+    const q2 = document.getElementById('swq'); if (q2) q2.value = name;  // as written, not lower-cased
     const card = [...document.querySelectorAll('#list details.sw')].find(d => d.dataset.aname === name);
     if (!card) return;
     card.open = true;
@@ -4846,13 +5030,23 @@ async function openMeet(id, focus){
   // returns to the meet list instead of skipping to an earlier tab.
   history.pushState({ meet: id }, '', location.href);
 }
-window.addEventListener('popstate', () => {
+window.addEventListener('popstate', e => {
   if (!document.querySelector('#app section[data-page]') && document.querySelector('#app .here')) {
     closeMeet();
     // The browser restores its own scroll after popstate; put the list back
     // where the reader was once it has.
     requestAnimationFrame(() => window.scrollTo({ top: meetReturn, behavior: 'auto' }));
+    return;
   }
+  if (!DATA || !DATA.years || !DATA.years.all) return;
+  // Another entry: take its tab, filters and swimmer from the address, and
+  // its scroll position from the entry itself.
+  readUrl();
+  page = routeFromHash();
+  render();
+  showSelected();
+  const y = (e.state && e.state.y) || 0;
+  requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'auto' }));
 });
 
 function renderMeet(m, focus){
@@ -5030,7 +5224,12 @@ function draw(){
     sub.textContent = 'Every race, every season · '
       + seasons[seasons.length-1] + ' to ' + seasons[0];
   }
+  readUrl();
+  page = routeFromHash();
   tabs(); render();
+  // A shared link to a swimmer lands on their card.
+  const card = showSelected();
+  if (card) requestAnimationFrame(() => card.scrollIntoView({ block: 'start', behavior: 'auto' }));
 }
 
 boot();
