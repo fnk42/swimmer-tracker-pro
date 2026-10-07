@@ -312,6 +312,9 @@ details.sw .trend .rate{display:block}
 .prof h4{font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);margin:0 0 9px}
 .chips{display:flex;gap:7px;flex-wrap:wrap}
 .chip{font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;background:var(--sunken);border:1px solid var(--line)}
+/* The profile chips are names only, and all five fit one line on a phone. */
+.prof .chips{flex-wrap:nowrap;gap:5px}
+.prof .chip{font-size:11.5px;padding:4px 8px;white-space:nowrap}
 .chip .dot{margin-right:5px}
 .evlist{margin-top:16px}
 /* Event name, course, times and the trend each held their own grid column but
@@ -590,6 +593,12 @@ details.sw .trend .rate{display:block}
 .tw-legend{display:flex;align-items:center;flex-wrap:wrap;gap:5px 7px;margin:10px 0 0;
   font-size:11px;color:var(--muted)}
 .tw-legend span{flex:0 0 auto}
+/* One legend item per line, in smaller type: side by side they wrapped
+   mid-item on a phone, leaving "Free" on one line and "2.8% faster" on the
+   next. */
+.tw-legend{flex-direction:column;align-items:flex-start;gap:4px;font-size:11.5px}
+.tw-legend .lg{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.tw-legend .lg small{margin-left:0}
 .k-line{width:15px;height:2px;border-radius:2px;background:var(--muted)}
 .k-trend{width:15px;height:0;border-top:2px dashed var(--muted);opacity:.7}
 .k-pb{width:8px;height:8px;border-radius:50%;background:var(--gold)}
@@ -1605,7 +1614,7 @@ const TIPS = {
   'g-stable':    { t: 'Within 2%/yr of what is typical for their age.', a: 'groups' },
   'g-review':    { t: 'More than 2%/yr below what is typical for their age. Usually still getting faster; worth a look, not a verdict.', a: 'groups' },
   chart:     { t: 'A line that falls is a swimmer getting faster. Each line is one stroke at one distance and pool length.', a: 'chart' },
-  follow:    { t: "Each dot is one meet: how much faster than their first swim in each event. The grey line is the typical swimmer their age, measured the same way. \u22125% is five per cent quicker.", a: 'chart' },
+  follow:    { t: "Each dot is one meet: how much faster than their first swim in each event. \u22125% is five per cent quicker.", a: 'chart' },
 };
 /** An info button. `extra` is one more sentence specific to this spot. */
 function ib(key, label, extra){
@@ -1620,62 +1629,7 @@ function ib(key, label, extra){
 // (Felix, 7 Oct 2026). Must match ATH in NextGen/tools/analytics.py.
 const GROUP_LINES = { fast: -6, improving: -2, stable_hi: 2 };
 
-const GROUPS = [
-  {k:'fast',      slug:'fast',      t:'Well ahead for their age',
-   d:'6%/yr or more faster than is typical for their age'},
-  {k:'improving', slug:'improving', t:'Ahead for their age',
-   d:'2 to 6%/yr faster than is typical for their age'},
-  {k:'stable',    slug:'stable',    t:'In line with their age',
-   d:'within 2%/yr of what is typical for their age'},
-  {k:'review',    slug:'review',    t:'Below typical for their age',
-   d:'more than 2%/yr below what is typical for their age, usually still getting faster — worth a look'},
-  {k:'unrated',   slug:'unrated',   t:'Not enough data',
-   d:'not enough racing yet to measure a trend — each swimmer says why'},
-];
-/** Why this swimmer has no rate, in the words that are actually true of them.
- *
- *  Four cases, in the order they bite: no second swim, no second day, no event
- *  raced twice, and raced twice but too close together to annualise.
- */
-/** The events this swimmer has raced exactly once, named.
- *  Empty when the pipeline sent none, so nothing is claimed that is not known. */
-function evList(s, label){
-  const ev = s.onceEvents || [];
-  if (!ev.length) return '';
-  return `<span class="once"><b>${esc(label)}:</b> ${ev.map(esc).join(' &middot; ')}</span>`;
-}
 
-function whyUnrated(s){
-  if (!s.nocompare && s.trend !== null && s.trend !== undefined) return '';
-  const n = s.swims || 0, m = s.meets || 0, reps = (s.events || []).length;
-  let why;
-  if (n < 2) {
-    why = `Only one timed swim on record. A trend needs the same event swum at least twice.`;
-  } else if (!reps) {
-    // The precise cause, and the one that tells them what would fix it. Saying
-    // "all at one meet" was true of these swimmers but sounded like the meet
-    // was the problem; the problem is that every event was swum once, so no
-    // event has a second time to measure the first against.
-    //
-    // The events are named, because that turns a rule into a next step: a coach
-    // reading "50 Fly SCM, 50 Free SCM …, each once" knows what to enter them
-    // for, where "repeat an event" leaves them to work it out.
-    why = `${n} races, but each event only once${m < 2 ? `, all at the same meet` : ``} —
-      so there is no second 50 Fly to measure the first 50 Fly against, and the same for
-      every other event. Every event is tracked on its own, never against a different
-      distance or stroke, so a trend needs one of them raced twice.
-      ${evList(s, 'Raced once each')}`;
-  } else if (m < 2) {
-    why = `All ${n} races were at one meet. The same event was swum more than once, but on
-      the same day, so no time has passed for a trend to be measured over.`;
-  } else {
-    why = `${n} races across ${m} meets, and an event has been repeated — but the repeats
-      fall less than ${MIN_SPAN_DAYS} days apart. A few weeks is too short a window to turn
-      into a yearly figure honestly.
-      ${evList(s, 'Also raced once each')}`;
-  }
-  return `<p class="nodata">${why}</p>`;
-}
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 // A swimmer who took 22.7% off their time is 22.7% FASTER. Showing that as
@@ -1831,24 +1785,7 @@ function windowRating(lo, hi){
 const signed = v => v === null || v === undefined ? '\u2014'
   : (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(1);
 
-/** How a rate sits against its age band, in words. */
-function vsNorm(adj, band){
-  if (adj === null || adj === undefined) return '';
-  const a = Math.abs(adj);
-  if (a < 1.5) return `about what ${band} typically gain`;
-  return adj < 0
-    ? `${a.toFixed(1)}%/yr more than ${band} typically gain`
-    : `${a.toFixed(1)}%/yr less than ${band} typically gain`;
-}
 
-/** Where the comparison came from: their own age band, or the club median
-    standing in because the band was too thin to have a norm of its own. */
-function normNote(sw){
-  if (sw.ageNorm === null || sw.ageNorm === undefined) return '';
-  return sw.normOwn
-    ? `${sw.band} benchmark, ${sw.normN} rated`
-    : `club benchmark (${sw.normN} rated) — too few in ${sw.band}`;
-}
 
 // ---------------------------------------------------------------------------
 // Trend charts: one event, one course, one child.
@@ -2454,9 +2391,8 @@ function meetSection(){
 
 
 /* ---- Progress: one swimmer over time --------------------------------------
-   One swimmer, meet by meet, against their own first swims, with the typical
-   swimmer their age drawn in grey. A span bar above the chart says how long
-   they have been racing before the line says how far they have come. */
+   One swimmer, meet by meet, against their own first swims. Nothing else on
+   the chart. */
 
 let twA = '';               // swimmer names; '' = pick one
 // Progress is drawn one way only: meet by meet, against where the swimmer
@@ -2520,11 +2456,8 @@ function twoSection(){
     return Object.entries(n).sort((x, y) => y[1] - x[1])[0]?.[0] || 'Free';
   })();
 
-  // One child, set against their own age group. Children are never put side
-  // by side: what a parent or coach is shown is this swimmer against the
-  // typical swimmer their age (Felix, 7 Oct 2026). "Compare with" is gone.
-  const bandOf = new Map((DATA.years.all.swimmers || []).map(s => [s.name, s.band]));
-  const aBand = bandOf.get(a) || null;
+  // One child, on their own: no second swimmer and no age-group line
+  // (Felix, 7 Oct 2026).
   const picked = [a];
   if (!picked.length) return '';
 
@@ -2569,32 +2502,6 @@ function twoSection(){
 
   if (!series.length) return `<p class="nodata">Nothing to plot for this swimmer.</p>`;
 
-  // The age group, measured exactly as the swimmer is: every other swimmer in
-  // the band, the same baseline and stroke, grouped the same way, and the
-  // middle of them taken at each point this swimmer has. A point needs three
-  // of them, so it is never one other child under another name.
-  if (aBand && series[0].pts.length) {
-    const bc = MS.cols.indexOf(twBaseUsed);
-    const keys = new Set(series[0].pts.map(p => p.k));
-    const per = new Map();                         // key -> Map(swimmer -> values)
-    for (const r of MS.rows) {
-      const nm = MS.swimmers[r[1]];
-      if (nm === a || bandOf.get(nm) !== aBand || r[bc] === null) continue;
-      const m = meetById.get(r[0]); if (!m) continue;
-      if (m.date.slice(0, 4) < SC.lo || m.date.slice(0, 4) > SC.hi) continue;
-      const st = strokeOf((MS.events[r[2]] || '').split('|')[0]);
-      if (twBy !== 'stroke' && st !== twStroke) continue;
-      const k = twBy === 'season' ? m.date.slice(0, 4) : twBy === 'stroke' ? st : m.id;
-      if (!keys.has(k)) continue;
-      const g = per.get(k) || new Map(); const v = g.get(nm) || []; v.push(r[bc]); g.set(nm, v); per.set(k, g);
-    }
-    const med = xs => { const z = [...xs].sort((x, y) => x - y), h = z.length >> 1; return z.length % 2 ? z[h] : (z[h - 1] + z[h]) / 2; };
-    const bpts = series[0].pts.map(p => {
-      const g = per.get(p.k); if (!g || g.size < 3) return null;
-      return { k: p.k, label: p.label, date: p.date, mean: med([...g.values()].map(v => v.reduce((x, y) => x + y, 0) / v.length)), n: g.size };
-    }).filter(Boolean);
-    if (bpts.length) series.push({ name: aBand + ' typical', isBand: true, colour: '#8FA3B8', pts: bpts, races: 0 });
-  }
   // The chosen swimmer has no race at all under these filters — nearly always
   // a stroke they do not swim. Say which, and leave every control in place so
   // the next click is a stroke change rather than a reload.
@@ -2603,7 +2510,7 @@ function twoSection(){
       + `${fActive() ? ' under these filters' : ''}.`
     : '';
 
-  // The axis categories, needed by the span bars below as well as the chart.
+  // The axis categories.
   // Keyed by meet id, but a meet id is not a label — carry the readable form
   // alongside the key: the axis was printing "20250829-ncsa-inter-cl".
   const catMap = new Map();
@@ -2613,24 +2520,6 @@ function twoSection(){
   const cats = [...catMap.values()].sort((x, y) => twBy === 'stroke'
     ? x.label.localeCompare(y.label) : x.date.localeCompare(y.date));
   const catKeys = cats.map(c => c.k);
-  const UNIT = twBy === 'meet' ? 'meets' : twBy === 'season' ? 'seasons' : 'strokes';
-
-  // ---- the span bars, drawn before anything else -------------------------
-  const own = series.filter(s => !s.isBand);     // the age group has no window of its own
-  const lo = own.map(s => s.from).sort()[0];
-  const hi = own.map(s => s.to).sort().slice(-1)[0];
-  const t0 = new Date(lo).getTime(), t1 = new Date(hi).getTime() || t0 + 1;
-  const spanBars = `<div class="twspan">${own.map(s => {
-    const l = (new Date(s.from).getTime() - t0) / (t1 - t0 || 1) * 100;
-    const w = (new Date(s.to).getTime() - new Date(s.from).getTime()) / (t1 - t0 || 1) * 100;
-    const months = Math.round((new Date(s.to) - new Date(s.from)) / 2629800000);
-    return `<div class="tws-row">
-      <span class="tws-nm" style="color:${s.colour}">${esc(shortName(s.name))}</span>
-      <span class="tws-track"><i style="left:${l.toFixed(1)}%;width:${Math.max(1.5, w).toFixed(1)}%;
-        background:${s.colour}"></i></span>
-      <span class="tws-t" title="${months} months · at ${s.pts.length} of the ${cats.length} ${UNIT} shown">${monYr(s.from)} \u2013 ${monYr(s.to)} · ${s.races} race${s.races === 1 ? '' : 's'}</span>
-    </div>`;
-  }).join('')}</div>`;
 
   // ---- the lines ---------------------------------------------------------
   const axisLabel = c => twBy === 'meet' ? c.date.slice(0, 7)
@@ -2644,51 +2533,23 @@ function twoSection(){
   // same thing.
   const span = (vhi + pad) - (vlo - pad);
   const axisFmt = v => (span < 4 ? v.toFixed(1) : v.toFixed(0));
-  const W = 760, H = 300, P = 12, GUT = 120;
+  // No name label at the line's end: there is one swimmer, named above.
+  const W = 760, H = 300, P = 12, GUT = 12;
   const X = i => P + (cats.length === 1 ? 0.5 : i / (cats.length - 1)) * (W - P - GUT);
   const Y = v => P + ((vhi + pad - v) / ((vhi + pad) - (vlo - pad) || 1)) * (H - 2 * P);
 
-  // The axis holds every meet EITHER swimmer attended, so a swimmer who
-  // skipped one sits two categories away from their own next race. Joining
-  // only adjacent categories broke their line into loose dots — the swimmer
-  // who raced less often barely had a line at all.
-  //
-  // A swimmer's form carries across a meet they did not enter, so the line
-  // continues; it is drawn dashed over the gap, which says "they were not
-  // here" without pretending we measured them in between.
-  // Dashed for a real ABSENCE, not for every skipped category.
-  //
-  // The old rule dashed any segment that stepped over a category, which was
-  // tolerable while a dot averaged all of a swimmer's events. One stroke at a
-  // time it is not: on Breast, Dr Boit is at 6 of the 19 meets on the axis, so
-  // thirteen of his segments were gaps and the line was almost entirely
-  // dotted — which is what was reported.
-  //
-  // Measured in time instead. Across the club the median gap between two
-  // races of the same stroke is 71 days, so racing a stroke every couple of
-  // months is the normal rhythm and should draw a solid line. Six months is a
-  // layoff, and dashes 8% of segments rather than 55%.
-  const GAP_DAYS = 182;
+  // One solid line through every meet they raced the stroke at. Gaps of six
+  // months or more used to be dashed, which needed a key to explain; the
+  // dates on the axis say the same thing.
   const body = series.map(s => {
     const pts = s.pts.map(p => ({ i: catKeys.indexOf(p.k), v: p.mean, d: p.date }))
       .filter(p => p.i >= 0).sort((x, y) => x.i - y.i);
-    if (s.isBand) {
-      const d = pts.map((p, k) => `${k ? 'L' : 'M'}${X(p.i).toFixed(1)} ${Y(p.v).toFixed(1)}`).join(' ');
-      return `<path d="${d}" fill="none" stroke="${s.colour}" stroke-width="2"
-          stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` +
-        pts.map(p => `<circle cx="${X(p.i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="2.6"
-          fill="var(--surface)" stroke="${s.colour}" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`).join('');
-    }
     const segs = [];
     for (let k = 1; k < pts.length; k++) {
       const a = pts[k - 1], b = pts[k];
-      const away = (a.d && b.d)
-        ? (new Date(b.d) - new Date(a.d)) / 86400000 > GAP_DAYS
-        : b.i - a.i > 1;
       segs.push(`<path d="M${X(a.i).toFixed(1)} ${Y(a.v).toFixed(1)}
         L${X(b.i).toFixed(1)} ${Y(b.v).toFixed(1)}" fill="none" stroke="${s.colour}"
-        stroke-width="2.6" stroke-linecap="round"${away
-          ? ' stroke-dasharray="3 4" opacity=".55"' : ''}
+        stroke-width="2.6" stroke-linecap="round"
         vector-effect="non-scaling-stroke"/>`);
     }
     return segs.join('') +
@@ -2697,24 +2558,17 @@ function twoSection(){
         vector-effect="non-scaling-stroke"/>`).join('');
   }).join('');
 
-  const { labs, fs } = stackLabels(series.map(s => {
-    const last = s.pts[s.pts.length - 1];
-    return { name: s.isBand ? s.name : shortName(s.name), colour: s.colour,
-             y: Y(last.mean), ty: Y(last.mean), x: X(catKeys.indexOf(last.k)) };
-  }), H, 15);
 
-  const others = all.filter(n => n !== a);
   return `
   <section class="wrap" id="s0c" data-page="swimmers">
     <div class="sec-head"><span class="sec-num">00</span><h2>Progress${ib('follow', 'the Progress chart')}</h2><a class="faq-link" href="/faq#chart">FAQ</a></div>
-    <p class="sec-sub"><b>${esc(a)}</b> · ${esc(twStroke)}, meet by meet, against where they
-      started.${aBand ? ` Grey is the typical ${esc(aBand)} swimmer.` : ''}
+    <p class="sec-sub"><b>${esc(a)}</b> · ${esc(twStroke)}, meet by meet: how much faster than
+      their first swim in each event.
       <button type="button" class="tw-change">Search another swimmer</button></p>
 
     ${twEmpty ? `<p class="nodata" style="margin-top:14px">${twEmpty} Choose another stroke in the
       filter bar.</p>` : `
     <div class="dbody solo"><div class="dmain">
-      ${spanBars}
       <div class="dchart dchart-big">
         <div class="dc-y"><span>+${axisFmt(vhi + pad)}%<i>slower</i></span>
           <span>${axisFmt(vlo - pad)}%<i>faster</i></span></div>
@@ -2724,29 +2578,11 @@ function twoSection(){
           <line x1="${P}" y1="${Y(0).toFixed(1)}" x2="${(W - GUT).toFixed(1)}"
             y2="${Y(0).toFixed(1)}" class="dz"/>
           ${body}
-          ${labs.map(l => `<line x1="${(l.x + 2).toFixed(1)}" y1="${l.y.toFixed(1)}"
-              x2="${(W - GUT + 3).toFixed(1)}" y2="${l.ty.toFixed(1)}" class="dlead"
-              stroke="${l.colour}"/>
-            <text class="dlab" x="${(W - GUT + 6).toFixed(1)}" y="${(l.ty + 3).toFixed(1)}"
-              style="font-size:${fs.toFixed(1)}px" fill="${l.colour}">${esc(l.name)}</text>`).join('')}
         </svg>
         <div class="dc-x" style="padding-right:${(GUT / W * 100).toFixed(1)}%">
           <span>${esc(axisLabel(cats[0]))}</span>
           <span>${esc(axisLabel(cats[cats.length - 1]))}</span></div></div>
       </div>
-
-      <!-- "One dot = one meet…" lives in the info button on the section title. -->
-      <p class="dkey">
-        ${series.some(x => x.isBand) ? `<span><svg width="36" height="9" aria-hidden><line x1="1" y1="4.5" x2="35" y2="4.5"
-          stroke="#8FA3B8" stroke-width="2"/></svg>
-          typical ${esc(aBand)} swimmer</span>` : ''}
-        <span><svg width="36" height="9" aria-hidden><line x1="1" y1="4.5" x2="35" y2="4.5"
-          stroke="currentColor" stroke-width="2.4"/></svg>
-          racing regularly</span>
-        <span><svg width="36" height="9" aria-hidden><line x1="1" y1="4.5" x2="35" y2="4.5"
-          stroke="currentColor" stroke-width="2.4" stroke-dasharray="3 4" opacity=".6"/></svg>
-          six months or more between races</span>
-      </p>
 
     </div></div>
     `}
@@ -3152,10 +2988,10 @@ function chartCardDistance(g){
     <div class="tw-xaxis"><span>${monthLabel(dates[0])}</span>
       <span>${monthLabel(dates[dates.length - 1])}</span></div>
     <p class="tw-legend">${series.map(x =>
-      `<span class="k-stroke" style="background:${x.colour}"></span>${esc(x.stroke)}
-       <small class="${trendCls(x.pct)}">${pct(x.pct)}</small>`).join('')}
-      <span class="k-pb"></span>fastest ever
-      ${g.events[0] && g.events[0].joined ? `<span class="k-join"></span>joined NextGen` : ''}</p>
+      `<span class="lg"><span class="k-stroke" style="background:${x.colour}"></span>${esc(x.stroke)}
+       <small class="${trendCls(x.pct)}">${pct(x.pct)}</small></span>`).join('')}
+      <span class="lg"><span class="k-pb"></span>fastest ever</span>
+      ${g.events[0] && g.events[0].joined ? `<span class="lg"><span class="k-join"></span>joined NextGen</span>` : ''}</p>
     <span class="sr-only">${g.dist}m ${esc(g.course)}: ${series.map(x =>
       `${x.stroke} ${pct(x.pct)}`).join('; ')}. A falling line means faster.</span>`;
 }
@@ -3183,11 +3019,11 @@ function chartCard(e){
     </div>
     <div class="tw-xaxis"><span>${monthLabel(pts[0].d)}</span>
       <span>${monthLabel(pts[pts.length - 1].d)}</span></div>
-    <p class="tw-legend"><span class="k-line"></span>every race
-      <span class="k-trend"></span>overall direction
-      ${best ? `<span class="k-pb"></span>fastest ever, ${monthLabel(best.d)}` : ''}
+    <p class="tw-legend"><span class="lg"><span class="k-line"></span>every race</span>
+      <span class="lg"><span class="k-trend"></span>overall direction</span>
+      ${best ? `<span class="lg"><span class="k-pb"></span>fastest ever, ${monthLabel(best.d)}</span>` : ''}
       ${e.joined && pts.some(p => p.d < e.joined) && pts.some(p => p.d >= e.joined)
-        ? `<span class="k-join"></span>joined NextGen, ${monthLabel(e.joined)}` : ''}</p>
+        ? `<span class="lg"><span class="k-join"></span>joined NextGen, ${monthLabel(e.joined)}</span>` : ''}</p>
     <span class="sr-only">${esc(e.event)} ${esc(e.course)}: ${e.swims} races from
       ${monthLabel(pts[0].d)} to ${monthLabel(pts[pts.length - 1].d)},
       ${clockAxis(pts[0].t)} to ${clockAxis(pts[pts.length - 1].t)}, ${pct(e.pct)}.
@@ -3289,10 +3125,10 @@ function swimmerCard(s){
   const strokeMap = s.strokes || {}, distMap = s.dists || {}, offclub = s.offclub || [];
   const strokes = ['Free','Back','Breast','Fly','IM']
     .filter(k => strokeMap[k])
-    .map(k => `<span class="chip"><span class="dot d-${strokeMap[k]}"></span>${k}</span>`).join('');
+    .map(k => `<span class="chip">${k}</span>`).join('');
   const dists = ['Sprint','Middle','Distance']
     .filter(k => distMap[k])
-    .map(k => `<span class="chip"><span class="dot d-${distMap[k]}"></span>${k}</span>`).join('');
+    .map(k => `<span class="chip">${k}</span>`).join('');
   // Two lines per event: what it is and how it moved, then the times behind
   // it. The grid this replaces gave the times priority and squeezed the event
   // name and the change to nothing on a phone.
@@ -3306,17 +3142,6 @@ function swimmerCard(s){
         year==='all'&&e.firstDate?` · ${monYr(e.firstDate)} \u2013 ${monYr(e.lastDate)}`:''}</div>
     </div>`).join('');
   const num = (v, suf) => v === null || v === undefined ? '—' : (v + (suf||''));
-  // A bar next to each trend, scaled against 25% — roughly the largest honest
-  // swing across a season, so anything beyond that pins at full width. The
-  // colour uses trendCls's own deadband, so the bar and the number can never
-  // disagree: a 0.3% move reads flat in both. Spelled out as "faster"/"slower"
-  // rather than pctShort's bare number, because there is room here and a
-  // signless "0.3%" does not say which way it went.
-  const cvTrend = (label, v) => `<div class="cvitem"><div class="k">${label}</div>
-    <div class="v ${trendCls(v)}">${pct(v)}</div>
-    ${v===null?'':`<div class="cvbar"><i class="${
-      v<-0.5?'ok':v>0.5?'warn':''}"
-      style="width:${Math.max(4,Math.min(100,Math.abs(v)/25*100))}%"></i></div>`}</div>`;
   // Gate on the ASSESSMENT fields, never on pbRate. pbRate is tier 1, so it
   // survives for a parent — and gating on it rendered a box headed "Coach view"
   // to parents with every tier-2 row showing an em-dash.
@@ -3326,8 +3151,6 @@ function swimmerCard(s){
     <div class="coachview">
       <h4>Coach view</h4>
       <div class="cvgrid">
-        ${cvTrend('Last 3 months', s.t3)}
-        ${cvTrend('Last 6 months', s.t6)}
         <div class="cvitem"><div class="k">PB rate${ib('pbrate', 'the PB rate')}</div>
           <div class="v">${num(s.pbRate,'%')}${s.pbEligible
             ? ` <span style="font-size:11px;font-weight:500;color:var(--muted)">${s.pbs} of ${s.pbEligible}</span>` : ''}</div>
@@ -3399,15 +3222,6 @@ function swimmerCard(s){
   const off = offclub.length
     ? `<div class="offclub"><strong>Also raced for:</strong> ${offclub.map(esc).join(', ')}.
        Those swims count toward this athlete's development, never toward NextGen team totals.</div>` : '';
-  // Say the true reason, per swimmer.
-  //
-  // Every unrated swimmer used to be told "no repeat swims in the same event
-  // and course". For most of them that is simply false: 37 of the 60 have a
-  // single timed swim, and 20 raced everything at one meet. A swimmer with six
-  // races across four strokes reading that he needs to repeat an event is being
-  // sent to do the one thing that would not help him — what he needs is a
-  // second meet, because a trend is measured over time, not over strokes.
-  const none = whyUnrated(s);
   return `
   <details class="sw" data-band="${esc(s.band)}" data-age="${s.age===null?'':s.age}"
     data-cls="${esc(s.cls || '')}" data-name="${esc(s.name.toLowerCase())}"
@@ -3415,8 +3229,7 @@ function swimmerCard(s){
     data-rate="${s.trend===null?'':esc(pct(s.trend).replace('% ','%/yr '))}">
     <summary>
       <!-- Rows, not columns, on a phone: the name on one line with the chevron
-           at its right; the meta as separate items that wrap whole; then the
-           rate, the age-group comparison and where the figure comes from. The
+           at its right, then the meta as separate items that wrap whole. The
            two-column grid squeezed the name to "Njenga," / "Daniel" and the
            meta to one word per line. Two columns return at 640px. -->
       <span class="sw-head"><span class="sw-name">${esc(s.name)}</span><span class="chev"></span></span>
@@ -3424,22 +3237,10 @@ function swimmerCard(s){
           s.podiums ? s.podiums + ' podium' + (s.podiums===1?'':'s') : '',
           s.status==='former' ? 'former member' : '']
           .filter(Boolean).map(x => `<span>${x}</span>`).join('<i aria-hidden="true">·</i>')}</span>
-      <!-- No class pill here: the swimmer already sits inside that group's
-           drawer, so repeating "Fast progression" on every row said nothing. -->
-      <span class="trend ${trendCls(s.trend)}"><span class="rate">${s.trend===null?'—':pct(s.trend).replace('% ','%/yr ')}${
-        s.trend !== null && s.trend > 0 ? '<span class="declining">Declining</span>' : ''}<span class="basis">yearly rate</span>${ib('ratecard', 'the yearly rate', s.ageAdj===null||s.ageAdj===undefined ? '' : 'This one is measured against the ' + normNote(s) + '.')}</span>${
-        s.ageAdj===null||s.ageAdj===undefined?''
-          :`<span class="norm">${esc(vsNorm(s.ageAdj, s.band))}</span>`}${
-        (s.ageAdj!==null&&s.ageAdj!==undefined) || s.rateRaces || (!hasAssessment && s.pbRate!==null && s.pbRate!==undefined)
-          ? `<span class="prov">${[
-              s.ageAdj===null||s.ageAdj===undefined ? '' : `<span class="${s.normOwn?'own':'borrowed'}">${esc(normNote(s))}</span>`,
-              s.rateRaces ? `<span class="${s.rateRaces<=3?'thin':''}">from ${s.rateRaces} race${
-                s.rateRaces===1?'':'s'} across ${s.rateSeries} event${s.rateSeries===1?'':'s'}</span>` : '',
-              !hasAssessment && s.pbRate!==null && s.pbRate!==undefined ? `<span class="pbr" title="${s.pbRate}% of races were personal bests">${s.pbRate}% PBs</span>` : '']
-              .filter(Boolean).join('<i aria-hidden="true">·</i>')}</span>` : ''}</span>
+      <!-- No yearly rate and no age-group comparison: neither read clearly to a
+           parent (Felix, 7 Oct 2026). The name and the plain facts only. -->
     </summary>
     <div class="sw-body">
-      ${none}
       ${(strokes||dists) ? `<div class="profile">
         ${strokes?`<div class="prof"><h4>Stroke profile</h4><div class="chips">${strokes}</div></div>`:''}
         ${dists?`<div class="prof"><h4>Distance profile</h4><div class="chips">${dists}</div></div>`:''}
@@ -3559,10 +3360,6 @@ function render(){
   // range in the filter bar says the span, and the table ranked children.
   // No leaderboards: they ranked children against each other.
 
-  const SW_GROUPS = Y.swimmers.some(s => s.cls)
-    ? GROUPS
-    : bands.map(b => ({ k: b, slug: b.replace(/[^a-z0-9]+/gi, '-'), t: b,
-                        d: 'every race and every event, newest first', band: true }));
   const AGES = Object.keys(Y.ageYears||{}).map(Number).sort((a,b)=>a-b);
   const PRESETS = [
     {t:'8 & under', lo:0,  hi:8},  {t:'9–10', lo:9,  hi:10},
@@ -4047,31 +3844,19 @@ function render(){
     <div class="watch">${watchCards}</div>`:''}
   </section>
 
+  ${twoSection()}
   <section class="wrap" id="s3" data-page="swimmers">
-    <div class="sec-head"><span class="sec-num">03</span><h2>Which swimmers?${ib('groups', 'how the groups work')}</h2><a class="faq-link" href="/faq#rate">FAQ</a></div>
-        <p class="sec-sub">Tap a group, then a swimmer, or search a name.</p>
+    <div class="sec-head"><span class="sec-num">03</span><h2>Swimmers</h2><a class="faq-link" href="/faq">FAQ</a></div>
+        <p class="sec-sub">Search a name, or tap a swimmer.</p>
     
     ${filterBar(true)}
     ${fNote(FS)}
-    <div id="list" style="margin-top:18px">${SW_GROUPS.map(g=>{
-      const members = Y.swimmers.filter(s => g.band ? s.band === g.k : s.cls === g.k);
-      if(!members.length) return '';
-      // One row: colour dot, title (with its info button), count, chevron.
-      // The count is said once; the description sits under the title.
-      return `<details class="grp g-${esc(g.slug)}" data-grp="${esc(g.k)}">
-        <summary>
-          <span class="gdot" aria-hidden="true"></span>
-          <span class="gtxt"><span class="gt">${g.t}${TIPS['g-' + g.slug] ? ib('g-' + g.slug, g.t) : ''}</span><span class="gd">${g.d}</span></span>
-          <span class="gn" aria-label="${members.length} swimmers">${members.length}</span>
-          <span class="chev"></span>
-          <span class="gcount" data-gcount="${g.k}" hidden>${members.length} swimmer${members.length===1?'':'s'}</span>
-        </summary>
-        <div class="grpbody"><div class="swimmers">${members.map(swimmerCard).join('')}</div>
-          <div class="grpempty" data-empty="${g.k}" hidden>No swimmer in this group matches the filters.</div>
-        </div>
-      </details>`;}).join('')}</div>
+    <!-- Every swimmer by name. The development groups are gone: "in line with
+         their age" and the rest did not read clearly (Felix, 7 Oct 2026). -->
+    <div id="list" style="margin-top:18px"><div class="swimmers">${
+      [...Y.swimmers].sort((a, b) => a.name.localeCompare(b.name)).map(swimmerCard).join('')}</div>
+      <p class="nodata" id="swempty" hidden>No swimmer matches the filters.</p></div>
   </section>
-  ${twoSection()}
 
   <section class="wrap" id="s4" data-page="meets">
     <div class="sec-head"><span class="sec-num">04</span><h2>Did it show on the day?</h2><a class="faq-link" href="/faq#vs-form">FAQ</a></div>
@@ -4649,7 +4434,6 @@ function wireSearch(){
     } else filter();
     const card = [...document.querySelectorAll('#list details.sw')].find(d => d.dataset.aname === name);
     if (!card) return;
-    const grp = card.closest('details.grp'); if (grp) grp.open = true;
     card.open = true;
     card.scrollIntoView({ block: 'start', behavior: 'smooth' });
     card.querySelector('summary').focus({ preventScroll: true });
@@ -4759,43 +4543,25 @@ function monYr(iso){
 }
 
 function filter(){
-  // The shared bar narrows the list too, or the groups would still show the
-  // whole club under a bar that says otherwise. Band and stroke come from the
+  // The shared bar narrows the list too, or it would still show the whole
+  // club under a bar that says otherwise. Band and stroke come from the
   // same scope the tiles and the age tables used.
   const sc = (typeof fScope === 'function' && (fBand || fStroke)) ? fScope() : null;
   const keep = sc ? sc.names : null;
   const filtering = ageLo !== null || ageHi !== null || !!fQ || !!keep;
   let shown = 0, total = 0;
-  document.querySelectorAll('#list details.grp').forEach(grp => {
-    let n = 0, t = 0;
-    grp.querySelectorAll('details.sw').forEach(d => {
-      t++;
-      const age = d.dataset.age === '' ? null : Number(d.dataset.age);
-      const inRange = (ageLo === null && ageHi === null) ? true
-        : age === null ? false
-        : (ageLo === null || age >= ageLo) && (ageHi === null || age <= ageHi);
-      const ok = inRange && (!fQ || d.dataset.name.includes(fQ))
-                 && (!keep || keep.has(d.dataset.aname || d.dataset.name));
-      d.hidden = !ok; if (ok) n++;
-    });
-    shown += n; total += t;
-    // a group with no matches disappears entirely; one with matches opens itself
-    // so a search lands you on the swimmer rather than on a closed drawer
-    grp.hidden = filtering && n === 0;
-    if (filtering && n > 0) grp.open = true;
-    if (!filtering) grp.open = false;
-    const lbl = grp.querySelector('[data-gcount]');
-    if (lbl) lbl.textContent = filtering
-      ? n + ' of ' + t + ' shown'
-      : t + ' swimmer' + (t===1?'':'s');
-    // The big number beside the group name is the one people read. It showed
-    // the unfiltered total while the line beside it said "2 of 13 shown", so
-    // a group could read 13 with two swimmers under it.
-    const big = grp.querySelector('.gn');
-    if (big) big.textContent = filtering ? n : t;
-    const em = grp.querySelector('[data-empty]');
-    if (em) em.hidden = n > 0;
+  document.querySelectorAll('#list details.sw').forEach(d => {
+    total++;
+    const age = d.dataset.age === '' ? null : Number(d.dataset.age);
+    const inRange = (ageLo === null && ageHi === null) ? true
+      : age === null ? false
+      : (ageLo === null || age >= ageLo) && (ageHi === null || age <= ageHi);
+    const ok = inRange && (!fQ || d.dataset.name.includes(fQ))
+               && (!keep || keep.has(d.dataset.aname || d.dataset.name));
+    d.hidden = !ok; if (ok) shown++;
   });
+  const em = document.getElementById('swempty');
+  if (em) em.hidden = shown > 0;
   const c = document.getElementById('cnt');
   if (c) c.textContent = filtering ? shown + ' of ' + total + ' swimmers' : total + ' swimmers';
 }
