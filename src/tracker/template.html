@@ -337,6 +337,21 @@ details.sw .trend .rate{display:block}
 .prof h4{font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);margin:0 0 9px}
 .chips{display:flex;gap:7px;flex-wrap:wrap}
 .chip{font-size:12px;font-weight:600;padding:5px 11px;border-radius:8px;background:var(--sunken);border:1px solid var(--line)}
+/* The stroke web: one shape, five strokes, the age group's middle dashed. */
+.webcard{margin:4px 0 16px}
+.webcard h4{font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+.web-best{margin:0;font-size:14px}
+.web{display:block;width:100%;max-width:340px;margin:2px auto 0}
+.web-ring{fill:none;stroke:var(--line);stroke-width:1}
+.web-mid{fill:none;stroke:var(--muted);stroke-width:1.2;stroke-dasharray:4 4;opacity:.8}
+.web-ax{stroke:var(--line);stroke-width:1}
+.web-shape{fill:rgba(22,166,232,.22);stroke:var(--electric);stroke-width:2.2;stroke-linejoin:round}
+.web-dot{fill:var(--electric);stroke:var(--surface);stroke-width:1.5}
+.web-l{font:600 13px Sora,system-ui,sans-serif;fill:var(--ink)}
+.web-l.off{fill:var(--muted)}
+.web-v{font:500 11px Sora,system-ui,sans-serif;fill:var(--muted)}
+.web-key{margin:2px 0 0;font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:7px}
+.web-key .wk-mid{width:18px;height:0;border-top:1.5px dashed var(--muted)}
 /* Where they sit in their age group: one line, a slim track, one note. */
 .agepos{margin:2px 0 14px}
 .agepos p{margin:0;font-size:14px}
@@ -1649,6 +1664,7 @@ const TIPS = {
   'g-stable':    { t: 'Within 2%/yr of what is typical for their age.', a: 'groups' },
   'g-review':    { t: 'More than 2%/yr below what is typical for their age. Usually still getting faster; worth a look, not a verdict.', a: 'groups' },
   chart:     { t: 'A line that falls is a swimmer getting faster. Each line is one stroke at one distance and pool length.', a: 'chart' },
+  strokeweb: { t: "For each stroke, the share of the other swimmers their age whose times are slower. Further out is quicker; the dashed ring is the middle of the age group.", a: 'chart' },
   follow:    { t: "Each dot is one meet: how much faster than their first swim in each event. \u22125% is five per cent quicker.", a: 'chart' },
 };
 /** An info button. `extra` is one more sentence specific to this spot. */
@@ -3233,15 +3249,93 @@ function agePosLine(s){
     <p class="ap-sub">From ${a.n} races in ${when}, each set against the middle time for their age in that event.</p></div>`;
 }
 
+/** One swimmer across the five strokes, each against their own age group:
+    for every stroke, the share of the other swimmers in their age group,
+    over the chosen seasons, whose times in that stroke are slower. Drawn as a
+    web, so the shape says breaststroker or flyer at a glance. A stroke needs
+    2 timed swims from them and 5 others in the group who swim it. */
+const WEB_STROKES = ['Free', 'Back', 'Breast', 'Fly', 'IM'];
+let webKey = '', webMemo = null;
+function strokeWeb(name){
+  const MS = DATA.meetSwims;
+  if (!MS) return null;
+  const [lo, hi] = fSpan();
+  if (webKey !== lo + '|' + hi) {
+    webKey = lo + '|' + hi;
+    const vb = MS.cols.indexOf('vsBand');
+    const date = new Map(MS.meets.map(m => [m.id, m.date.slice(0, 4)]));
+    const per = new Map();                    // name -> stroke -> [vsBand]
+    for (const r of MS.rows) {
+      if (r[vb] === null) continue;
+      const y = date.get(r[0]); if (!y || y < lo || y > hi) continue;
+      const st = strokeOf((MS.events[r[2]] || '').split('|')[0]);
+      if (!WEB_STROKES.includes(st)) continue;
+      const nm = MS.swimmers[r[1]];
+      const g = per.get(nm) || per.set(nm, new Map()).get(nm);
+      (g.get(st) || g.set(st, []).get(st)).push(r[vb]);
+    }
+    const band = new Map((DATA.years.all.swimmers || []).map(x => [x.name, x.band]));
+    webMemo = { per, band };
+  }
+  const { per, band } = webMemo;
+  const mine = per.get(name), b = band.get(name);
+  if (!mine || !b) return null;
+  return WEB_STROKES.map(st => {
+    const v = mine.get(st);
+    if (!v || v.length < 2) return { st, p: null };
+    const me = med(v);
+    const others = [];
+    for (const [nm, g] of per) {
+      if (nm === name || band.get(nm) !== b) continue;
+      const w = g.get(st); if (w && w.length >= 2) others.push(med(w));
+    }
+    if (others.length < 5) return { st, p: null };
+    return { st, p: others.filter(x => x > me).length / others.length };
+  });
+}
+function strokeWebCard(s){
+  const w = strokeWeb(s.name);
+  const have = w ? w.filter(x => x.p !== null) : [];
+  if (have.length < 3) return '';
+  const R0 = 92, C = 130, ang = i => -Math.PI / 2 + i * 2 * Math.PI / WEB_STROKES.length;
+  const pt = (i, r) => [C + r * Math.cos(ang(i)), C + r * Math.sin(ang(i))];
+  const ring = f => WEB_STROKES.map((_, i) => pt(i, R0 * f).map(v => v.toFixed(1)).join(',')).join(' ');
+  const shape = w.map((x, i) => x.p === null ? null : pt(i, R0 * Math.max(0.06, x.p))).filter(Boolean)
+    .map(q => q.map(v => v.toFixed(1)).join(',')).join(' ');
+  // Strokes that read the same once rounded are named together, or "Fly"
+  // would be called strongest beside a Free that also says 7 in 10.
+  const top = Math.max(...have.map(x => Math.round(x.p * 10)));
+  const bestNames = have.filter(x => Math.round(x.p * 10) === top).map(x => x.st);
+  const best = { st: bestNames.length > 2 ? bestNames.slice(0, -1).join(', ') + ' and ' + bestNames.slice(-1)
+    : bestNames.join(' and ') };
+  const lab = (x, i) => {
+    const [lx, ly] = pt(i, R0 + 22);
+    const anchor = Math.abs(lx - C) < 8 ? 'middle' : lx < C ? 'end' : 'start';
+    return `<text x="${lx.toFixed(1)}" y="${(ly + 4).toFixed(1)}" text-anchor="${anchor}" class="web-l${x.p === null ? ' off' : ''}">${x.st}</text>
+      <text x="${lx.toFixed(1)}" y="${(ly + 18).toFixed(1)}" text-anchor="${anchor}" class="web-v">${
+        x.p === null ? 'too few races' : Math.round(x.p * 10) + ' in 10'}</text>`;
+  };
+  return `<div class="webcard">
+    <h4>Across the strokes${ib('strokeweb', 'the stroke chart')}</h4>
+    <p class="web-best">Strongest for their age: <b>${best.st}</b></p>
+    <svg class="web" viewBox="-40 -14 340 290" role="img" aria-label="${esc(have.map(x => x.st + ': quicker than about ' + Math.round(x.p * 10) + ' in 10').join('; '))}">
+      ${[1, .75, .25].map(f => `<polygon points="${ring(f)}" class="web-ring"/>`).join('')}
+      <polygon points="${ring(.5)}" class="web-mid"/>
+      ${WEB_STROKES.map((_, i) => { const [x, y] = pt(i, R0); return `<line x1="${C}" y1="${C}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" class="web-ax"/>`; }).join('')}
+      <polygon points="${shape}" class="web-shape"/>
+      ${w.map((x, i) => x.p === null ? '' : (([x2, y2]) => `<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="4" class="web-dot"/>`)(pt(i, R0 * Math.max(0.06, x.p)))).join('')}
+      ${w.map(lab).join('')}
+    </svg>
+    <p class="web-key"><span class="wk-mid"></span>middle of the ${esc(s.band)} swimmers · further out is quicker</p>
+  </div>`;
+}
+
 function swimmerCard(s){
   // Every tier-2 and coach field has to be treated as possibly absent. That is
   // the whole mechanism in src/lib/tiers.ts: the payload is shaped by OMITTING
   // fields, so a card that assumes s.strokes exists throws for a parent — and
   // one for a coach, where it does exist, would never show it.
-  const strokeMap = s.strokes || {}, distMap = s.dists || {}, offclub = s.offclub || [];
-  const strokes = ['Free','Back','Breast','Fly','IM']
-    .filter(k => strokeMap[k])
-    .map(k => `<span class="chip">${k}</span>`).join('');
+  const distMap = s.dists || {}, offclub = s.offclub || [];
   const dists = ['Sprint','Middle','Distance']
     .filter(k => distMap[k])
     .map(k => `<span class="chip">${k}</span>`).join('');
@@ -3272,10 +3366,6 @@ function swimmerCard(s){
             ? ` <span style="font-size:11px;font-weight:500;color:var(--muted)">${s.pbs} of ${s.pbEligible}</span>` : ''}</div>
           ${s.pbRate===null?'':`<div class="cvbar"><i class="${s.pbRate>=50?'ok':''}"
             style="width:${Math.min(100,s.pbRate)}%"></i></div>`}</div>
-        <div class="cvitem"><div class="k">Race consistency</div>
-          <div class="v">${esc(s.consBand)}${s.consistency!==null?` <span style="font-size:11.5px;font-weight:500;color:var(--muted)">±${s.consistency}%</span>`:''}</div>
-          ${s.consistency===null?'':`<div class="cvbar"><i class="${s.consistency<=4?'ok':s.consistency>=9?'warn':''}"
-            style="width:${Math.max(4,100-Math.min(100,s.consistency*7))}%"></i></div>`}</div>
       </div>
       ${s.focus?`<div class="focusline"><span class="fi" aria-hidden>&#9678;</span>
         <span><b>Coaching focus:</b> ${esc(s.focus)}</span></div>`:''}
@@ -3358,8 +3448,8 @@ function swimmerCard(s){
     </summary>
     <div class="sw-body">
       ${agePosLine(s)}
-      ${(strokes||dists) ? `<div class="profile">
-        ${strokes?`<div class="prof"><h4>Stroke profile</h4><div class="chips">${strokes}</div></div>`:''}
+      ${strokeWebCard(s)}
+      ${dists ? `<div class="profile">
         ${dists?`<div class="prof"><h4>Distance profile</h4><div class="chips">${dists}</div></div>`:''}
       </div>`:''}
       ${chart}
@@ -4230,8 +4320,7 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
       <h3>Who can see what</h3>
       <p>Results are the competition record and the organisers published them, so every confirmed
         parent or guardian sees every NextGen swimmer&rsquo;s races, times and places.</p>
-      <p>The assessment is different. Coaching focus, race consistency, the three- and six-month
-        readings and the group a swimmer sits in are shown to coaches and to that child&rsquo;s own
+      <p>The assessment is different. Coaching focus, the PB rate and the group a swimmer sits in are shown to coaches and to that child&rsquo;s own
         parents or guardians &mdash; and to nobody else. A guardian who has not yet been confirmed
         sees the club&rsquo;s shape and no child&rsquo;s name at all. This is enforced on the server
         by a list of which fields belong to which audience, with a test that fails the build if a
