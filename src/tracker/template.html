@@ -116,6 +116,10 @@ footer{flex-shrink:0}
 h1,h2,h3{text-wrap:balance;margin:0}
 .display{font-family:'Anton',Impact,sans-serif;font-weight:400;letter-spacing:.5px;text-transform:uppercase;line-height:1.05}
 
+/* "Coach view": on whenever the page carries the coach scope. */
+.coachbadge{display:inline-flex;align-items:center;gap:6px;margin-left:10px;padding:4px 10px;border-radius:999px;
+  background:#FFC24B;color:#0A1B33;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.coachbadge::before{content:"";width:6px;height:6px;border-radius:50%;background:#0A1B33}
 /* hero */
 .hero{background:var(--hero);color:#fff;padding-block:32px 30px;position:relative;overflow:hidden}
 .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,rgba(70,211,240,.08),transparent 55%);pointer-events:none}
@@ -454,6 +458,7 @@ details.sw .trend .rate{display:block}
 .cvgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:13px}
 .cvitem .k{font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--muted)}
 .cvitem .v{font-size:14px;font-weight:700;margin-top:2px}
+.cvnotes{margin:12px 0 0;padding-top:11px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
 .focusline{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:13.5px}
 .focusline b{color:var(--electric-deep)}
 /* The four numbers alone read as a spreadsheet cell. A bar under each trend
@@ -1566,6 +1571,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
          squashed. The club name alone does the same job. -->
     <span class="club">NextGen Multi Sport Academy</span>
     <span class="club abbr" aria-hidden="true">NextGen</span>
+    <span class="coachbadge" id="pb-coach" hidden>Coach view</span>
     <nav aria-label="Portal sections">
       <a class="t" href="/tracker" aria-current="true">Analytics</a>
       <button class="t" id="pb-events" type="button" aria-haspopup="menu" aria-expanded="false"
@@ -1606,7 +1612,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
       <a href="#/age-groups" data-page="age-groups">Ages</a>
       <a href="#/swimmers"   data-page="swimmers">Swimmers</a>
       <a href="#/meets"      data-page="meets">Meets</a>
-      <a href="#/decisions"  data-page="decisions">Actions</a>
+      <a href="#/coaches"  data-page="decisions">Coaches</a>
       <a href="#/method"     data-page="method">Method</a>
     </div>
   </nav>
@@ -3406,6 +3412,7 @@ function swimmerCard(s){
           ${s.pbRate===null?'':`<div class="cvbar"><i class="${s.pbRate>=50?'ok':''}"
             style="width:${Math.min(100,s.pbRate)}%"></i></div>`}</div>
       </div>
+      <p class="cvnotes">Coach's notes for this swimmer: coming soon.</p>
     </div>` : '';
   // Trend charts. Chips pick the event; one chart shows at a time, which is the
   // only version that works at 390px — a child can have 22 chartable series.
@@ -4406,14 +4413,14 @@ swimmer&rsquo;s figure  =  the median across all their events</div>
     </div>
   </section>
 
-  <section class="wrap" id="s5" data-page="decisions">
-    <div class="sec-head"><span class="sec-num">05</span><h2>So what now?</h2><a class="faq-link" href="/faq#groups">FAQ</a></div>
-    <p class="sec-sub">What to do next · ${rated} of ${s.swimmers} rated</p>
+  ${DATA.scope !== 'coach' ? '' : `<section class="wrap" id="s5" data-page="decisions">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Coaches: what now?</h2><a class="faq-link" href="/faq#groups">FAQ</a></div>
+    <p class="sec-sub">For coaches only · ${rated} of ${s.swimmers} rated</p>
     <div class="calls">${calls}</div>
     ${looks?`<p class="subhead">Where to look first</p>
     <p class="sec-sub" style="margin-top:6px">Age groups by share in the Change call.</p>
     <div class="looks">${looks}</div>`:''}
-  </section>`;
+  </section>`}`;
 
   // Chips swap the chart in place. Delegated on #app because the swimmer cards
   // are rebuilt wholesale on every render — and bound ONCE, because #app itself
@@ -4653,12 +4660,19 @@ let PAGES = ALL_PAGES;
 let page = routeFromHash();
 
 function routeFromHash(){
-  const h = (location.hash || '').replace(/^#\/?/, '').split('?')[0];
+  let h = (location.hash || '').replace(/^#\/?/, '').split('?')[0];
+  if (h === 'coaches') h = 'decisions';   // the tab's address
   return PAGES.includes(h) ? h : PAGES[0];
 }
 
 function applyScope(){
   PAGES = SCOPE === 'family' ? ALL_PAGES.filter(p => p !== 'swimmers') : ALL_PAGES;
+  // The Coaches tab (who is stalling, where to look first, the swimmers to
+  // look at) is for coaches and admins only (Felix, 19 Oct 2026). Parents
+  // keep Overview, Ages, Swimmers, Meets and Method.
+  if (DATA.scope !== 'coach') PAGES = PAGES.filter(p => p !== 'decisions');
+  const cb = document.getElementById('pb-coach');
+  if (cb) cb.hidden = DATA.scope !== 'coach';
   document.querySelectorAll('#sidenav a').forEach(a => {
     a.hidden = !PAGES.includes(a.dataset.page);
   });
@@ -4761,7 +4775,7 @@ function urlFor(p){
   if (fFrom) q.set('from', fFrom);
   if (fTo) q.set('to', fTo);
   const qs = q.toString();
-  return location.pathname + location.search + '#/' + p + (qs ? '?' + qs : '');
+  return location.pathname + location.search + '#/' + (p === 'decisions' ? 'coaches' : p) + (qs ? '?' + qs : '');
 }
 // What the address cannot say: which filters the chosen swimmer set, and
 // what they replaced. Kept on the history entry, so back brings the

@@ -481,12 +481,12 @@ export function useAddMyPayment() {
 export function useRequestCode() {
   return useMutation({
     mutationFn: async (
-      email: string,
+      v: string | { email: string; coach?: boolean },
     ): Promise<{ ok: boolean; devMode?: boolean; signedIn?: boolean }> =>
       apiFetch("/api/auth/request-code", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify(typeof v === "string" ? { email: v } : v),
       }),
   });
 }
