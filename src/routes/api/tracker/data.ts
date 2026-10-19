@@ -63,7 +63,10 @@ export const Route = createFileRoute("/api/tracker/data")({
         return new Response(JSON.stringify({ ...body, myAthletes: v.myAthletes, myChildren }), {
           headers: {
             "content-type": "application/json",
-            "cache-control": "private, max-age=300",
+            // Not kept by the browser: the payload carries the viewer's own
+            // children, and a page reloaded after adding or removing one was
+            // served the copy from before (Felix, Zoey Makena, 19 Oct 2026).
+            "cache-control": "private, no-store",
           },
         });
       },
