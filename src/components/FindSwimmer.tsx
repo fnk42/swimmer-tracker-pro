@@ -200,15 +200,15 @@ export function FindSwimmer({
                   {s.mine ? (
                     <button
                       type="button"
+                      aria-label={`Remove ${s.name} from your account`}
+                      title="Remove from your account"
                       onClick={() => setRemoving(removing === s.id ? null : s.id)}
                       className={
-                        "shrink-0 rounded-md border px-3 py-1.5 text-xs font-medium underline-offset-4 hover:underline " +
-                        (dark
-                          ? "border-white/30 text-white hover:border-red-300 hover:text-red-200"
-                          : "border-border text-foreground hover:text-destructive")
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[18px] leading-none " +
+                        (dark ? "text-white/60 hover:bg-white/10 hover:text-white" : "text-muted-foreground hover:bg-secondary hover:text-destructive")
                       }
                     >
-                      Not my child
+                      ×
                     </button>
                   ) : (
                     <Button
