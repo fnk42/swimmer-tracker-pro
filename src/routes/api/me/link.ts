@@ -82,7 +82,7 @@ export const Route = createFileRoute("/api/me/link")({
           if (!s?.parentId) return json({ error: "Not signed in" }, 401);
           const b = await request.json().catch(() => ({}));
           const swimmerId = String(b?.swimmerId ?? "");
-          const givenPhone = String(b?.phone ?? "").trim();
+          let givenPhone = String(b?.phone ?? "").trim();
           if (!swimmerId) return json({ error: "swimmerId required" }, 400);
           // Both may change under us: adopting a phone number can fold this
           // account into an older one, and the session then has to follow.
@@ -126,6 +126,19 @@ export const Route = createFileRoute("/api/me/link")({
           }
 
           if (others.length > 0) {
+            // A registered parent's own number is already on their account,
+            // and it is exactly what this check needs. Using it makes adding a
+            // second child one step from the analytics page (Felix, 19 Oct
+            // 2026). Every rule below still applies to it: different from the
+            // first parent's, and two adults at most. Re-adopting one's own
+            // number merges nothing and sends nothing.
+            if (!givenPhone) {
+              const own = await one<{ phone: string }>(
+                `select coalesce(phone,'') as phone from public.parents where id = $1`,
+                [parentId],
+              );
+              if (own?.phone) givenPhone = own.phone;
+            }
             if (!givenPhone) {
               return json(
                 {
