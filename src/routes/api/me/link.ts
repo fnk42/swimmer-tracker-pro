@@ -50,16 +50,19 @@ export const Route = createFileRoute("/api/me/link")({
           if (!s?.parentId) return json({ error: "Not signed in" }, 401);
           const b = await request.json().catch(() => ({}));
           const swimmerId = String(b?.swimmerId ?? "");
-          if (!swimmerId) return json({ error: "swimmerId required" }, 400);
+          // The analytics page knows a child by their results name, not the
+          // record's id: its "Your swimmers" × sends that instead.
+          const analyticsName = String(b?.analyticsName ?? "");
+          if (!swimmerId && !analyticsName) return json({ error: "swimmerId required" }, 400);
 
           const gone = await one<{ name: string }>(
             `delete from public.swimmer_parents sp
               using public.swimmers sw
               where sw.id = sp.swimmer_id
-                and sp.swimmer_id = $1
+                and ${swimmerId ? "sp.swimmer_id = $1" : "sw.analytics_name = $1"}
                 and sp.parent_id = $2
              returning sw.name`,
-            [swimmerId, s.parentId],
+            [swimmerId || analyticsName, s.parentId],
           );
           if (!gone) return json({ error: "That swimmer is not on your account" }, 404);
 

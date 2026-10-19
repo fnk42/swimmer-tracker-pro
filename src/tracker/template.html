@@ -1128,6 +1128,20 @@ details.ev .evmeta{margin-left:auto;font-size:12px;color:var(--muted);white-spac
 .mykids button{appearance:none;font:inherit;font-size:14px;font-weight:600;min-height:40px;padding:8px 16px;
   border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
 .mykids button[aria-pressed="true"]{background:var(--electric);border-color:var(--electric);color:#fff}
+/* Each name carries its own ×: the pair reads as one pill. */
+.mykids .mk{display:inline-flex;align-items:center}
+.mykids .mk > [data-mykid]{border-radius:999px 0 0 999px;padding-right:10px}
+.mykids .mk-x{border-radius:0 999px 999px 0 !important;border-left:0 !important;padding:8px 12px !important;
+  font-size:16px !important;line-height:1;color:var(--muted) !important}
+.mykids .mk-x:hover{color:var(--alert-t,#B03127) !important}
+.mk-confirm{margin:10px 0 4px;max-width:820px;padding:14px 16px;border-radius:14px;border:1px solid rgba(224,82,74,.45);
+  background:rgba(224,82,74,.07)}
+.mk-confirm p{margin:0;font-size:14px;line-height:1.5}
+.mk-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.mk-btns button{appearance:none;font:inherit;font-size:14px;font-weight:600;min-height:40px;padding:8px 16px;border-radius:10px;cursor:pointer}
+.mk-yes{background:#C93A31;color:#fff;border:0}
+.mk-no{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.mk-err{margin-top:8px !important;color:var(--alert-t,#B03127);font-size:13px !important}
 /* The list: a parent's own children first, then everyone. */
 .listhead{margin:22px 0 10px;font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
 .listhead:first-child{margin-top:0}
@@ -2523,6 +2537,9 @@ let twA = '';               // the swimmer shown; '' = the viewer's child, or th
 // Every swimmer who can be shown, set by twoSection() on every render; search
 // only moves the top to a name in it.
 let twNames = [];
+// The child an × on "Your swimmers" is asking about, and what went wrong if
+// the removal failed. A check before anything goes (Felix, 19 Oct 2026).
+let mkRemoving = '', mkError = '';
 
 function twoSection(){
   // The top of the Swimmers page: one swimmer across the five strokes, the
@@ -2542,10 +2559,17 @@ function twoSection(){
     <div class="sec-head"><span class="sec-num">00</span><h2>Across the strokes${ib('strokeweb', 'the stroke chart')}</h2><a class="faq-link" href="/faq#chart">FAQ</a></div>
     <p class="sec-sub"><b>${esc(a)}</b> · each stroke against the other swimmers their age.
       <button type="button" class="tw-change">Search another swimmer</button></p>
-    ${mineAll.length > 1 ? `<div class="mykids" role="group" aria-label="Your swimmers">
+    ${mineAll.length ? `<div class="mykids" role="group" aria-label="Your swimmers">
       <span class="mk-lab">Your swimmers</span>
-      ${mineAll.map(n => `<button type="button" data-mykid="${esc(n)}" aria-pressed="${n === a}">${esc(firstName(n))}</button>`).join('')}
-    </div>` : ''}
+      ${mineAll.map(n => `<span class="mk"><button type="button" data-mykid="${esc(n)}" aria-pressed="${n === a}">${esc(firstName(n))}</button><button
+        type="button" class="mk-x" data-mykid-x="${esc(n)}" aria-label="Remove ${esc(firstName(n))} from your account" title="Remove from your account">×</button></span>`).join('')}
+    </div>
+    ${mkRemoving && mineAll.includes(mkRemoving) ? `<div class="mk-confirm" role="alertdialog" aria-label="Remove a swimmer">
+      <p>Remove <b>${esc(firstName(mkRemoving))}</b> from your account? Their details stay with the club, and any other parent on their record keeps access.</p>
+      <div class="mk-btns"><button type="button" class="mk-yes" data-mykid-yes="${esc(mkRemoving)}">Yes, remove ${esc(firstName(mkRemoving))}</button>
+        <button type="button" class="mk-no" data-mykid-no>Cancel</button></div>
+      ${mkError ? `<p class="mk-err">${esc(mkError)}</p>` : ''}
+    </div>` : ''}` : ''}
     ${web ? `<div class="webtop">${web}</div>`
       : `<p class="nodata" style="margin-top:14px">Not enough races yet to show ${esc(firstName(a))} across the strokes.</p>`}
   </section>`;
@@ -4693,6 +4717,33 @@ document.addEventListener('click', e => {
     const rest = wrap && wrap.previousElementSibling;
     if (rest && rest.classList.contains('more-names')) rest.hidden = false;
     (wrap || more).remove();
+    return;
+  }
+  const kx = e.target.closest?.('[data-mykid-x]');
+  if (kx) {
+    mkRemoving = mkRemoving === kx.dataset.mykidX ? '' : kx.dataset.mykidX; mkError = '';
+    const y = window.scrollY; render(); window.scrollTo({ top: y, behavior: 'auto' });
+    return;
+  }
+  if (e.target.closest?.('[data-mykid-no]')) {
+    mkRemoving = ''; mkError = '';
+    const y = window.scrollY; render(); window.scrollTo({ top: y, behavior: 'auto' });
+    return;
+  }
+  const ky = e.target.closest?.('[data-mykid-yes]');
+  if (ky) {
+    const name = ky.dataset.mykidYes;
+    ky.disabled = true; ky.textContent = 'Removing\u2026';
+    fetch('/api/me/link', { method: 'DELETE', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ analyticsName: name }) })
+      .then(r => r.ok ? r.json() : r.json().then(b => Promise.reject(new Error(b.error || 'Could not remove that swimmer.'))))
+      .then(() => {
+        DATA.myAthletes = (DATA.myAthletes || []).filter(n => n !== name);
+        if (twA === name) twA = '';
+        mkRemoving = ''; mkError = '';
+        const y = window.scrollY; render(); window.scrollTo({ top: y, behavior: 'auto' });
+      })
+      .catch(err => { mkError = err.message || 'Could not remove that swimmer.'; const y = window.scrollY; render(); window.scrollTo({ top: y, behavior: 'auto' }); });
     return;
   }
   const kid = e.target.closest?.('[data-mykid]');
