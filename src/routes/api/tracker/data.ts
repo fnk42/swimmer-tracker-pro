@@ -38,7 +38,14 @@ export const Route = createFileRoute("/api/tracker/data")({
         // on the agreement; the trip is a different question, asked in a
         // different place.
 
-        const body = shapeAnalytics(data as unknown as Record<string, unknown>, v.scope);
+        // "See it as a parent" (Felix, 19 Oct 2026): an admin may ask for
+        // exactly what a parent receives, shaped by the same tiers, so what
+        // they check is the real parent page and not an imitation of it.
+        const asParent = v.isAdmin && new URL(request.url).searchParams.get("as") === "parent";
+        const body = shapeAnalytics(
+          data as unknown as Record<string, unknown>,
+          asParent ? "community" : v.scope,
+        );
         return new Response(JSON.stringify({ ...body, myAthletes: v.myAthletes }), {
           headers: {
             "content-type": "application/json",
