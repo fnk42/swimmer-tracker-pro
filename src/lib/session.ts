@@ -128,6 +128,25 @@ export function isAdminEmail(email: string): boolean {
   return adminEmails().includes(email.trim().toLowerCase());
 }
 
+/**
+ * The club's coaches, from COACH_EMAILS (comma separated): Cian and Lucas to
+ * start (Felix, 19 Oct 2026). A coach sees the coach analytics (who is
+ * stalling, where to look first, the swimmers to look at) and NOT the admin
+ * page: parent links, the activity log and the roster stay with ADMIN_EMAILS.
+ * Read on every request rather than baked into the session, so taking a
+ * coach off the list takes effect on their next click.
+ */
+export function coachEmails(): string[] {
+  return (process.env.COACH_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+export function isCoachEmail(email: string): boolean {
+  return coachEmails().includes(email.trim().toLowerCase());
+}
+
 // ---------- route guards --------------------------------------------------
 
 /**

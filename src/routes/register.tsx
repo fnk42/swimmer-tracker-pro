@@ -10,6 +10,7 @@ import {
   useSaveMyParent,
   useSaveMyRegistration,
   useAddMyPayment,
+  useUnlinkSwimmer,
   paidForSwimmer,
 } from "@/lib/api";
 import type { Registration } from "@/lib/schemas";
@@ -77,6 +78,11 @@ function MachakosFlow() {
 
   const [step, setStep] = useState<Step>("who");
   const [picked, setPicked] = useState<string[]>([]);
+  // An × on each child takes them off the account, after a check (Felix,
+  // 19 Oct 2026: Lowena was on his by mistake). Only this parent's own link
+  // goes; the child and any other parent stay.
+  const unlink = useUnlinkSwimmer();
+  const [removing, setRemoving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Arrived straight from finishing registration. Worth saying out loud, or
   // the next screen looks like the same work starting over.
@@ -412,14 +418,14 @@ function MachakosFlow() {
                     {swimmers.map((s) => {
                       const on = picked.includes(s.id);
                       return (
-                        <li key={s.id}>
+                        <li key={s.id} className="relative">
                           <button
                             type="button"
                             onClick={() =>
                               setPicked((p) => (on ? p.filter((x) => x !== s.id) : [...p, s.id]))
                             }
                             className={
-                              "flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors " +
+                              "flex w-full items-center gap-3 rounded-xl border p-4 pr-14 text-left transition-colors " +
                               (on
                                 ? "border-[var(--ng-electric)] bg-[var(--ng-electric)]/15"
                                 : "border-white/15 bg-white/[.04] hover:bg-white/[.07]")
@@ -444,6 +450,49 @@ function MachakosFlow() {
                               </span>
                             </span>
                           </button>
+                          <button
+                            type="button"
+                            aria-label={`Remove ${s.name} from your account`}
+                            title="Remove from your account"
+                            onClick={() => setRemoving(removing === s.id ? null : s.id)}
+                            className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full
+                                       text-[18px] leading-none text-white/55 hover:bg-white/10 hover:text-white"
+                          >
+                            ×
+                          </button>
+                          {removing === s.id && (
+                            <div className="mt-2 rounded-xl border border-red-300/40 bg-red-500/10 p-3.5">
+                              <p className="text-[13.5px] leading-relaxed text-white/90">
+                                Remove <b>{s.name}</b> from your account? Their details stay with
+                                the club, and any other parent on their record keeps access.
+                              </p>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  disabled={unlink.isPending}
+                                  onClick={async () => {
+                                    try {
+                                      await unlink.mutateAsync(s.id);
+                                      setPicked((p) => p.filter((x) => x !== s.id));
+                                      setRemoving(null);
+                                    } catch (err) {
+                                      setError((err as Error)?.message || "Could not remove that swimmer.");
+                                    }
+                                  }}
+                                  className="rounded-lg bg-red-500 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-red-600 disabled:opacity-60"
+                                >
+                                  {unlink.isPending ? "Removing\u2026" : `Yes, remove ${s.name.split(" ")[0]}`}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setRemoving(null)}
+                                  className="rounded-lg border border-white/25 px-3.5 py-2 text-[13px] font-semibold text-white hover:bg-white/10"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </li>
                       );
                     })}

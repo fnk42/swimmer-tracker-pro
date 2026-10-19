@@ -40,6 +40,12 @@ function nextFromUrl(): string | null {
 // Analytics, for everyone — parents, former testers and coordinators alike.
 // Machakos is a button on that page for the families who have somebody in the
 // team; it is no longer where anyone is sent (Felix, 27 Sep 2026).
+/** Arrived through /coach: the coaches' wording, and a coach-only code. */
+function coachDoor(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("coach") === "1";
+}
+
 function landing(): string {
   return nextFromUrl() ?? "/tracker";
 }
@@ -121,7 +127,9 @@ function PortalLanding() {
     e.preventDefault();
     setError(null);
     try {
-      const r = await requestCode.mutateAsync(email.trim());
+      const r = await requestCode.mutateAsync(
+        coachDoor() ? { email: email.trim(), coach: true } : email.trim(),
+      );
       // Already signed in as this address: no second code, straight on.
       if (r.signedIn) {
         const who = await fetch("/api/auth/me")
@@ -136,8 +144,12 @@ function PortalLanding() {
       }
       setDevNote(!!r.devMode);
       setStep("code");
-    } catch {
-      setError("Could not send a code just now. Please try again in a moment.");
+    } catch (err) {
+      setError(
+        coachDoor() && err instanceof Error && /coaches/i.test(err.message)
+          ? err.message
+          : "Could not send a code just now. Please try again in a moment.",
+      );
     }
   }
 
@@ -315,7 +327,15 @@ function PortalLanding() {
             </div>
           ) : step === "email" ? (
             <form onSubmit={onSendCode}>
-              <h2 className="text-[20px] font-semibold">Sign in</h2>
+              <h2 className="text-[20px] font-semibold">
+                {coachDoor() ? "Coaches\u2019 sign-in" : "Sign in"}
+              </h2>
+              {coachDoor() && (
+                <p className="mb-4 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
+                  For NextGen coaches. Use the email address the club has for you, and we will send a
+                  six-digit code.
+                </p>
+              )}
               {nextFromUrl() === "/register" && (
                 <p
                   className="mb-4 mt-2 rounded-xl border border-[color:var(--ng-electric)]/40
@@ -324,7 +344,7 @@ function PortalLanding() {
                   This takes you straight back to your Machakos entry.
                 </p>
               )}
-              <p className="mb-6 mt-1.5 text-[13.5px] leading-relaxed text-white/65">
+              <p className={"mb-6 mt-1.5 text-[13.5px] leading-relaxed text-white/65" + (coachDoor() ? " hidden" : "")}>
                 New here? Use your address anyway — signing in is how an account gets made. There is
                 no password to remember; we send a six-digit code each time.
               </p>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useClaimable, useClaimSwimmer } from "@/lib/api";
+import { useClaimable, useClaimSwimmer, useUnlinkSwimmer } from "@/lib/api";
 
 // Find your swimmer, and put yourself on their record.
 //
@@ -58,6 +58,11 @@ export function FindSwimmer({
   const [phoneCode, setPhoneCode] = useState("");
   const results = useClaimable(debounced);
   const claim = useClaimSwimmer();
+  // A child already on the account can be taken off it from here, where the
+  // parent finds it: Felix had Lowena on his record by mistake and the row
+  // offered only a greyed-out "Added" button nobody could read (19 Oct 2026).
+  const unlink = useUnlinkSwimmer();
+  const [removing, setRemoving] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(term), 250);
@@ -192,15 +197,65 @@ export function FindSwimmer({
                             : "One parent already · you can be the second"}
                     </span>
                   </span>
-                  <Button
-                    size="sm"
-                    variant={s.mine ? "outline" : "default"}
-                    disabled={s.mine || claim.isPending}
-                    onClick={() => attempt(s.id, s.name, s.adults)}
-                  >
-                    {s.mine ? "Added" : "This is my child"}
-                  </Button>
+                  {s.mine ? (
+                    <button
+                      type="button"
+                      aria-label={`Remove ${s.name} from your account`}
+                      title="Remove from your account"
+                      onClick={() => setRemoving(removing === s.id ? null : s.id)}
+                      className={
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[18px] leading-none " +
+                        (dark ? "text-white/60 hover:bg-white/10 hover:text-white" : "text-muted-foreground hover:bg-secondary hover:text-destructive")
+                      }
+                    >
+                      ×
+                    </button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      disabled={claim.isPending}
+                      onClick={() => attempt(s.id, s.name, s.adults)}
+                    >
+                      This is my child
+                    </Button>
+                  )}
                 </div>
+
+                {s.mine && removing === s.id && (
+                  <div
+                    className={
+                      "border-t px-3.5 py-3 " +
+                      (dark ? "border-white/10 bg-white/[.05]" : "border-border bg-secondary")
+                    }
+                  >
+                    <p className={"text-[13px] leading-relaxed " + (dark ? "text-white/85" : "")}>
+                      Remove <b>{s.name}</b> from your account? You will no longer see their entry,
+                      payments or results. Nothing about {s.name} is deleted, and any other parent
+                      on their record keeps their access.
+                    </p>
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={unlink.isPending}
+                        onClick={async () => {
+                          try {
+                            await unlink.mutateAsync(s.id);
+                            setRemoving(null);
+                            setError(null);
+                          } catch (err) {
+                            setError((err as Error)?.message || "Could not remove that swimmer.");
+                          }
+                        }}
+                      >
+                        Yes, remove {s.name}
+                      </Button>
+                      <Button size="sm" variant="outline" className={dark ? "text-[#0A1B33]" : ""} onClick={() => setRemoving(null)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {phoneFor === s.id && (
                   <div

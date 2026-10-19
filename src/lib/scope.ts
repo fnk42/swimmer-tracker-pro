@@ -4,7 +4,7 @@
 // from anything the browser sends. Every route that serves swimmer data calls
 // viewer() and then obeys it.
 import { q, one } from "@/lib/db";
-import { sessionFromRequest } from "@/lib/session";
+import { sessionFromRequest, isCoachEmail } from "@/lib/session";
 import type { Scope } from "@/lib/tiers";
 
 /**
@@ -66,6 +66,7 @@ export async function maySeeAnalytics(request: Request): Promise<boolean> {
   const s = sessionFromRequest(request);
   if (!s) return false;
   if (s.isAdmin) return true;
+  if (isCoachEmail(s.email)) return true;
   if (await signedTester(s)) return true;
   const v = await viewer(request);
   return v?.scope === "community";
@@ -81,6 +82,8 @@ export type Viewer = {
   email: string;
   parentId: string | null;
   isAdmin: boolean;
+  /** On the coach list: the coach analytics, never the admin page. */
+  isCoach?: boolean;
   /** What shape of analytics this person may receive. */
   scope: Scope;
   /** Registration is not finished until both of these are false. */
@@ -113,7 +116,10 @@ export async function viewer(request: Request): Promise<Viewer | null> {
   //
   // Their own profile and consent are still tracked, so they can complete them
   // as a parent; it just never blocks the coach view.
-  if (s.isAdmin) {
+  // A coach: the coach scope, like a coordinator, but isAdmin stays false, so
+  // every admin route (all of which check the session's isAdmin) refuses them.
+  const coach = !s.isAdmin && isCoachEmail(s.email);
+  if (s.isAdmin || coach) {
     const athletes = s.parentId
       ? await q<{ analytics_name: string }>(
           `select sw.analytics_name
@@ -127,7 +133,8 @@ export async function viewer(request: Request): Promise<Viewer | null> {
     return {
       email: s.email,
       parentId: s.parentId ?? null,
-      isAdmin: true,
+      isAdmin: !!s.isAdmin,
+      isCoach: coach,
       scope: "coach",
       needsProfile: false,
       needsConsent: false,

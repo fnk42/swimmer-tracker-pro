@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { q, one, json, fail } from "@/lib/db";
-import { newCode, hashCode, isAdminEmail, sessionFromRequest } from "@/lib/session";
+import { newCode, hashCode, isAdminEmail, isCoachEmail, sessionFromRequest } from "@/lib/session";
 import { note } from "@/lib/activity";
 import { sendLoginCode } from "@/lib/mailer";
 
@@ -23,6 +23,15 @@ export const Route = createFileRoute("/api/auth/request-code")({
 
           // Too many requests for this address recently? Stop, but say the same
           // thing we always say, so this cannot be used to probe for addresses.
+          // The coaches' sign-in (/coach) is for the coach list and the
+          // admins only. Anyone else is told so, and no code is made or sent.
+          if (body?.coach === true && !isCoachEmail(email) && !isAdminEmail(email)) {
+            return json(
+              { error: "This sign-in is for NextGen coaches. Parents can sign in on the main page." },
+              403,
+            );
+          }
+
           const recent = await one<{ n: number }>(
             `select count(*)::int n from public.auth_codes
              where lower(email) = $1 and created_at > now() - interval '${WINDOW_MIN} minutes'`,
@@ -66,6 +75,7 @@ export const Route = createFileRoute("/api/auth/request-code")({
           const liveAccount =
             live && live.email.toLowerCase() === email
               ? live.isAdmin ||
+                isCoachEmail(email) ||
                 (!!live.parentId &&
                   !!(await one<{ id: string }>(`select id from public.parents where id = $1`, [
                     live.parentId,

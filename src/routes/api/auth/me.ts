@@ -89,11 +89,14 @@ export const Route = createFileRoute("/api/auth/me")({
           const v = await viewer(request);
 
           // Someone can be both — a coordinator who also has a child swimming.
-          if (!p && !s.isAdmin) return json({ signedIn: false });
+          // A coach is signed in on the coach list alone, record or not.
+          if (!p && !s.isAdmin && !v?.isCoach) return json({ signedIn: false });
           return json({
             signedIn: true,
             email: s.email,
             isAdmin: s.isAdmin,
+            // On the coach list: the page shows "Coach view" and the Coaches tab.
+            isCoach: !!v?.isCoach,
             // A parent who also tests. Events is theirs as a parent; the
             // analytics open only once the agreement is signed.
             isTester: !!testerId,
@@ -119,7 +122,7 @@ export const Route = createFileRoute("/api/auth/me")({
               // Every parent who has been through /welcome — the same rule
               // maySeeAnalytics applies to the data itself. A signed preview
               // agreement still counts, so no tester loses access.
-              analytics: s.isAdmin || previewAccess || v?.scope === "community",
+              analytics: s.isAdmin || previewAccess || v?.scope === "community" || !!v?.isCoach,
               events: s.isAdmin || inSquad,
             },
             // An account that has never been filled in. /welcome greets these
