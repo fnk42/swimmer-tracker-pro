@@ -1155,6 +1155,19 @@ details.ev .evmeta{margin-left:auto;font-size:12px;color:var(--muted);white-spac
 .mykids .mk-x{border-radius:0 999px 999px 0 !important;border-left:0 !important;padding:8px 12px !important;
   font-size:16px !important;line-height:1;color:var(--muted) !important}
 .mykids .mk-x:hover{color:var(--alert-t,#B03127) !important}
+.mykids .mk-add{border-style:dashed;color:var(--electric-deep)}
+.mk-addbox{margin:10px 0 4px;max-width:820px;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--surface)}
+.mk-addbox label{display:block;font-size:12px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.mk-addbox input{width:100%;box-sizing:border-box;font:inherit;font-size:15px;min-height:44px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+#mk-res{list-style:none;margin:8px 0 0;padding:0}
+#mk-res li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:14px}
+#mk-res .mk-nm{flex:1 1 180px;font-weight:600}
+#mk-res .mk-st{font-size:12.5px;color:var(--muted)}
+#mk-res .mk-claim{appearance:none;font:inherit;font-size:13px;font-weight:600;min-height:38px;padding:7px 14px;border-radius:10px;border:0;background:var(--electric);color:#fff;cursor:pointer}
+#mk-res .mk-claim.sure{background:#0E8455}
+#mk-res .mk-none{color:var(--muted)}
+#mk-res .mk-err{flex-basis:100%;color:var(--alert-t,#B03127);font-size:12.5px}
+.mk-note{margin:10px 0 0;font-size:12.5px;color:var(--muted);line-height:1.5}
 .mk-confirm{margin:10px 0 4px;max-width:820px;padding:14px 16px;border-radius:14px;border:1px solid rgba(224,82,74,.45);
   background:rgba(224,82,74,.07)}
 .mk-confirm p{margin:0;font-size:14px;line-height:1.5}
@@ -2565,6 +2578,26 @@ let twNames = [];
 // The child an × on "Your swimmers" is asking about, and what went wrong if
 // the removal failed. A check before anything goes (Felix, 19 Oct 2026).
 let mkRemoving = '', mkError = '';
+// "+ Add a swimmer" (Felix, 19 Oct 2026): a search right under Your swimmers.
+let mkAdding = false, mkTimer = null;
+/** Fill the add-a-swimmer results from the same search the account page uses. */
+function mkSearch(term){
+  const ul = document.getElementById('mk-res'); if (!ul) return;
+  if (term.trim().length < 2) { ul.innerHTML = ''; return; }
+  fetch('/api/me/claimable?q=' + encodeURIComponent(term.trim()))
+    .then(r => r.ok ? r.json() : { swimmers: [] })
+    .then(d => {
+      const xs = d.swimmers || [];
+      ul.innerHTML = xs.length ? xs.map(x => {
+        const act = x.mine ? '<span class="mk-st">On your account</span>'
+          : x.adults === 0 ? `<button type="button" class="mk-claim" data-claim="${esc(x.id)}" data-claim-name="${esc(x.name)}">This is my child</button>`
+          : x.slotsLeft > 0 ? '<a class="mk-st" href="/parent">Has a parent on record: add on your account page</a>'
+          : '<span class="mk-st">Already has two parents on record</span>';
+        return `<li><span class="mk-nm">${esc(x.name)}</span>${act}</li>`;
+      }).join('') : '<li class="mk-none">No swimmer by that name. Message the club if your child is missing.</li>';
+    })
+    .catch(() => { ul.innerHTML = '<li class="mk-none">Could not search just now. Try again.</li>'; });
+}
 
 function twoSection(){
   // The top of the Swimmers page: one swimmer across the five strokes, the
@@ -2588,7 +2621,15 @@ function twoSection(){
       <span class="mk-lab">Your swimmers</span>
       ${mineAll.map(n => `<span class="mk"><button type="button" data-mykid="${esc(n)}" aria-pressed="${n === a}">${esc(firstName(n))}</button><button
         type="button" class="mk-x" data-mykid-x="${esc(n)}" aria-label="Remove ${esc(firstName(n))} from your account" title="Remove from your account">×</button></span>`).join('')}
+      <button type="button" class="mk-add" data-mykid-add aria-expanded="${mkAdding}">+ Add a swimmer</button>
     </div>
+    ${mkAdding ? `<div class="mk-addbox">
+      <label for="mk-q">Your child's name</label>
+      <input id="mk-q" type="search" autocomplete="off" placeholder="Type at least two letters\u2026">
+      <ul id="mk-res" aria-live="polite"></ul>
+      <p class="mk-note">Only a parent or guardian adds a swimmer. A child with a parent already on record is
+        added on <a href="/parent">your account page</a>, where you confirm your own phone number.</p>
+    </div>` : ''}
     ${mkRemoving && mineAll.includes(mkRemoving) ? `<div class="mk-confirm" role="alertdialog" aria-label="Remove a swimmer">
       <p>Remove <b>${esc(firstName(mkRemoving))}</b> from your account? Their details stay with the club, and any other parent on their record keeps access.</p>
       <div class="mk-btns"><button type="button" class="mk-yes" data-mykid-yes="${esc(mkRemoving)}">Yes, remove ${esc(firstName(mkRemoving))}</button>
@@ -4747,6 +4788,27 @@ document.addEventListener('click', e => {
     const rest = wrap && wrap.previousElementSibling;
     if (rest && rest.classList.contains('more-names')) rest.hidden = false;
     (wrap || more).remove();
+    return;
+  }
+  if (e.target.closest?.('[data-mykid-add]')) {
+    mkAdding = !mkAdding;
+    const y = window.scrollY; render(); window.scrollTo({ top: y, behavior: 'auto' });
+    const q = document.getElementById('mk-q');
+    if (q) { q.focus({ preventScroll: true }); q.oninput = () => { clearTimeout(mkTimer); mkTimer = setTimeout(() => mkSearch(q.value), 250); }; }
+    return;
+  }
+  const cl = e.target.closest?.('[data-claim]');
+  if (cl) {
+    // Two taps: the first asks, the second adds. A child added by mistake
+    // comes off again with the × beside their name.
+    if (!cl.dataset.sure) { cl.dataset.sure = '1'; cl.textContent = `Yes, add ${cl.dataset.claimName.split(',').slice(-1)[0].trim().split(/\s+/)[0]}`; cl.classList.add('sure'); return; }
+    cl.disabled = true; cl.textContent = 'Adding\u2026';
+    fetch('/api/me/link', { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ swimmerId: cl.dataset.claim }) })
+      .then(r => r.ok ? r.json() : r.json().then(b => Promise.reject(new Error(b.error || 'Could not add that swimmer.'))))
+      .then(() => location.reload())
+      .catch(err => { cl.disabled = false; cl.textContent = 'Try again'; delete cl.dataset.sure;
+        const li = cl.closest('li'); if (li) li.insertAdjacentHTML('beforeend', `<span class="mk-err">${esc(err.message)}</span>`); });
     return;
   }
   const kx = e.target.closest?.('[data-mykid-x]');
