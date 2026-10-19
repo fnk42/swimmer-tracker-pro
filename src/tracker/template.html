@@ -2590,8 +2590,8 @@ function mkSearch(term){
       const xs = d.swimmers || [];
       ul.innerHTML = xs.length ? xs.map(x => {
         const act = x.mine ? '<span class="mk-st">On your account</span>'
-          : x.adults === 0 ? `<button type="button" class="mk-claim" data-claim="${esc(x.id)}" data-claim-name="${esc(x.name)}">This is my child</button>`
-          : x.slotsLeft > 0 ? '<a class="mk-st" href="/parent">Has a parent on record: add on your account page</a>'
+          : x.slotsLeft > 0 ? `<button type="button" class="mk-claim" data-claim="${esc(x.id)}" data-claim-name="${esc(x.name)}">This is my child</button>${
+              x.adults > 0 ? '<span class="mk-st">You\u2019ll be their second parent</span>' : ''}`
           : '<span class="mk-st">Already has two parents on record</span>';
         return `<li><span class="mk-nm">${esc(x.name)}</span>${act}</li>`;
       }).join('') : '<li class="mk-none">No swimmer by that name. Message the club if your child is missing.</li>';
@@ -2627,8 +2627,7 @@ function twoSection(){
       <label for="mk-q">Your child's name</label>
       <input id="mk-q" type="search" autocomplete="off" placeholder="Type at least two letters\u2026">
       <ul id="mk-res" aria-live="polite"></ul>
-      <p class="mk-note">Only a parent or guardian adds a swimmer. A child with a parent already on record is
-        added on <a href="/parent">your account page</a>, where you confirm your own phone number.</p>
+      <p class="mk-note">Only a parent or guardian adds a swimmer. A child can have two parents on record.</p>
     </div>` : ''}
     ${mkRemoving && mineAll.includes(mkRemoving) ? `<div class="mk-confirm" role="alertdialog" aria-label="Remove a swimmer">
       <p>Remove <b>${esc(firstName(mkRemoving))}</b> from your account? Their details stay with the club, and any other parent on their record keeps access.</p>
@@ -4799,15 +4798,14 @@ document.addEventListener('click', e => {
   }
   const cl = e.target.closest?.('[data-claim]');
   if (cl) {
-    // Two taps: the first asks, the second adds. A child added by mistake
-    // comes off again with the × beside their name.
-    if (!cl.dataset.sure) { cl.dataset.sure = '1'; cl.textContent = `Yes, add ${cl.dataset.claimName.split(',').slice(-1)[0].trim().split(/\s+/)[0]}`; cl.classList.add('sure'); return; }
+    // One tap (Felix, 19 Oct 2026). A child added by mistake comes off again
+    // with the × beside their name, which does ask first.
     cl.disabled = true; cl.textContent = 'Adding\u2026';
     fetch('/api/me/link', { method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ swimmerId: cl.dataset.claim }) })
       .then(r => r.ok ? r.json() : r.json().then(b => Promise.reject(new Error(b.error || 'Could not add that swimmer.'))))
       .then(() => location.reload())
-      .catch(err => { cl.disabled = false; cl.textContent = 'Try again'; delete cl.dataset.sure;
+      .catch(err => { cl.disabled = false; cl.textContent = 'Try again';
         const li = cl.closest('li'); if (li) li.insertAdjacentHTML('beforeend', `<span class="mk-err">${esc(err.message)}</span>`); });
     return;
   }
