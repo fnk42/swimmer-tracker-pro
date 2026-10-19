@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { json } from "@/lib/db";
+import { json, q } from "@/lib/db";
 import { viewer, maySeeAnalytics } from "@/lib/scope";
 import { shapeAnalytics } from "@/lib/tiers";
 import data from "../../../tracker/data.json";
@@ -46,7 +46,21 @@ export const Route = createFileRoute("/api/tracker/data")({
           data as unknown as Record<string, unknown>,
           asParent ? "community" : v.scope,
         );
-        return new Response(JSON.stringify({ ...body, myAthletes: v.myAthletes }), {
+        // Every child on the account, raced or not, for the Your swimmers
+        // row: one added today with no results yet still belongs there, with
+        // its × (Felix, Zoey Makena, 19 Oct 2026). Names and ids only, and
+        // only the viewer's own children.
+        const myChildren = v.parentId
+          ? await q<{ id: string; name: string; analytics_name: string | null }>(
+              `select sw.id, sw.name, sw.analytics_name
+                 from public.swimmer_parents sp
+                 join public.swimmers sw on sw.id = sp.swimmer_id
+                where sp.parent_id = $1 and sp.status = 'approved'
+                order by sw.name`,
+              [v.parentId],
+            )
+          : [];
+        return new Response(JSON.stringify({ ...body, myAthletes: v.myAthletes, myChildren }), {
           headers: {
             "content-type": "application/json",
             "cache-control": "private, max-age=300",
