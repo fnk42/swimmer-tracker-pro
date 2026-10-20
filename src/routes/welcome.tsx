@@ -92,8 +92,16 @@ function Welcome() {
     new Set([...(mine.data ?? []).map((s) => s.name), ...claimed].filter(Boolean)),
   );
 
+  // Already registered, but the consent has a new version: only the consent.
+  const reconsent = !!me.data && me.data.needsProfile === false && me.data.needsConsent === true;
   // A coach's registration is two steps: who you are, then the consent.
-  const steps: readonly Step[] = role === "coach" ? ["you", "consent"] : STEPS;
+  const steps: readonly Step[] = reconsent ? ["consent"] : role === "coach" ? ["you", "consent"] : STEPS;
+  // Coach wording on the consent: a coach registering, or a coach with no
+  // children on the account agreeing to the new version.
+  const coachWords = role === "coach" || (reconsent && !!me.data?.isCoach && !(mine.data ?? []).length);
+  useEffect(() => {
+    if (reconsent) setStep("consent");
+  }, [reconsent]);
   const idx = steps.indexOf(step);
   const canAdvance = useMemo(() => {
     if (step === "you") {
@@ -147,6 +155,24 @@ function Welcome() {
   async function finish() {
     setBusy(true);
     setError(null);
+    // Already registered: record the agreement to the new version and carry on.
+    if (reconsent) {
+      try {
+        const r = await fetch("/api/me/consent", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ consentData, consentCommunity }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { setError(d.error ?? "Could not record your agreement."); return; }
+        window.location.href = me.data?.isCoach ? "/tracker#/coaches" : "/tracker";
+      } catch {
+        setError("Could not reach the server. Please try again.");
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     try {
       const res = await fetch("/api/me/register", {
         method: "POST",
@@ -214,7 +240,7 @@ function Welcome() {
         />
 
         {/* progress — four steps, so it is worth showing how far in they are */}
-        <div className="mb-7 flex items-center gap-2" aria-hidden>
+        <div className={"mb-7 flex items-center gap-2" + (reconsent ? " hidden" : "")} aria-hidden>
           {steps.map((sName, i) => (
             <span
               key={sName}
@@ -225,10 +251,12 @@ function Welcome() {
             />
           ))}
         </div>
-        <p className="ng-eyebrow mb-4">
-          <span className="dot" aria-hidden />
-          Step {idx + 1} of {steps.length}
-        </p>
+        {!reconsent && (
+          <p className="ng-eyebrow mb-4">
+            <span className="dot" aria-hidden />
+            Step {idx + 1} of {steps.length}
+          </p>
+        )}
 
         <div className="mb-5">
           <DevNotice />
@@ -479,18 +507,23 @@ function Welcome() {
           {!coachPending && step === "consent" && (
             <>
               <h1 className="text-[23px] font-semibold">
-                {role === "coach" ? "How we use the data you will see" : "How we use your child's data"}
+                {reconsent
+                  ? "We've updated how we use your information"
+                  : coachWords
+                    ? "How we use the data you will see"
+                    : "How we use your child's data"}
               </h1>
               <p className="mb-5 mt-1.5 text-[14px] leading-relaxed text-white/65">
-                Please read this. Both boxes need ticking — we cannot set up your account without
-                them.
+                {reconsent
+                  ? "Please read it and tick both boxes once to carry on. Nothing else changes."
+                  : "Please read this. Both boxes need ticking — we cannot set up your account without them."}
               </p>
 
               {/* Last look before anything is committed. The names are what a
                   parent can actually check — the consent below refers to "the
                   swimmers I have selected", and until now that phrase pointed
                   at a screen they had already left. */}
-              {role !== "coach" && (
+              {role !== "coach" && !reconsent && (
               <div className="mb-5 rounded-xl border border-white/15 bg-white/[.04] p-4">
                 <p className="ng-label mb-2">Swimmers you are adding</p>
                 {addedNames.length === 0 ? (
@@ -537,9 +570,9 @@ function Welcome() {
                   onChange={(e) => setConsentData(e.target.checked)}
                 />
                 <span className="text-[13.8px] leading-relaxed text-white/85">
-                  {role === "coach"
+                  {coachWords
                     ? "I consent to NextGen holding and using my details as described above, and I will use what I see only for coaching NextGen swimmers."
-                    : "I am the parent or guardian of the swimmers I have selected, and I consent to NextGen holding and using their data as described above."}
+                    : "I am the parent or guardian of the swimmers on my account, and I consent to NextGen holding and using their information as described above."}
                 </span>
               </label>
 

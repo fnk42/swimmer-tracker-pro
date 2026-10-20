@@ -10,85 +10,95 @@ import { CONSENT_VERSION } from "@/lib/consent-version";
 // If this text changes, bump CONSENT_VERSION. Guardians on an older version are
 // asked to accept the new one before they reach the dashboard, and the old
 // acceptance stays on record rather than being overwritten.
+//
+// Version 2026-10-20 (Felix, for launch): rewritten against Kenya's Data
+// Protection Act 2019, covering coaches as well as parents, with a contact and
+// a retention period. Server locations are not named; that data is held
+// outside Kenya is (the Act requires it).
 export function ConsentText() {
   return (
     <div className="max-h-[42vh] overflow-y-auto rounded-xl border border-white/15 bg-black/20 p-4 text-[13.4px] leading-relaxed text-white/75">
-      <h2 className="text-[15px] font-semibold text-white">
-        How NextGen uses your child's swimming data
-      </h2>
+      <h2 className="text-[15px] font-semibold text-white">How NextGen uses your information</h2>
 
       <p className="mt-3">
-        We record your child's race results and use them to help them swim better.{" "}
-        <strong className="text-white">That is the only thing we use this data for.</strong>
+        NextGen Multi Sport Academy (&ldquo;NextGen&rdquo;) runs NextGen Analytics and Events.
+        Golden Pipit Solutions builds and runs the app for us.
       </p>
 
       <h3 className="mt-4 font-semibold text-white">What we hold</h3>
-      <p className="mt-1">
-        Their name, age group, and the results of meets they have swum — times, places and
-        personal bests. Meet results are already published by the organisers of each competition.
-        We hold your name, phone number and email so the club can reach you.
-      </p>
-
-      <h3 className="mt-4 font-semibold text-white">Who can see what</h3>
-      <p className="mt-1">
-        Anyone in the NextGen community who has been confirmed as a parent or guardian can see
-        race results for all NextGen swimmers — the way SwimCloud and Meet Mobile work.
-      </p>
-      <p className="mt-2">
-        Coaching assessments — how a swimmer is developing, what they should work on — are shown
-        only to the coaches and to that child's own parents or guardians.{" "}
-        <strong className="text-white">No other family sees an assessment of your child.</strong>
-      </p>
-
-      <h3 className="mt-4 font-semibold text-white">Analytics that help your child</h3>
-      <p className="mt-1">
-        We use analytics tools to understand how each swimmer is developing &mdash; who is
-        improving, who has stalled, and what they should work on next. To do that, the club
-        sometimes sends the relevant race data to trusted service providers who process it on
-        computers <strong className="text-white">outside Kenya</strong> and send an answer back.
-        This is the only circumstance in which your child&rsquo;s data leaves NextGen, and it is
-        only ever done to help your child swim better.
-      </p>
-      <p className="mt-2">
-        Those providers act only on our instructions. They may not use this data for their own
-        purposes or to train their systems, and they keep nothing afterwards. Only coaches see
-        what comes back. It is never shown to other families.
-      </p>
-      <p className="mt-2">
-        <strong className="text-white">You can say no to this and still use everything else.</strong>{" "}
-        If you do, your child is left out of any such analysis, and nothing about them is ever
-        sent.
-      </p>
-
-      <h3 className="mt-4 font-semibold text-white">What we will not do</h3>
-      <p className="mt-1">
-        We will not sell this data, and we will not use it for anything other than your
-        child&rsquo;s development and the running of the club. We look after it carefully. Apart
-        from the analytics described above, and the organisers who already publish meet results,
-        we do not share it outside NextGen.
-      </p>
-
-      <h3 className="mt-4 font-semibold text-white">Your choices</h3>
       <ul className="mt-1 list-disc space-y-1 pl-5">
-        <li>You can ask us to keep your child out of the club-wide view at any time.</li>
         <li>
-          You can keep your child out of that analysis while agreeing to everything else, and
-          you can change your mind either way at any time.
+          <strong className="text-white">About you:</strong> your name, email, phone number, and
+          whether you are a parent, guardian or coach.
         </li>
         <li>
-          You can withdraw this consent at any time, and your child's name will be removed from
-          what other families can see.
+          <strong className="text-white">About your child:</strong> their name, age group, and the
+          results of the galas they swim: times, places and personal bests, as published by the
+          meet organisers.
         </li>
-        <li>You can ask for a copy of everything we hold about your family.</li>
         <li>
-          Children do not give or withdraw consent. That stays with you as their parent or
-          guardian.
+          <strong className="text-white">For events you enter:</strong> the entry details you give
+          us, including any health or dietary notes, and your payments.
+        </li>
+        <li>
+          <strong className="text-white">A sign-in record:</strong> when you ask for a code and
+          sign in. No tracking and no advertising.
         </li>
       </ul>
 
+      <h3 className="mt-4 font-semibold text-white">Who sees what</h3>
+      <ul className="mt-1 list-disc space-y-1 pl-5">
+        <li>
+          Every confirmed NextGen parent or guardian can see the race results of all NextGen
+          swimmers. These results are already public.
+        </li>
+        <li>
+          Assessments and coaching notes about a child are seen only by the club&rsquo;s coaches,
+          its administrators, and that child&rsquo;s own parents or guardians.
+        </li>
+        <li>
+          <strong className="text-white">
+            We never sell your information or share it with advertisers.
+          </strong>
+        </li>
+      </ul>
+
+      <h3 className="mt-4 font-semibold text-white">Why we hold it</h3>
+      <p className="mt-1">
+        To show each family their swimmer&rsquo;s progress, to help our coaches plan training, and
+        to run club events. We rely on your consent, which you give here as the child&rsquo;s
+        parent or guardian. Children do not give or withdraw consent themselves.
+      </p>
+
+      <h3 className="mt-4 font-semibold text-white">Who helps us</h3>
+      <p className="mt-1">
+        Trusted service providers, some of them outside Kenya, run the app, store the data and send
+        our emails, and may analyse race results to help our coaches. They act only on our
+        instructions, keep your information secure, and may not use it for their own purposes.
+      </p>
+
+      <h3 className="mt-4 font-semibold text-white">How long we keep it</h3>
+      <p className="mt-1">
+        While your child swims with NextGen, and for two years after, unless you ask us to delete
+        it sooner. Published race results stay in the club&rsquo;s records.
+      </p>
+
+      <h3 className="mt-4 font-semibold text-white">Your rights</h3>
+      <p className="mt-1">
+        Under Kenya&rsquo;s Data Protection Act, 2019, you can ask to see the information we hold
+        about you and your child, to correct it, or to delete it, and you can withdraw this consent
+        at any time; withdrawing closes your access. To do any of these, email{" "}
+        <a
+          href="mailto:hello@goldenpipitsolutions.com"
+          className="text-[var(--ng-cyan)] underline underline-offset-2"
+        >
+          hello@goldenpipitsolutions.com
+        </a>
+        . You can also complain to the Office of the Data Protection Commissioner (odpc.go.ke).
+      </p>
+
       <p className="mt-4 text-[12.5px] text-white/45">
-        NextGen Multi Sport Academy is the data controller. Version {CONSENT_VERSION}. To ask
-        about any of this, or to exercise any of the choices above, speak to a club coordinator.
+        NextGen Multi Sport Academy is the data controller. Version {CONSENT_VERSION}.
       </p>
     </div>
   );
