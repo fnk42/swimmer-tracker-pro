@@ -65,6 +65,9 @@ section.q p:last-child{margin-bottom:0}
 .d-fast{background:#7C4DFF}.d-improving{background:#1FB67A}.d-stable{background:#FFC24B}
 .d-review{background:#E0524A}.d-unrated{background:#9AACBF}
 .good{color:var(--ok-t);font-weight:600}.mid{color:var(--gold-t);font-weight:600}.bad{color:var(--alert-t);font-weight:600}
+h2.part{margin:34px 0 4px;font:400 26px/1.1 Anton,Impact,sans-serif;letter-spacing:.4px}
+.partnote{margin:0 0 6px;color:var(--muted);font-size:14px;max-width:62ch}
+.toc-part{margin:14px 0 6px;font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#8A5D00}
 footer{margin:28px 0 0;padding-block:22px 34px;color:var(--muted);font-size:13px}
 footer .wrap{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between}
 </style>
@@ -85,14 +88,17 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-betw
   <nav class="toc" aria-label="Questions on this page">
     <ol>
       <li><a href="#rate">How is a swimmer's improvement rate calculated?</a></li>
-      <li><a href="#benchmark">What is the benchmark under each rate?</a></li>
-      <li><a href="#lower-group">Why is my child in a lower group when they are getting faster?</a></li>
-      <li><a href="#groups">What do the development groups mean?</a></li>
       <li><a href="#vs-form">What do "vs form" and "pts" mean on a meet?</a></li>
       <li><a href="#rated">What does "rated" mean, and why are some swimmers not rated?</a></li>
       <li><a href="#pb-rate">What is the PB rate?</a></li>
       <li><a href="#chart">How do I read the progress chart?</a></li>
       <li><a href="#data">Where does the data come from?</a></li>
+    </ol>
+    <p class="toc-part">For coaches</p>
+    <ol>
+      <li><a href="#benchmark">What is the benchmark under each rate?</a></li>
+      <li><a href="#lower-group">Why is a swimmer in a lower group when they are getting faster?</a></li>
+      <li><a href="#groups">What do the development groups mean?</a></li>
     </ol>
   </nav>
 
@@ -106,38 +112,8 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-betw
       about 14.5% a year.</p>
   </section>
 
-  <section class="q" id="benchmark">
-    <h2>What is the benchmark under each rate?</h2>
-    <p>Young swimmers improve far faster than older ones, whatever the coaching, so each swimmer
-      is compared with the typical (median) rate of NextGen swimmers in their own age group over
-      the same period.</p>
-    <p>"1.6%/yr more than 9-10 typically gain" means that swimmer is improving a little faster than
-      most nine- and ten-year-olds at the club. If fewer than 6 swimmers in an age group are rated,
-      the club-wide figure is used instead, and the card says so.</p>
-  </section>
 
-  <section class="q" id="lower-group">
-    <h2>Why is my child in a lower group when they are getting faster?</h2>
-    <p>The groups do not ask whether a swimmer is getting faster; nearly all of them are. They ask
-      how fast, against what is typical for NextGen swimmers of the same age. Young swimmers
-      improve quickly as a matter of course, so the bar for each age is different.</p>
-    <p>Swimmers are never ranked against each other. Each group is a fixed line, so no group has
-      to be filled, and a swimmer only moves when their own rate, or what is typical for their age,
-      changes.</p>
-  </section>
 
-  <section class="q" id="groups">
-    <h2>What do the development groups mean?</h2>
-    <p>Each swimmer's yearly rate is set against the typical rate for their age group:</p>
-    <ul class="groups">
-      <li><span class="dot d-fast"></span><span><b>Well ahead for their age</b>: improving 6%/yr or more faster than is typical.</span></li>
-      <li><span class="dot d-improving"></span><span><b>Ahead for their age</b>: 2 to 6%/yr faster than is typical.</span></li>
-      <li><span class="dot d-stable"></span><span><b>In line with their age</b>: within 2%/yr of typical.</span></li>
-      <li><span class="dot d-review"></span><span><b>Below typical for their age</b>: more than 2%/yr below typical, usually still getting faster.</span></li>
-      <li><span class="dot d-unrated"></span><span><b>Not enough data</b>: not enough racing yet to measure a trend.</span></li>
-    </ul>
-    <p>The groups are a guide to who to look at first, never a verdict on a child.</p>
-  </section>
 
   <section class="q" id="vs-form">
     <h2>What does "vs form" mean on a meet?</h2>
@@ -169,9 +145,9 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-betw
     <p>A line that falls is a swimmer getting faster: times come down as they improve, so down the
       chart is progress. On a swimmer's own card, each line is one stroke at one distance and pool
       length, race by race.</p>
-    <p>At the top of the Swimmers page, "Across the strokes" shows one swimmer in all five strokes.
-      Each point is the share of the other swimmers their age whose times in that stroke are slower:
-      further out is quicker, and the dashed ring is the middle of the age group.</p>
+    <p>At the top of the Swimmers page, "Personal bests" shows your swimmer's best time in each stroke
+      and how much faster it is than their first swim. Tap a time to open the gala it was swum at.
+      Coaches also see how each stroke compares with other swimmers of the same age.</p>
     <p>Tap a time on a swimmer's card to open the meet it was swum at.</p>
   </section>
 
@@ -184,6 +160,42 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-betw
       another club, stay on that swimmer's own chart. If anything here contradicts your own record,
       your record is right, and we want to hear about it.</p>
   </section>
+  <h2 class="part" id="for-coaches">For coaches</h2>
+  <p class="partnote">These figures set a swimmer against others their age, so they are shown only to
+    the club's coaches. Parents see their own child's results and progress.</p>
+  <section class="q" id="benchmark">
+    <h2>What is the benchmark under each rate?</h2>
+    <p>Young swimmers improve far faster than older ones, whatever the coaching, so each swimmer
+      is compared with the typical (median) rate of NextGen swimmers in their own age group over
+      the same period.</p>
+    <p>"1.6%/yr more than 9-10 typically gain" means that swimmer is improving a little faster than
+      most nine- and ten-year-olds at the club. If fewer than 6 swimmers in an age group are rated,
+      the club-wide figure is used instead, and the card says so.</p>
+  </section>
+
+  <section class="q" id="lower-group">
+    <h2>Why is a swimmer in a lower group when they are getting faster?</h2>
+    <p>The groups do not ask whether a swimmer is getting faster; nearly all of them are. They ask
+      how fast, against what is typical for NextGen swimmers of the same age. Young swimmers
+      improve quickly as a matter of course, so the bar for each age is different.</p>
+    <p>Swimmers are never ranked against each other. Each group is a fixed line, so no group has
+      to be filled, and a swimmer only moves when their own rate, or what is typical for their age,
+      changes.</p>
+  </section>
+
+  <section class="q" id="groups">
+    <h2>What do the development groups mean?</h2>
+    <p>Each swimmer's yearly rate is set against the typical rate for their age group:</p>
+    <ul class="groups">
+      <li><span class="dot d-fast"></span><span><b>Well ahead for their age</b>: improving 6%/yr or more faster than is typical.</span></li>
+      <li><span class="dot d-improving"></span><span><b>Ahead for their age</b>: 2 to 6%/yr faster than is typical.</span></li>
+      <li><span class="dot d-stable"></span><span><b>In line with their age</b>: within 2%/yr of typical.</span></li>
+      <li><span class="dot d-review"></span><span><b>Below typical for their age</b>: more than 2%/yr below typical, usually still getting faster.</span></li>
+      <li><span class="dot d-unrated"></span><span><b>Not enough data</b>: not enough racing yet to measure a trend.</span></li>
+    </ul>
+    <p>The groups are a guide to who to look at first, never a verdict on a child.</p>
+  </section>
+
 </main>
 
 <footer>
