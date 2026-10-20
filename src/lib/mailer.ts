@@ -228,3 +228,48 @@ export async function sendClaimNotice(
     return { delivered: false, via: "resend", error: String(err) };
   }
 }
+
+/**
+ * Someone registered as a coach whose address is not on the coach list
+ * (Felix, 20 Oct 2026). Saying so grants nothing; this tells the admins so
+ * they can add the address, or not.
+ */
+export async function sendCoachRequest(
+  to: string[],
+  who: { name: string; email: string; phone: string; alsoParent: boolean },
+): Promise<SendResult> {
+  const key = mailKey();
+  if (!to.length) return { delivered: false, via: "console" };
+  if (!key) {
+    console.warn(`\n[mailer] RESEND_API_KEY not set — not emailing.\n[mailer] Coach request: ${who.name} <${who.email}>\n`);
+    return { delivered: false, via: "console" };
+  }
+  const esc = (x: string) =>
+    x.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+  const role = who.alsoParent ? "a coach and a parent" : "a coach";
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
+      body: JSON.stringify({
+        from: FROM,
+        to,
+        subject: `${who.name} registered as ${role}`,
+        text:
+          `${who.name} (${who.email}, ${who.phone}) registered on NextGen Analytics as ${role}.\n\n` +
+          `That address is not on the coach list, so they do not have coach access. ` +
+          `If they should, add ${who.email} to the coach list.\n\nNextGen Multi Sport Academy`,
+        html:
+          `<p><strong>${esc(who.name)}</strong> (${esc(who.email)}, ${esc(who.phone)}) registered on ` +
+          `NextGen Analytics as ${role}.</p>` +
+          `<p>That address is not on the coach list, so they do not have coach access. If they ` +
+          `should, add <strong>${esc(who.email)}</strong> to the coach list.</p>` +
+          `<p style="color:#666;font-size:13px">NextGen Multi Sport Academy</p>`,
+      }),
+    });
+    if (!res.ok) return { delivered: false, via: "resend", error: `${res.status}` };
+    return { delivered: true, via: "resend" };
+  } catch (err) {
+    return { delivered: false, via: "resend", error: String(err) };
+  }
+}

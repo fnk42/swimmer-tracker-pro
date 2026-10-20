@@ -289,6 +289,8 @@ export type Me = {
   previewAccess?: boolean;
   needsProfile?: boolean;
   needsConsent?: boolean;
+  /** On the club's coach list. */
+  isCoach?: boolean;
   pendingClaims?: number;
   myAthletes?: number;
   parent: Parent | null;
@@ -314,6 +316,7 @@ export function useMe() {
         signedIn: !!d.signedIn,
         email: d.email,
         isAdmin: !!d.isAdmin,
+        isCoach: !!d.isCoach,
         sections: d.sections ?? { performance: true, events: true },
         scope: d.scope,
         needsRegistration: !!d.needsRegistration,

@@ -44,7 +44,12 @@ function Welcome() {
   // for the club himself; Mercy, Anita, Nyagaki and Boit are parents who also
   // swim. Asking both questions is the only way to tell those three apart, and
   // it decides what the next screen is even for.
-  const isParent = true; // only parents and guardians register
+  const isParent = true; // only parents and guardians register children
+  // Parent, coach, or both (Felix, 20 Oct 2026). A coach skips the second
+  // parent and the children; choosing coach grants nothing by itself, the
+  // club's coach list does. Someone already on that list starts on Coach.
+  const [role, setRole] = useState<"parent" | "coach" | "both" | null>(null);
+  const [coachPending, setCoachPending] = useState(false);
   const [isSwimmer, setIsSwimmer] = useState<boolean | null>(null);
   const [secondName, setSecondName] = useState("");
   const [secondEmail, setSecondEmail] = useState("");
@@ -67,6 +72,10 @@ function Welcome() {
   }, [me.data]);
 
   useEffect(() => {
+    if (me.data?.isCoach) setRole((r) => r ?? "coach");
+  }, [me.data]);
+
+  useEffect(() => {
     if (!me.isLoading && !me.data?.signedIn) navigate({ to: "/" });
     if (me.data?.isAdmin) navigate({ to: "/admin" });
   }, [me.isLoading, me.data, navigate]);
@@ -83,7 +92,9 @@ function Welcome() {
     new Set([...(mine.data ?? []).map((s) => s.name), ...claimed].filter(Boolean)),
   );
 
-  const idx = STEPS.indexOf(step);
+  // A coach's registration is two steps: who you are, then the consent.
+  const steps: readonly Step[] = role === "coach" ? ["you", "consent"] : STEPS;
+  const idx = steps.indexOf(step);
   const canAdvance = useMemo(() => {
     if (step === "you") {
       // The same rule the server applies, so nobody is waved through here and
@@ -92,7 +103,8 @@ function Welcome() {
         fullName.trim().length > 1 &&
         !!canonicalPhone(phone) &&
         isSwimmer !== null &&
-        !!relationship
+        role !== null &&
+        (role === "coach" || !!relationship)
       );
     }
     // Compulsory, and answerable two ways: pick your child off the roster, or
@@ -142,8 +154,9 @@ function Welcome() {
         body: JSON.stringify({
           fullName: fullName.trim(),
           phone: phone.trim(),
-          relationship,
-          isParent: true,
+          relationship: role === "coach" ? "coach" : relationship,
+          role,
+          isParent: role !== "coach",
           isSwimmer: isSwimmer === true,
           consentData,
           consentCommunity,
@@ -165,6 +178,16 @@ function Welcome() {
         return;
       }
       await me.refetch();
+      // Said coach, but not on the club's coach list: the admins have been
+      // told; say so rather than open a Coaches tab they cannot have.
+      if (d.coachPending) {
+        setCoachPending(true);
+        return;
+      }
+      if (role !== "parent" && me.data?.isCoach) {
+        window.location.href = "/tracker#/coaches";
+        return;
+      }
       // Everyone goes on to Analytics. Machakos is a button there for the
       // families with somebody in the team, not a stop on the way (Felix,
       // 27 Sep 2026).
@@ -192,7 +215,7 @@ function Welcome() {
 
         {/* progress — four steps, so it is worth showing how far in they are */}
         <div className="mb-7 flex items-center gap-2" aria-hidden>
-          {STEPS.map((sName, i) => (
+          {steps.map((sName, i) => (
             <span
               key={sName}
               className="h-1 flex-1 rounded-full transition-colors"
@@ -204,7 +227,7 @@ function Welcome() {
         </div>
         <p className="ng-eyebrow mb-4">
           <span className="dot" aria-hidden />
-          Step {idx + 1} of {STEPS.length}
+          Step {idx + 1} of {steps.length}
         </p>
 
         <div className="mb-5">
@@ -212,27 +235,69 @@ function Welcome() {
         </div>
 
         <div className="ng-panel p-6 text-white sm:p-7">
-          {step === "you" && (
+          {coachPending && (
+            <>
+              <h1 className="text-[23px] font-semibold">Thanks, you're registered</h1>
+              <p className="mt-2 text-[14.5px] leading-relaxed text-white/75">
+                We have asked the club to confirm you as a coach. Your address is not on the coach list
+                yet, so the coach view opens once an admin adds you. You will not need to register
+                again.
+              </p>
+              <a href="/tracker" className="ng-btn ng-btn-primary mt-6 inline-flex min-h-[44px] items-center px-6">
+                Continue to the analytics
+              </a>
+            </>
+          )}
+          {!coachPending && step === "you" && (
             <>
               <h1 className="text-[23px] font-semibold">
                 {firstTime ? "Welcome — let's get you set up" : "Let's set up your account"}
               </h1>
-              {firstTime ? (
-                <>
-                  <p className="mb-2 mt-1.5 text-[14px] leading-relaxed text-white/65">
-                    We don't have this email address on the club's list yet, so you are registering
-                    for the first time. Nothing is wrong — it takes a minute.
-                  </p>
-                  <p className="mb-6 text-[14px] leading-relaxed text-white/65">
-                    Tell us who you are, then search for your swimmer. You can enter them for the
-                    Nationals and pay straight away; a coordinator confirms the link afterwards
-                    before you see their results.
-                  </p>
-                </>
+              {me.data?.isCoach ? (
+                <p className="mb-6 mt-1.5 text-[14px] leading-relaxed text-white/65">
+                  You are on the club's coach list. Tell us who you are and agree to how the data is
+                  used; it takes a minute, and you only do it once.
+                </p>
+              ) : firstTime ? (
+                <p className="mb-6 mt-1.5 text-[14px] leading-relaxed text-white/65">
+                  You are registering for the first time. Nothing is wrong; it takes a minute. Tell us
+                  who you are; parents then find their swimmers.
+                </p>
               ) : (
                 <p className="mb-6 mt-1.5 text-[14px] leading-relaxed text-white/65">
                   This is a one-off, even if you registered for the Nationals. We need it to know
                   who to contact and which swimmers are yours.
+                </p>
+              )}
+
+              <span className="ng-label block">You are joining NextGen as</span>
+              <div className="mb-5 mt-1.5 grid grid-cols-3 gap-2">
+                {(
+                  [
+                    ["parent", "A parent"],
+                    ["coach", "A coach"],
+                    ["both", "Both"],
+                  ] as const
+                ).map(([val, lbl]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setRole(val)}
+                    aria-pressed={role === val}
+                    className={
+                      "min-h-[44px] rounded-xl px-3 text-[14.5px] font-medium transition-colors " +
+                      (role === val
+                        ? "bg-[var(--ng-electric)] text-white"
+                        : "border border-white/25 bg-white/5 text-white/80 hover:bg-white/10")
+                    }
+                  >
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+              {role === "both" && (
+                <p className="-mt-3 mb-5 text-[12.5px] text-white/55">
+                  A coach who also has a child at the club. You will add your children next.
                 </p>
               )}
 
@@ -293,7 +358,7 @@ function Welcome() {
                 ))}
               </div>
 
-              {isParent && (
+              {role !== "coach" && (
                 <>
                   <span className="ng-label mt-4 block">You are the</span>
                   <div className="flex flex-wrap gap-2">
@@ -319,7 +384,7 @@ function Welcome() {
             </>
           )}
 
-          {step === "second" && (
+          {!coachPending && step === "second" && (
             <>
               <h1 className="text-[23px] font-semibold">Is there a second parent?</h1>
               <p className="mb-6 mt-1.5 text-[14px] leading-relaxed text-white/65">
@@ -379,7 +444,7 @@ function Welcome() {
             </>
           )}
 
-          {step === "children" && (
+          {!coachPending && step === "children" && (
             <>
               <h1 className="text-[23px] font-semibold">Which swimmers are yours?</h1>
               <p className="mb-5 mt-1.5 text-[14px] leading-relaxed text-white/65">
@@ -411,9 +476,11 @@ function Welcome() {
             </>
           )}
 
-          {step === "consent" && (
+          {!coachPending && step === "consent" && (
             <>
-              <h1 className="text-[23px] font-semibold">How we use your child's data</h1>
+              <h1 className="text-[23px] font-semibold">
+                {role === "coach" ? "How we use the data you will see" : "How we use your child's data"}
+              </h1>
               <p className="mb-5 mt-1.5 text-[14px] leading-relaxed text-white/65">
                 Please read this. Both boxes need ticking — we cannot set up your account without
                 them.
@@ -423,6 +490,7 @@ function Welcome() {
                   parent can actually check — the consent below refers to "the
                   swimmers I have selected", and until now that phrase pointed
                   at a screen they had already left. */}
+              {role !== "coach" && (
               <div className="mb-5 rounded-xl border border-white/15 bg-white/[.04] p-4">
                 <p className="ng-label mb-2">Swimmers you are adding</p>
                 {addedNames.length === 0 ? (
@@ -456,6 +524,7 @@ function Welcome() {
                   </>
                 )}
               </div>
+              )}
 
               <ConsentText />
 
@@ -468,8 +537,9 @@ function Welcome() {
                   onChange={(e) => setConsentData(e.target.checked)}
                 />
                 <span className="text-[13.8px] leading-relaxed text-white/85">
-                  I am the parent or guardian of the swimmers I have selected, and I consent to
-                  NextGen holding and using their data as described above.
+                  {role === "coach"
+                    ? "I consent to NextGen holding and using my details as described above, and I will use what I see only for coaching NextGen swimmers."
+                    : "I am the parent or guardian of the swimmers I have selected, and I consent to NextGen holding and using their data as described above."}
                 </span>
               </label>
 
@@ -512,11 +582,12 @@ function Welcome() {
           )}
           {error && <p className="mt-4 text-sm font-medium text-[#FFC24B]">{error}</p>}
 
+          {!coachPending && (
           <div className="mt-6 flex items-center gap-3">
             {idx > 0 && (
               <button
                 type="button"
-                onClick={() => setStep(STEPS[idx - 1])}
+                onClick={() => setStep(steps[idx - 1])}
                 className="min-h-[44px] px-2 text-[14px] text-white/55 hover:text-white"
               >
                 Back
@@ -527,7 +598,7 @@ function Welcome() {
               disabled={
                 !canAdvance || busy || (!!proofMsg && step === "consent" && phoneCode.trim().length < 6)
               }
-              onClick={() => (step === "consent" ? finish() : setStep(STEPS[idx + 1]))}
+              onClick={() => (step === "consent" ? finish() : setStep(steps[idx + 1]))}
               className="ng-btn ng-btn-primary ml-auto min-h-[44px] flex-1 sm:flex-none sm:px-8"
             >
               {busy
@@ -539,6 +610,7 @@ function Welcome() {
                     : "Continue"}
             </button>
           </div>
+          )}
         </div>
       </main>
 

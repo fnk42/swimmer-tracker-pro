@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { one, json, fail, tx } from "@/lib/db";
-import { sessionFromRequest } from "@/lib/session";
+import { one, q, json, fail, tx } from "@/lib/db";
+import { sessionFromRequest, isCoachEmail, notifyEmails } from "@/lib/session";
 import { CONSENT_DOCUMENT, CONSENT_VERSION } from "@/lib/scope";
-import { sendParentInvite } from "@/lib/mailer";
+import { sendParentInvite, sendClaimNotice, sendCoachRequest } from "@/lib/mailer";
 import { canonicalPhone } from "@/lib/phone";
 import { adoptPhone } from "@/lib/identity";
 import { createSession, cookieHeader } from "@/lib/session";
@@ -31,10 +31,14 @@ export const Route = createFileRoute("/api/me/register")({
           const b = (await request.json().catch(() => ({}))) as Record<string, unknown>;
           const fullName = String(b.fullName ?? "").trim();
           const phone = String(b.phone ?? "").trim();
-          const relationship = String(b.relationship ?? "").trim().toLowerCase();
+          // Parent, coach, or both (Felix, 20 Oct 2026). A coach skips the
+          // relationship, the second parent and the children; saying "coach"
+          // grants nothing by itself, the coach list does.
+          const role = ["parent", "coach", "both"].includes(String(b.role)) ? String(b.role) : "parent";
+          const relationship = role === "coach" ? "coach" : String(b.relationship ?? "").trim().toLowerCase();
           const consentData = b.consentData === true;
           const consentCommunity = b.consentCommunity === true;
-          const second = (b.secondParent ?? null) as {
+          const second = (role === "coach" ? null : b.secondParent ?? null) as {
             name?: string;
             email?: string;
             phone?: string;
@@ -71,7 +75,7 @@ export const Route = createFileRoute("/api/me/register")({
           // Only parents and guardians register. A swimmer of any age — Bongani
           // at eighteen included — is registered by their parents, whose consent
           // it is; "self" is no longer accepted (Felix, 27 Sep 2026).
-          if (!["mother", "father", "guardian"].includes(relationship)) {
+          if (role !== "coach" && !["mother", "father", "guardian"].includes(relationship)) {
             return json({ error: "Tell us whether you are the mother, father or guardian" }, 400);
           }
 
@@ -105,6 +109,14 @@ export const Route = createFileRoute("/api/me/register")({
           // One connection, one transaction. q() takes an arbitrary
           // connection from the pool, so BEGIN/COMMIT through it would not wrap
           // anything.
+          // Whether this is the first time they finish: children picked on the
+          // way through were linked before there was a name to put on the
+          // notice, so those notices go out now (below).
+          const before = await one<{ done: boolean }>(
+            `select coalesce(profile_complete, false) and coalesce(full_name, '') <> '' as done
+               from public.parents where id = $1`,
+            [pid],
+          );
           const invited = await tx(async (c) => {
             await c.query(
               `update public.parents
@@ -179,14 +191,39 @@ export const Route = createFileRoute("/api/me/register")({
             email: s.email, parentId: pid,
             detail: `version ${CONSENT_VERSION}`,
           });
+
+          // The children linked during this first registration, each now with
+          // the parent's name on the notice (Felix, 20 Oct 2026).
+          if (!before?.done) {
+            const kids = await q<{ name: string }>(
+              `select sw.name from public.swimmer_parents sp
+                 join public.swimmers sw on sw.id = sp.swimmer_id
+                where sp.parent_id = $1 and sp.status = 'approved'`,
+              [pid],
+            );
+            for (const k of kids) {
+              await sendClaimNotice(notifyEmails(), {
+                parentName: fullName, parentEmail: s.email, swimmer: k.name, phoneMatch: false,
+              }).catch(() => undefined);
+            }
+          }
+
+          // Says they coach, but is not on the coach list: tell the admins.
+          const coachPending = role !== "parent" && !s.isAdmin && !isCoachEmail(s.email);
+          if (coachPending) {
+            await note("coach_requested", { email: s.email, parentId: pid, detail: `${fullName} · ${role}` });
+            await sendCoachRequest(notifyEmails(), {
+              name: fullName, email: s.email, phone: adopted.phone, alsoParent: role === "both",
+            }).catch(() => undefined);
+          }
           if (refreshed) {
-            return new Response(JSON.stringify({ ok: true, invited }), {
+            return new Response(JSON.stringify({ ok: true, invited, coachPending }), {
               status: 200,
               headers: { "content-type": "application/json",
                          "set-cookie": cookieHeader(refreshed) },
             });
           }
-          return json({ ok: true, invited });
+          return json({ ok: true, invited, coachPending });
         } catch (err) {
           return fail("POST /api/me/register", err, "Could not finish setting up your account");
         }

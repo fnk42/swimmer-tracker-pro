@@ -15,6 +15,7 @@ export type Kind =
   | "signed_in" // a session was created
   | "registration_done" // a parent finished the registration form
   | "parent_invited" // a parent named a second parent; detail holds the number given
+  | "coach_requested" // registered as a coach from an address not on the coach list
   | "consent_given" // a guardian accepted the current consent document
   | "swimmer_claimed" // a parent put a child on their account
   | "swimmer_unlinked" // a parent took a child back off their own account
