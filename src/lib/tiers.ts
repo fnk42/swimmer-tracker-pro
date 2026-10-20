@@ -41,17 +41,13 @@ export const SWIMMER_FIELDS = {
     "rateSeries", // how many event-series the rate was taken across
     "rateRaces", //  and how many races those hold. Counts of published swims,
     //               shown so a figure resting on two races reads as one.
-    "ageNorm", // the median rate for that age band — a club aggregate, names nobody
-    "ageAdj", // their rate minus that norm. Still arithmetic on tier-1 numbers;
-    //           what stays tier 2 is `cls`, the verdict NextGen draws from it.
     "joined", // the date they joined NextGen. Marks which part of a chart is
     //           ours — a career baseline is misleading without it.
     "pbRate",
     "pbEligible", // how many swims the PB rate was out of. A percentage with no
     //               denominator was read as wrong, because 13/21 is not 68%.
-    "normOwn", //    whether the age-band norm came from that band or from the
-    "normN", //      club median, and how many swimmers it rests on.
     "events", // per event: course, first/last time and date, swim count
+    "onceEvents", // the events raced only once, named: their own record
   ],
   tier2: [
     "cls", // fast / improving / stable / review — the label
@@ -67,6 +63,12 @@ export const SWIMMER_FIELDS = {
   coach: [
     "status", // current / former on the roster
     "offclub", // other clubs raced for
+    // A child set against other children: coaches only, not even the child's
+    // own parents (Felix, 20 Oct 2026). Every child's own results stay tier 1.
+    "ageNorm", // the median rate for that age band
+    "ageAdj", //  their rate minus that norm
+    "normOwn", // whether the norm came from that band or from the club median
+    "normN", //   and how many swimmers it rests on
   ],
 } as const;
 
@@ -189,6 +191,15 @@ export function shapeAnalytics(data: Rec, scope: Scope): Rec {
   // Picked, not spread: a top-level block nobody has classified is dropped
   // here rather than forwarded to a parent by default.
   const top = pick(data, TOP_TIER1);
+
+  // Each swim's gap to the median time for the swimmer's age (vsBand) sets a
+  // child against other children, so only coaches receive it. The column stays
+  // so every index keeps its meaning; its values are blanked.
+  const ms = top.meetSwims as { cols?: string[]; rows?: unknown[][] } | undefined;
+  const vb = ms?.cols?.indexOf("vsBand") ?? -1;
+  if (ms && vb >= 0 && Array.isArray(ms.rows)) {
+    top.meetSwims = { ...ms, rows: ms.rows.map((r) => { const c = r.slice(); c[vb] = null; return c; }) };
+  }
   if (scope === "pending") {
     for (const k of TOP_LEVEL.named) {
       const b = top[k] as Rec | undefined;

@@ -128,6 +128,19 @@ describe("community scope: names yes, assessment no", () => {
     expect([...leaked]).toEqual([]);
   });
 
+  test("no swim carries its gap to the age-group median", () => {
+    // Coaches only (Felix, 20 Oct 2026): it sets a child against other children.
+    for (const sc of ["community", "tester", "pending"] as const) {
+      const ms = shapeAnalytics(D, sc).meetSwims as { cols: string[]; rows: unknown[][] };
+      const vb = ms.cols.indexOf("vsBand");
+      expect(vb).toBeGreaterThanOrEqual(0);
+      expect(ms.rows.filter((r) => r[vb] !== null).length).toBe(0);
+    }
+    const coach = shapeAnalytics(D, "coach").meetSwims as { cols: string[]; rows: unknown[][] };
+    const vbc = coach.cols.indexOf("vsBand");
+    expect(coach.rows.filter((r) => r[vbc] !== null).length).toBeGreaterThan(100);
+  });
+
   test("carries no coach-only block", () => {
     for (const block of Object.values(shaped.years as Record<string, Rec>)) {
       expect(block.watch).toEqual({});
