@@ -1176,20 +1176,31 @@ details.ev .evmeta{margin-left:auto;font-size:12px;color:var(--muted);white-spac
 /* A parent's own children, to switch the chart between them. */
 .mykids{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 4px}
 .mykids .mk-lab{font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-right:4px}
-.mykids button{appearance:none;font:inherit;font-size:14px;font-weight:600;min-height:40px;padding:8px 16px;
+.mykids button{appearance:none;font:inherit;font-size:13.5px;font-weight:600;min-height:34px;padding:5px 14px;
   border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
 .mykids button[aria-pressed="true"]{background:var(--electric);border-color:var(--electric);color:#fff}
 /* Each name carries its own ×: the pair reads as one pill. */
 .mykids .mk{display:inline-flex;align-items:center}
 .mykids .mk > [data-mykid]{border-radius:999px 0 0 999px;padding-right:10px}
-.mykids .mk-x{border-radius:0 999px 999px 0 !important;border-left:0 !important;padding:8px 12px !important;
-  font-size:16px !important;line-height:1;color:var(--muted) !important}
+.mykids .mk-x{border-radius:0 999px 999px 0 !important;border-left:0 !important;padding:5px 10px !important;
+  font-size:15px !important;line-height:1;color:var(--muted) !important}
 .mykids .mk-x:hover{color:var(--alert-t,#B03127) !important}
-.mykids .mk.norace .mk-nr{display:inline-flex;align-items:baseline;gap:6px;min-height:40px;box-sizing:border-box;padding:8px 10px 8px 16px;
+.mykids .mk.norace .mk-nr{display:inline-flex;align-items:baseline;gap:6px;min-height:34px;box-sizing:border-box;padding:5px 10px 5px 14px;
   border:1px dashed var(--line);border-right:0;border-radius:999px 0 0 999px;background:var(--surface);font-size:14px;font-weight:600;color:var(--ink)}
 .mykids .mk.norace .mk-nr small{font-size:11px;font-weight:500;color:var(--muted)}
 .mykids .mk.norace .mk-x{border-style:dashed !important}
 .mykids .mk-add{border-style:dashed;color:var(--electric-deep)}
+/* On a phone the pills wrapped wherever they fell: one beside the label, the
+   rest on the next line, "Add" alone below. Two even columns instead, the
+   label and "Add a swimmer" each across the full width. */
+@media (max-width:640px){
+  .mykids{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .mykids .mk-lab,.mykids .mk-add{grid-column:1 / -1}
+  .mykids .mk{display:flex;min-width:0}
+  .mykids .mk > [data-mykid],.mykids .mk.norace .mk-nr{flex:1;min-width:0;justify-content:flex-start;
+    text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mykids button,.mykids .mk.norace .mk-nr{min-height:38px}
+}
 .mk-addbox{margin:10px 0 4px;max-width:820px;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--surface)}
 .mk-addbox label{display:block;font-size:12px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 .mk-addbox input{width:100%;box-sizing:border-box;font:inherit;font-size:15px;min-height:44px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
@@ -4808,7 +4819,10 @@ function showPage(p){
   document.querySelectorAll('#sidenav a').forEach(a => {
     a.setAttribute('aria-current', String(a.dataset.page === page));
   });
-  document.getElementById('hero')?.classList.toggle('compact', page !== 'analytics');
+  // Compact on every page, Overview included: the logo is in the top bar now,
+  // and the full hero made the first page several times taller than the rest
+  // (Felix, 20 Oct 2026).
+  document.getElementById('hero')?.classList.add('compact');
   requestAnimationFrame(measureStick);
   requestAnimationFrame(tabFade);
 
