@@ -124,20 +124,14 @@ h1,h2,h3{text-wrap:balance;margin:0}
 .pbar .asparent{appearance:none;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;
   font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border-radius:9px;cursor:pointer}
 .pbar .asparent[aria-pressed="true"]{background:#46D3F0;border-color:#46D3F0;color:#0A1B33}
-.asbar{display:none}
+.pbar .menu .menuas{display:none}
 @media (max-width:640px){
+  /* No room in the bar on a phone: the switch moves into the Events menu,
+     rather than taking a row of its own under the bar. */
   #pb-asparent{display:none !important}
+  .pbar .menu .menuas:not([hidden]){display:block}
   .coachbadge{margin-left:6px;padding:4px 8px;letter-spacing:.5px;font-size:10px}
   #pb-out{white-space:nowrap}
-}
-@media (max-width:420px){
-  /* With the Admin / Coach view badge, the short club name does not fit
-     beside it; the header right below already says NextGen. */
-  .asbar:not([hidden]){display:flex;justify-content:flex-end;padding:6px 16px;background:#071427;
-    border-bottom:1px solid rgba(255,255,255,.08)}
-  .asbar .asparent{appearance:none;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;
-    font:inherit;font-size:13px;font-weight:600;min-height:36px;padding:6px 12px;border-radius:9px;cursor:pointer}
-  .asbar .asparent[aria-pressed="true"]{background:#46D3F0;border-color:#46D3F0;color:#0A1B33}
 }
 /* hero */
 .hero{background:var(--hero);color:#fff;padding-block:32px 30px;position:relative;overflow:hidden}
@@ -463,12 +457,15 @@ th.co-col{color:#7A5200;border-bottom:2px solid #E3A92B}
    cyan underline below are enough to mark the strip. */
 .tabnav{position:sticky;top:var(--stick,0px);z-index:50;background:#071427;
   border-top:1px solid rgba(255,255,255,.10)}
-.tabwrap{max-width:1140px;margin:0 auto;padding-inline:20px;display:flex;gap:2px;
+.tabwrap{position:relative;max-width:1140px;margin:0 auto;padding-inline:20px;display:flex;gap:2px;
   overflow-x:auto;scrollbar-width:none}
 .tabwrap::-webkit-scrollbar{display:none}
 /* The tab row scrolls sideways on a phone; a fade at the edge says there is
    more ("Actions" showed as "Ac" with nothing to say it continued). */
-.tabwrap{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scroll-snap-type:x proximity}
+/* scroll-padding matches the strip's 20px gutter: without it, snapping put
+   the first tab flush against the edge, so Overview opened half cut off. */
+.tabwrap{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
+  scroll-padding-inline:20px}
 .tabwrap a{scroll-snap-align:start}
 .tabwrap.more-r{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent);
   mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent)}
@@ -930,7 +927,9 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
 .pbar .menu .cap{padding:7px 11px 6px;font-size:10px;font-weight:700;letter-spacing:1.4px;
   text-transform:uppercase;color:var(--muted)}
 .pbar .menu a{display:block;padding:9px 11px;border-radius:8px;text-decoration:none}
-.pbar .menu a:hover{background:var(--sunken)}
+.pbar .menu .menuas{padding:9px 11px;border-radius:8px}
+.pbar .menu .menuas{appearance:none;width:100%;border:0;background:none;font:inherit;text-align:left;cursor:pointer}
+.pbar .menu a:hover,.pbar .menu .menuas:hover{background:var(--sunken)}
 .pbar .menu b{display:block;font-size:13.5px;color:var(--ink)}
 .pbar .menu span{display:block;font-size:11.8px;color:var(--muted);margin-top:1px}
 /* The way in to the board. A button, in the bar, with the number of open
@@ -952,6 +951,17 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
 .pbar .out:hover{background:rgba(255,255,255,.1);color:#fff}
 @media (max-width:640px){
   .pbar .club,.pbar .out span{display:none}
+  .pbar .brand{flex-shrink:0}
+}
+/* A phone with the Admin or Coach badge: logo, badge, Analytics, Events and
+   Log out have to fit 360px without the logo sliding under the badge. */
+@media (max-width:420px){
+  .pbar .in{padding:0 12px;gap:8px}
+  .pbar .brand img{height:30px}
+  .pbar nav{gap:2px}
+  .pbar a.t,.pbar button.t{padding:6px 9px}
+  .pbar .chev,.pbar .pchev{width:14px;height:14px}
+  .pbar .out{padding:0 8px}
   .pbar .out{margin-left:0;padding:0 10px}
 }
 .scopenote{margin:14px 0 0;padding:11px 14px;border-left:3px solid var(--electric);
@@ -1176,20 +1186,31 @@ details.ev .evmeta{margin-left:auto;font-size:12px;color:var(--muted);white-spac
 /* A parent's own children, to switch the chart between them. */
 .mykids{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 4px}
 .mykids .mk-lab{font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-right:4px}
-.mykids button{appearance:none;font:inherit;font-size:14px;font-weight:600;min-height:40px;padding:8px 16px;
+.mykids button{appearance:none;font:inherit;font-size:13.5px;font-weight:600;min-height:34px;padding:5px 14px;
   border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
 .mykids button[aria-pressed="true"]{background:var(--electric);border-color:var(--electric);color:#fff}
 /* Each name carries its own ×: the pair reads as one pill. */
 .mykids .mk{display:inline-flex;align-items:center}
 .mykids .mk > [data-mykid]{border-radius:999px 0 0 999px;padding-right:10px}
-.mykids .mk-x{border-radius:0 999px 999px 0 !important;border-left:0 !important;padding:8px 12px !important;
-  font-size:16px !important;line-height:1;color:var(--muted) !important}
+.mykids .mk-x{border-radius:0 999px 999px 0 !important;border-left:0 !important;padding:5px 10px !important;
+  font-size:15px !important;line-height:1;color:var(--muted) !important}
 .mykids .mk-x:hover{color:var(--alert-t,#B03127) !important}
-.mykids .mk.norace .mk-nr{display:inline-flex;align-items:baseline;gap:6px;min-height:40px;box-sizing:border-box;padding:8px 10px 8px 16px;
+.mykids .mk.norace .mk-nr{display:inline-flex;align-items:baseline;gap:6px;min-height:34px;box-sizing:border-box;padding:5px 10px 5px 14px;
   border:1px dashed var(--line);border-right:0;border-radius:999px 0 0 999px;background:var(--surface);font-size:14px;font-weight:600;color:var(--ink)}
 .mykids .mk.norace .mk-nr small{font-size:11px;font-weight:500;color:var(--muted)}
 .mykids .mk.norace .mk-x{border-style:dashed !important}
 .mykids .mk-add{border-style:dashed;color:var(--electric-deep)}
+/* On a phone the pills wrapped wherever they fell: one beside the label, the
+   rest on the next line, "Add" alone below. Two even columns instead, the
+   label and "Add a swimmer" each across the full width. */
+@media (max-width:640px){
+  .mykids{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .mykids .mk-lab,.mykids .mk-add{grid-column:1 / -1}
+  .mykids .mk{display:flex;min-width:0}
+  .mykids .mk > [data-mykid],.mykids .mk.norace .mk-nr{flex:1;min-width:0;justify-content:flex-start;
+    text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mykids button,.mykids .mk.norace .mk-nr{min-height:38px}
+}
 .mk-addbox{margin:10px 0 4px;max-width:820px;padding:14px 16px;border-radius:14px;border:1px solid var(--line);background:var(--surface)}
 .mk-addbox label{display:block;font-size:12px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 .mk-addbox input{width:100%;box-sizing:border-box;font:inherit;font-size:15px;min-height:44px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
@@ -1663,6 +1684,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
         <div class="cap">Machakos County</div>
         <a href="/parent"><b>Swimming Nationals</b><span>19&ndash;22 Nov 2026 &middot; register &amp; pay</span></a>
         <a href="/admin" id="pb-admin" hidden><b>Admin view</b><span>Every registration and payment</span></a>
+        <button type="button" class="menuas" id="pb-asparent2" hidden></button>
         <a href="/roadmap" id="pb-road" hidden><b>What we are building</b><span>Shipped, planned, and your ideas</span></a>
       </div>
       <a class="t roadbtn" id="pb-roadbtn" href="/roadmap" hidden>
@@ -1674,8 +1696,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
   </div>
 </div>
 
-<!-- On a phone the bar has no room for the parent-view switch; it sits here. -->
-<div class="asbar" id="pb-asbar" hidden><button type="button" class="asparent" id="pb-asparent2"></button></div>
 
 <header class="hero" id="hero">
   <div class="wrap">
@@ -4808,7 +4828,10 @@ function showPage(p){
   document.querySelectorAll('#sidenav a').forEach(a => {
     a.setAttribute('aria-current', String(a.dataset.page === page));
   });
-  document.getElementById('hero')?.classList.toggle('compact', page !== 'analytics');
+  // Compact on every page, Overview included: the logo is in the top bar now,
+  // and the full hero made the first page several times taller than the rest
+  // (Felix, 20 Oct 2026).
+  document.getElementById('hero')?.classList.add('compact');
   requestAnimationFrame(measureStick);
   requestAnimationFrame(tabFade);
 
@@ -5280,13 +5303,14 @@ function portalBar(me){
   ME = me;
   AS_PARENT = !!(me && me.isAdmin) && readAsParent();
   const isAdm = !!(me && me.isAdmin);
-  const bar2 = document.getElementById('pb-asbar');
-  if (bar2) bar2.hidden = !isAdm;
   for (const id of ['pb-asparent', 'pb-asparent2']) {
     const ap = document.getElementById(id);
     if (!ap) continue;
-    if (id === 'pb-asparent') ap.hidden = !isAdm;
-    ap.textContent = AS_PARENT ? 'Back to the admin view' : 'See it as a parent';
+    ap.hidden = !isAdm;
+    const label = AS_PARENT ? 'Back to the admin view' : 'See it as a parent';
+    if (id === 'pb-asparent') ap.textContent = label;
+    else ap.innerHTML = `<b>${label}</b><span>${AS_PARENT
+      ? 'Coach and admin views again' : 'The page as a parent sees it'}</span>`;
     ap.setAttribute('aria-pressed', String(AS_PARENT));
     ap.onclick = () => {
       try { sessionStorage.setItem('ng_as_parent', AS_PARENT ? '0' : '1'); } catch (e) {}
