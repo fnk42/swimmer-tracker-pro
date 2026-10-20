@@ -124,20 +124,14 @@ h1,h2,h3{text-wrap:balance;margin:0}
 .pbar .asparent{appearance:none;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;
   font:inherit;font-size:13px;font-weight:600;padding:7px 12px;border-radius:9px;cursor:pointer}
 .pbar .asparent[aria-pressed="true"]{background:#46D3F0;border-color:#46D3F0;color:#0A1B33}
-.asbar{display:none}
+.pbar .menu .menuas{display:none}
 @media (max-width:640px){
+  /* No room in the bar on a phone: the switch moves into the Events menu,
+     rather than taking a row of its own under the bar. */
   #pb-asparent{display:none !important}
+  .pbar .menu .menuas:not([hidden]){display:block}
   .coachbadge{margin-left:6px;padding:4px 8px;letter-spacing:.5px;font-size:10px}
   #pb-out{white-space:nowrap}
-}
-@media (max-width:420px){
-  /* With the Admin / Coach view badge, the short club name does not fit
-     beside it; the header right below already says NextGen. */
-  .asbar:not([hidden]){display:flex;justify-content:flex-end;padding:6px 16px;background:#071427;
-    border-bottom:1px solid rgba(255,255,255,.08)}
-  .asbar .asparent{appearance:none;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;
-    font:inherit;font-size:13px;font-weight:600;min-height:36px;padding:6px 12px;border-radius:9px;cursor:pointer}
-  .asbar .asparent[aria-pressed="true"]{background:#46D3F0;border-color:#46D3F0;color:#0A1B33}
 }
 /* hero */
 .hero{background:var(--hero);color:#fff;padding-block:32px 30px;position:relative;overflow:hidden}
@@ -463,12 +457,15 @@ th.co-col{color:#7A5200;border-bottom:2px solid #E3A92B}
    cyan underline below are enough to mark the strip. */
 .tabnav{position:sticky;top:var(--stick,0px);z-index:50;background:#071427;
   border-top:1px solid rgba(255,255,255,.10)}
-.tabwrap{max-width:1140px;margin:0 auto;padding-inline:20px;display:flex;gap:2px;
+.tabwrap{position:relative;max-width:1140px;margin:0 auto;padding-inline:20px;display:flex;gap:2px;
   overflow-x:auto;scrollbar-width:none}
 .tabwrap::-webkit-scrollbar{display:none}
 /* The tab row scrolls sideways on a phone; a fade at the edge says there is
    more ("Actions" showed as "Ac" with nothing to say it continued). */
-.tabwrap{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scroll-snap-type:x proximity}
+/* scroll-padding matches the strip's 20px gutter: without it, snapping put
+   the first tab flush against the edge, so Overview opened half cut off. */
+.tabwrap{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
+  scroll-padding-inline:20px}
 .tabwrap a{scroll-snap-align:start}
 .tabwrap.more-r{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent);
   mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent)}
@@ -930,7 +927,9 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
 .pbar .menu .cap{padding:7px 11px 6px;font-size:10px;font-weight:700;letter-spacing:1.4px;
   text-transform:uppercase;color:var(--muted)}
 .pbar .menu a{display:block;padding:9px 11px;border-radius:8px;text-decoration:none}
-.pbar .menu a:hover{background:var(--sunken)}
+.pbar .menu .menuas{padding:9px 11px;border-radius:8px}
+.pbar .menu .menuas{appearance:none;width:100%;border:0;background:none;font:inherit;text-align:left;cursor:pointer}
+.pbar .menu a:hover,.pbar .menu .menuas:hover{background:var(--sunken)}
 .pbar .menu b{display:block;font-size:13.5px;color:var(--ink)}
 .pbar .menu span{display:block;font-size:11.8px;color:var(--muted);margin-top:1px}
 /* The way in to the board. A button, in the bar, with the number of open
@@ -952,6 +951,17 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
 .pbar .out:hover{background:rgba(255,255,255,.1);color:#fff}
 @media (max-width:640px){
   .pbar .club,.pbar .out span{display:none}
+  .pbar .brand{flex-shrink:0}
+}
+/* A phone with the Admin or Coach badge: logo, badge, Analytics, Events and
+   Log out have to fit 360px without the logo sliding under the badge. */
+@media (max-width:420px){
+  .pbar .in{padding:0 12px;gap:8px}
+  .pbar .brand img{height:30px}
+  .pbar nav{gap:2px}
+  .pbar a.t,.pbar button.t{padding:6px 9px}
+  .pbar .chev,.pbar .pchev{width:14px;height:14px}
+  .pbar .out{padding:0 8px}
   .pbar .out{margin-left:0;padding:0 10px}
 }
 .scopenote{margin:14px 0 0;padding:11px 14px;border-left:3px solid var(--electric);
@@ -1674,6 +1684,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
         <div class="cap">Machakos County</div>
         <a href="/parent"><b>Swimming Nationals</b><span>19&ndash;22 Nov 2026 &middot; register &amp; pay</span></a>
         <a href="/admin" id="pb-admin" hidden><b>Admin view</b><span>Every registration and payment</span></a>
+        <button type="button" class="menuas" id="pb-asparent2" hidden></button>
         <a href="/roadmap" id="pb-road" hidden><b>What we are building</b><span>Shipped, planned, and your ideas</span></a>
       </div>
       <a class="t roadbtn" id="pb-roadbtn" href="/roadmap" hidden>
@@ -1685,8 +1696,6 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
   </div>
 </div>
 
-<!-- On a phone the bar has no room for the parent-view switch; it sits here. -->
-<div class="asbar" id="pb-asbar" hidden><button type="button" class="asparent" id="pb-asparent2"></button></div>
 
 <header class="hero" id="hero">
   <div class="wrap">
@@ -5294,13 +5303,14 @@ function portalBar(me){
   ME = me;
   AS_PARENT = !!(me && me.isAdmin) && readAsParent();
   const isAdm = !!(me && me.isAdmin);
-  const bar2 = document.getElementById('pb-asbar');
-  if (bar2) bar2.hidden = !isAdm;
   for (const id of ['pb-asparent', 'pb-asparent2']) {
     const ap = document.getElementById(id);
     if (!ap) continue;
-    if (id === 'pb-asparent') ap.hidden = !isAdm;
-    ap.textContent = AS_PARENT ? 'Back to the admin view' : 'See it as a parent';
+    ap.hidden = !isAdm;
+    const label = AS_PARENT ? 'Back to the admin view' : 'See it as a parent';
+    if (id === 'pb-asparent') ap.textContent = label;
+    else ap.innerHTML = `<b>${label}</b><span>${AS_PARENT
+      ? 'Coach and admin views again' : 'The page as a parent sees it'}</span>`;
     ap.setAttribute('aria-pressed', String(AS_PARENT));
     ap.onclick = () => {
       try { sessionStorage.setItem('ng_as_parent', AS_PARENT ? '0' : '1'); } catch (e) {}
