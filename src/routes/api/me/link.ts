@@ -249,7 +249,12 @@ export const Route = createFileRoute("/api/me/link")({
                 where sw.id = $1`,
               [swimmerId, parentId],
             );
-            if (ctx) {
+            // No name yet means they are part-way through registering; the
+            // notice goes out, with their name, when they finish (register.ts).
+            const named = await one<{ n: string }>(
+              `select coalesce(full_name,'') as n from public.parents where id = $1`, [parentId],
+            );
+            if (ctx && named?.n.trim()) {
               const d = (x: string) => (normalizeKePhone(x) || x || "").replace(/\D/g, "").slice(-9);
               const mine = d(ctx.parent_phone);
               await sendClaimNotice(notifyEmails(), {

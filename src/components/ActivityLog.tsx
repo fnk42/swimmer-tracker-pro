@@ -42,6 +42,7 @@ const LABEL: Record<string, string> = {
   signed_in: "signed in",
   registration_done: "finished registering",
   parent_invited: "invited a second parent",
+  coach_requested: "registered as a coach (not on the coach list)",
   consent_given: "accepted the consent document",
   swimmer_claimed: "claimed a swimmer",
   swimmer_unlinked: "removed a swimmer from their account",

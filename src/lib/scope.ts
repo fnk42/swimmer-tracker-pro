@@ -130,14 +130,29 @@ export async function viewer(request: Request): Promise<Viewer | null> {
           [s.parentId],
         )
       : [];
+    // A coach registers once, like a parent: name, phone and the data
+    // consent, on the same page (Felix, 20 Oct 2026). Admins are never held.
+    let needsProfile = false, needsConsent = false;
+    if (coach && s.parentId) {
+      const [prof, cons] = await Promise.all([
+        one<{ ok: boolean }>(
+          `select coalesce(profile_complete,false) and coalesce(full_name,'') <> '' and coalesce(phone,'') <> '' as ok
+             from public.parents where id = $1`, [s.parentId]),
+        one<{ n: number }>(
+          `select count(*)::int n from public.consents where parent_id = $1 and document = $2 and version = $3
+              and withdrawn_at is null`, [s.parentId, CONSENT_DOCUMENT, CONSENT_VERSION]),
+      ]);
+      needsProfile = !prof?.ok;
+      needsConsent = (cons?.n ?? 0) === 0;
+    }
     return {
       email: s.email,
       parentId: s.parentId ?? null,
       isAdmin: !!s.isAdmin,
       isCoach: coach,
       scope: "coach",
-      needsProfile: false,
-      needsConsent: false,
+      needsProfile,
+      needsConsent,
       myAthletes: athletes.map((r) => r.analytics_name),
       pendingClaims: 0,
     };
