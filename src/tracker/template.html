@@ -428,6 +428,7 @@ th.co-col{color:#7A5200;border-bottom:2px solid #E3A92B}
 .evrow .evtop{display:flex;align-items:baseline;gap:8px;min-width:0}
 .evrow .evtop .e{flex:0 1 auto}
 .evrow .evtop .trend{margin-left:auto;font-size:13px;min-width:0;text-align:right}
+.evlist.once .oncenote{margin:4px 0 10px;font-size:13px;color:var(--muted);line-height:1.5}
 .evrow .evsub{margin-top:2px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 /* A time that opens its meet. Underlined like a link; padded so a thumb finds it. */
 .tlink{appearance:none;border:0;background:none;font:inherit;color:var(--electric-deep);
@@ -3410,6 +3411,33 @@ function pbCard(s){
   return `<ul class="pbcard">${rows}</ul>`;
 }
 
+/** A swimmer's races in the events they have swum only once, within the
+    chosen seasons: the time (opening the gala), the meet and the place. */
+function onceRaces(s){
+  const MS = DATA.meetSwims;
+  if (!MS || !(s.onceEvents || []).length) return [];
+  const want = new Set(s.onceEvents.map(ev => { const i = ev.lastIndexOf(' ');
+    return ev.slice(0, i) + '|' + ev.slice(i + 1); }));
+  const [lo, hi] = fSpan();
+  const meet = new Map(MS.meets.map(m => [m.id, m]));
+  const SECS = MS.cols.indexOf('secs'), PLACE = MS.cols.indexOf('place');
+  return MS.rows.filter(r => MS.swimmers[r[1]] === s.name && want.has(MS.events[r[2]]))
+    .map(r => ({ r, m: meet.get(r[0]) }))
+    .filter(({ m }) => m && m.date.slice(0, 4) >= lo && m.date.slice(0, 4) <= hi)
+    .sort((a, b) => b.m.date.localeCompare(a.m.date))
+    .map(({ r, m }) => {
+      const [event, course] = MS.events[r[2]].split('|');
+      const e = { event, course }, secs = r[SECS];
+      return { event, course, place: PLACE < 0 ? null : r[PLACE],
+        meet: `${meetName(m.name)} · ${monYr(m.date)}`,
+        time: timeLink(s.name, e, { t: secs }, secs) };
+    });
+}
+function placeTxt(n){
+  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
 function swimmerCard(s){
   // Every tier-2 and coach field has to be treated as possibly absent. That is
   // the whole mechanism in src/lib/tiers.ts: the payload is shaped by OMITTING
@@ -3504,6 +3532,21 @@ function swimmerCard(s){
       <div class="chartbox" data-sw="${swIdx}">${first}</div>
       
     </div>` : '';
+  // Events raced only once never reach spanEvents, so a swimmer whose every
+  // race was a different event had a card with nothing in it, under a header
+  // that says "3 swims · 1 meet". Show those races, and say why there is no
+  // progress yet (Felix, 20 Oct 2026).
+  const once = onceRaces(s);
+  const onceBlock = once.length ? `<div class="evlist once">
+      <h4 class="evhead">Raced once</h4>
+      ${evs ? '' : `<p class="oncenote">Every race so far has been a different event, so there is
+        nothing to compare yet. Their progress shows here once they swim one of these again.</p>`}
+      ${once.map(o => `<div class="evrow">
+        <div class="evtop"><span class="e">${esc(o.event)}</span><span class="c">${esc(o.course)}</span>
+          <span class="trend">${o.time}</span></div>
+        <div class="evsub">${esc(o.meet)}${o.place ? ` · ${placeTxt(o.place)}` : ''}</div>
+      </div>`).join('')}
+    </div>` : '';
   const off = offclub.length
     ? `<div class="offclub"><strong>Also raced for:</strong> ${offclub.map(esc).join(', ')}.
        Those swims count toward this athlete's development, never toward NextGen team totals.</div>` : '';
@@ -3533,6 +3576,7 @@ function swimmerCard(s){
       ${chart}
       ${coach}
       ${evs?`<div class="evlist"><h4 class="evhead">Event by event${ib('events', 'event by event')}</h4>${evs}</div>`:''}
+      ${onceBlock}
       ${off}
     </div>
   </details>`;
