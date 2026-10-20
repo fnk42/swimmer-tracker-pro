@@ -133,8 +133,6 @@ h1,h2,h3{text-wrap:balance;margin:0}
 @media (max-width:420px){
   /* With the Admin / Coach view badge, the short club name does not fit
      beside it; the header right below already says NextGen. */
-  .pbar .in:has(#pb-coach:not([hidden])) .club.abbr{display:none}
-  .pbar .in:has(#pb-coach:not([hidden])) .coachbadge{margin-left:0}
   .asbar:not([hidden]){display:flex;justify-content:flex-end;padding:6px 16px;background:#071427;
     border-bottom:1px solid rgba(255,255,255,.08)}
   .asbar .asparent{appearance:none;border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;
@@ -430,6 +428,7 @@ th.co-col{color:#7A5200;border-bottom:2px solid #E3A92B}
 .evrow .evtop{display:flex;align-items:baseline;gap:8px;min-width:0}
 .evrow .evtop .e{flex:0 1 auto}
 .evrow .evtop .trend{margin-left:auto;font-size:13px;min-width:0;text-align:right}
+.evlist.once .oncenote{margin:4px 0 10px;font-size:13px;color:var(--muted);line-height:1.5}
 .evrow .evsub{margin-top:2px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 /* A time that opens its meet. Underlined like a link; padded so a thumb finds it. */
 .tlink{appearance:none;border:0;background:none;font:inherit;color:var(--electric-deep);
@@ -906,15 +905,20 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
 .pbar{background:#071427;
   border-bottom:1px solid rgba(255,255,255,.10);
   position:sticky;top:env(safe-area-inset-top,0px);z-index:60}
-.pbar .in{max-width:1180px;margin:0 auto;padding:0 20px;height:56px;
-  display:flex;align-items:center;gap:14px}
-.pbar .club.abbr{display:none;font-weight:600;color:#C9DAEC}
-.pbar .club{font-size:11px;color:#8FA9C4;white-space:nowrap}
+.pbar .in{max-width:1140px;margin:0 auto;padding:0 20px;height:56px;
+  display:flex;align-items:center;gap:16px}
+.pbar .brand{display:flex;align-items:center;gap:12px;min-width:0;text-decoration:none}
+.pbar .brand img{height:36px;width:auto;flex-shrink:0}
+.pbar .club{font-size:11px;letter-spacing:.025em;color:rgba(255,255,255,.45);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.pbar .in > .coachbadge{margin-left:0}
 .pbar nav{margin-left:auto;display:flex;align-items:center;gap:4px;position:relative}
-.pbar a.t,.pbar button.t{font:inherit;font-size:13.5px;padding:7px 13px;border-radius:8px;
-  border:0;background:none;color:#C8D8EA;cursor:pointer;text-decoration:none;
+.pbar a.t,.pbar button.t{font:inherit;font-size:14px;line-height:20px;padding:6px 12px;border-radius:6px;
+  border:0;background:none;color:rgba(255,255,255,.7);cursor:pointer;text-decoration:none;
   display:flex;align-items:center;gap:6px;transition:background .15s,color .15s}
-.pbar a.t:hover,.pbar button.t:hover{background:rgba(255,255,255,.09);color:#fff}
+.pbar a.t:hover,.pbar button.t:hover{background:rgba(255,255,255,.1);color:#fff}
+.pbar .pchev{width:16px;height:16px;transition:transform .15s}
+.pbar [aria-expanded="true"] .pchev{transform:rotate(180deg)}
 /* The tab you are on, in the club's electric blue — the same fill the chosen
    swimmers wear on the Nationals page, so "where am I" and "what is selected"
    read as one idea. Grey-on-grey at 14% white was almost invisible on a phone. */
@@ -941,12 +945,14 @@ details.grp .gcount{font-size:12px;font-weight:600;color:var(--muted);white-spac
    progress" was what pushed it to 471px and the whole page sideways for every
    admin; it is still one tap away in the Events menu ("What we are building"). */
 @media (max-width:640px){ .pbar a.t.roadbtn{display:none} }
-.pbar .out{font-size:12px;color:#8FA9C4;background:none;border:0;cursor:pointer;
-  padding:7px 4px;margin-left:6px;font-family:inherit}
-.pbar .out:hover{color:#fff}
+.pbar .out{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 12px;margin-left:8px;
+  font:inherit;font-size:14px;font-weight:500;color:rgba(255,255,255,.7);background:none;border:0;
+  border-radius:6px;cursor:pointer;transition:background .15s,color .15s}
+.pbar .out svg{width:16px;height:16px;flex-shrink:0}
+.pbar .out:hover{background:rgba(255,255,255,.1);color:#fff}
 @media (max-width:640px){
-  .pbar .club{display:none}
-  .pbar .club.abbr{display:inline}
+  .pbar .club,.pbar .out span{display:none}
+  .pbar .out{margin-left:0;padding:0 10px}
 }
 .scopenote{margin:14px 0 0;padding:11px 14px;border-left:3px solid var(--electric);
   background:var(--sunken);border-radius:0 8px 8px 0;font-size:13px;color:var(--muted)}
@@ -1644,16 +1650,15 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 
 <div class="pbar" id="pbar" hidden>
   <div class="in">
-    <!-- No logo in this bar. The hero immediately below carries it at full
-         size, and squeezed to the 34px bar height a wide wordmark just looked
-         squashed. The club name alone does the same job. -->
-    <span class="club">NextGen Multi Sport Academy</span>
-    <span class="club abbr" aria-hidden="true">NextGen</span>
+    <!-- Logo, club name, sections, Log out: the same bar AppHeader draws on
+         the Events pages, so moving between them does not shift anything. -->
+    <a class="brand" href="/tracker"><img src="/nextgen-logo.png" alt="NextGen Swim Club" width="395" height="265">
+      <span class="club">NextGen Multi Sport Academy</span></a>
     <span class="coachbadge" id="pb-coach" hidden>Coach view</span>
     <nav aria-label="Portal sections">
       <a class="t" href="/tracker" aria-current="true">Analytics</a>
       <button class="t" id="pb-events" type="button" aria-haspopup="menu" aria-expanded="false"
-              hidden>Events <span aria-hidden style="font-size:10px">&#9662;</span></button>
+              hidden>Events <svg class="pchev" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
       <div class="menu" id="pb-menu" hidden>
         <div class="cap">Machakos County</div>
         <a href="/parent"><b>Swimming Nationals</b><span>19&ndash;22 Nov 2026 &middot; register &amp; pay</span></a>
@@ -1664,7 +1669,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
         <span aria-hidden>&#128172;</span> Ideas &amp; progress
         <span class="rbadge" id="pb-rbadge" hidden></span></a>
       <button class="t asparent" id="pb-asparent" type="button" hidden>See it as a parent</button>
-      <button class="out" id="pb-out" type="button">Log out</button>
+      <button class="out" id="pb-out" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg><span>Log out</span></button>
     </nav>
   </div>
 </div>
@@ -3406,6 +3411,33 @@ function pbCard(s){
   return `<ul class="pbcard">${rows}</ul>`;
 }
 
+/** A swimmer's races in the events they have swum only once, within the
+    chosen seasons: the time (opening the gala), the meet and the place. */
+function onceRaces(s){
+  const MS = DATA.meetSwims;
+  if (!MS || !(s.onceEvents || []).length) return [];
+  const want = new Set(s.onceEvents.map(ev => { const i = ev.lastIndexOf(' ');
+    return ev.slice(0, i) + '|' + ev.slice(i + 1); }));
+  const [lo, hi] = fSpan();
+  const meet = new Map(MS.meets.map(m => [m.id, m]));
+  const SECS = MS.cols.indexOf('secs'), PLACE = MS.cols.indexOf('place');
+  return MS.rows.filter(r => MS.swimmers[r[1]] === s.name && want.has(MS.events[r[2]]))
+    .map(r => ({ r, m: meet.get(r[0]) }))
+    .filter(({ m }) => m && m.date.slice(0, 4) >= lo && m.date.slice(0, 4) <= hi)
+    .sort((a, b) => b.m.date.localeCompare(a.m.date))
+    .map(({ r, m }) => {
+      const [event, course] = MS.events[r[2]].split('|');
+      const e = { event, course }, secs = r[SECS];
+      return { event, course, place: PLACE < 0 ? null : r[PLACE],
+        meet: `${meetName(m.name)} · ${monYr(m.date)}`,
+        time: timeLink(s.name, e, { t: secs }, secs) };
+    });
+}
+function placeTxt(n){
+  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
 function swimmerCard(s){
   // Every tier-2 and coach field has to be treated as possibly absent. That is
   // the whole mechanism in src/lib/tiers.ts: the payload is shaped by OMITTING
@@ -3500,6 +3532,21 @@ function swimmerCard(s){
       <div class="chartbox" data-sw="${swIdx}">${first}</div>
       
     </div>` : '';
+  // Events raced only once never reach spanEvents, so a swimmer whose every
+  // race was a different event had a card with nothing in it, under a header
+  // that says "3 swims · 1 meet". Show those races, and say why there is no
+  // progress yet (Felix, 20 Oct 2026).
+  const once = onceRaces(s);
+  const onceBlock = once.length ? `<div class="evlist once">
+      <h4 class="evhead">Raced once</h4>
+      ${evs ? '' : `<p class="oncenote">Every race so far has been a different event, so there is
+        nothing to compare yet. Their progress shows here once they swim one of these again.</p>`}
+      ${once.map(o => `<div class="evrow">
+        <div class="evtop"><span class="e">${esc(o.event)}</span><span class="c">${esc(o.course)}</span>
+          <span class="trend">${o.time}</span></div>
+        <div class="evsub">${esc(o.meet)}${o.place ? ` · ${placeTxt(o.place)}` : ''}</div>
+      </div>`).join('')}
+    </div>` : '';
   const off = offclub.length
     ? `<div class="offclub"><strong>Also raced for:</strong> ${offclub.map(esc).join(', ')}.
        Those swims count toward this athlete's development, never toward NextGen team totals.</div>` : '';
@@ -3529,6 +3576,7 @@ function swimmerCard(s){
       ${chart}
       ${coach}
       ${evs?`<div class="evlist"><h4 class="evhead">Event by event${ib('events', 'event by event')}</h4>${evs}</div>`:''}
+      ${onceBlock}
       ${off}
     </div>
   </details>`;
@@ -5285,7 +5333,7 @@ function portalBar(me){
     menu.hidden = !nowOpen;
     evBtn.setAttribute('aria-expanded', String(nowOpen));
   };
-  document.addEventListener('mousedown', e => { if (!menu.contains(e.target) && e.target !== evBtn) close(); });
+  document.addEventListener('mousedown', e => { if (!menu.contains(e.target) && !evBtn.contains(e.target)) close(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
 
   // Everything sticky hangs below the portal bar, which is itself sticky and
