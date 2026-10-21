@@ -593,6 +593,7 @@ function SwimmerFigure({ zone, counts, onZone }: { zone: Zone | null; counts: Pa
           <stop offset="1" stopColor="#16A6E8" stopOpacity="0" />
         </linearGradient>
       </defs>
+      <g pointerEvents="none">
       <rect x="0" y="70" width="640" height="160" fill="url(#fig-water)" />
       <path d="M0 70 Q 20 64 40 70 T 80 70 T 120 70 T 160 70 T 200 70 T 240 70 T 280 70 T 320 70 T 360 70 T 400 70 T 440 70 T 480 70 T 520 70 T 560 70 T 600 70 T 640 70"
         fill="none" stroke="#46D3F0" strokeOpacity=".45" strokeWidth="2" />
@@ -603,6 +604,7 @@ function SwimmerFigure({ zone, counts, onZone }: { zone: Zone | null; counts: Pa
         {limbs.map(([d, w], i) => <path key={"i" + i} d={d} stroke="#10284A" strokeWidth={w} />)}
         <circle cx="484" cy="90" r="21.5" fill="#10284A" />
         <path d="M490 84 L503 86" stroke="#FFC24B" strokeWidth="4" />
+      </g>
       </g>
       {spots.map((s) => {
         const on = zone === s.z, n = counts[s.z] ?? 0;
