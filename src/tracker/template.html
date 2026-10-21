@@ -275,6 +275,7 @@ table:not(:has(.co-col)){min-width:0}
   .tblwrap table:not(:has(.co-col)) th{white-space:normal;font-size:9.5px;letter-spacing:.3px;padding:10px 7px;vertical-align:bottom}
   .tblwrap table:not(:has(.co-col)) td{padding:10px 7px}
   .tblwrap table:not(:has(.co-col)) td.rowlab{white-space:normal}
+  .tblwrap table:not(:has(.co-col)) td .nof{white-space:normal}
   table:not(:has(.co-col)) td{padding:10px 8px}
 }
 /* The label column stays put while the figures scroll under it on a phone,
@@ -435,6 +436,7 @@ th.co-col{color:#7A5200;border-bottom:2px solid #E3A92B}
 .evrow .evtop{display:flex;align-items:baseline;gap:8px;min-width:0}
 .evrow .evtop .e{flex:0 1 auto}
 .evrow .evtop .trend{margin-left:auto;font-size:13px;min-width:0;text-align:right}
+.tblnote{margin:8px 2px 0;font-size:12.5px;line-height:1.5;color:var(--muted)}
 .evlist.once .oncenote{margin:4px 0 10px;font-size:13px;color:var(--muted);line-height:1.5}
 .evrow .evsub{margin-top:2px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 /* A time that opens its meet. Underlined like a link; padded so a thumb finds it. */
@@ -3440,7 +3442,7 @@ function pbCard(s){
       <span class="pb-ev">${esc(e.event)} <small>${esc(e.course)}</small></span>
       <span class="pb-t">${timeLink(s.name, e, best, best.t)}</span>
       <span class="pb-d ${drop < -0.05 ? 'good' : ''}">${pts.length < 2 ? 'first swim'
-        : drop < -0.05 ? `${Math.abs(drop).toFixed(1)}% faster than their first` : 'their first swim is still the best'}</span></li>`;
+        : drop < -0.05 ? `${Math.abs(drop).toFixed(1)}% faster than their first swim (${monYr(pts[0].d)})` : 'their first swim is still the best'}</span></li>`;
   }).join('');
   return `<ul class="pbcard">${rows}</ul>`;
 }
@@ -3472,6 +3474,12 @@ function placeTxt(n){
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
+/** 400m and up was called "Distance", which made the alert read "Slowest-
+    improving distance: Distance" (Martin, 21 Oct 2026). The data keeps the
+    key; only the label changes. */
+const DIST_LAB = { Sprint: 'Sprint', Middle: 'Middle', Distance: 'Long' };
+const DIST_LONG = { Sprint: 'Sprint races (25–50m)', Middle: 'Middle races (100–200m)', Distance: 'Long races (400m and up)' };
+
 function swimmerCard(s){
   // Every tier-2 and coach field has to be treated as possibly absent. That is
   // the whole mechanism in src/lib/tiers.ts: the payload is shaped by OMITTING
@@ -3480,7 +3488,7 @@ function swimmerCard(s){
   const distMap = s.dists || {}, offclub = s.offclub || [];
   const dists = ['Sprint','Middle','Distance']
     .filter(k => distMap[k])
-    .map(k => `<span class="chip">${k}</span>`).join('');
+    .map(k => `<span class="chip">${DIST_LAB[k]}</span>`).join('');
   // Two lines per event: what it is and how it moved, then the times behind
   // it. The grid this replaces gave the times priority and squeezed the event
   // name and the change to nothing on a phone.
@@ -3842,7 +3850,7 @@ function render(){
   const distBars = ['Sprint','Middle','Distance'].filter(k=>distSrc[k]).map(k=>{
     const v = distSrc[k];
     const mx = Math.max(...Object.values(distSrc).map(x=>Math.abs(x.median)),1);
-    return `<div class="bar"><span class="lab">${k}</span>
+    return `<div class="bar"><span class="lab">${DIST_LAB[k]}</span>
       <span class="track"><span class="fill f-${v.cls}" style="width:${Math.max(4,100*Math.abs(v.median)/mx)}%"></span></span>
       <span class="val">${pctShort(v.median)}</span></div>`;}).join('');
 
@@ -3941,11 +3949,11 @@ function render(){
     : BAND_ORDER.map(b => [b, (fRebuild('band').find(x => x[0] === b) || [])[1]])
         .filter(([, v]) => v);
   const ageRows = ageSrc.map(([lab,a], i)=>
-    `<tr><td class="rowlab"><strong>${esc(lab)}</strong></td><td class="num">${a.swimmers}</td>
+    `<tr><td class="rowlab"><strong>${esc(String(lab).replace(/-/g, '\u2011'))}</strong></td><td class="num">${a.swimmers}</td>
       <td class="num">${a.swims}</td><td class="num">${a.podiums}</td>
       <td class="num ${trendCls(a.median===undefined?null:a.median)}">${a.median===null||a.median===undefined?'—':pctShort(a.median)}${
-        a.rated ? `<span class="nof">${a.rated} of ${a.swimmers} rated${
-          a.rated < 6 ? ' ⚠' : ''}</span>` : ''}</td>
+        a.rated ? `<span class="nof">from ${a.rated} swimmer${a.rated === 1 ? '' : 's'}${
+          a.rated < 6 && coachView() ? ' ⚠' : ''}</span>` : ''}</td>
       ${coachView() ? `<td class="num co-col">${isrCell(a, 'age' + i)}</td>` : ''}</tr>${isrRows(a, 'age' + i, lab)}`).join('');
 
   // The alerts are written in the pipeline for the whole club. Under a filter
@@ -3953,7 +3961,8 @@ function render(){
   // stroke on a page filtered to Back. Rebuilt here from the same filtered
   // tables those panels use, in the same words.
   const fAlerts = (() => {
-    if (!fActive()) return Y.alerts;
+    // Always rebuilt (not only under a filter): the pipeline's copy said
+    // "Distance" and "9.2% faster" with no unit (Martin, 21 Oct 2026).
     const out = [];
     const st = Object.entries(strokeSrc).filter(([, v]) => v.median !== null && v.n);
     if (st.length) {
@@ -3961,20 +3970,20 @@ function render(){
       const fastest = by[0], slowest = by[by.length - 1];
       if (slowest !== fastest) {
         out.push({ k: 'Slowest-improving stroke', v: slowest[0], t: 'warn',
-                   d: `${pctShort(slowest[1].median)} faster across ${slowest[1].n} comparable races` });
+                   d: `${pctShort(slowest[1].median)} faster a year, typically · ${slowest[1].n} comparable races` });
       }
       out.push({ k: 'Fastest-improving stroke', v: fastest[0], t: 'ok',
-                 d: `${pctShort(fastest[1].median)} faster across ${fastest[1].n} comparable races` });
+                 d: `${pctShort(fastest[1].median)} faster a year, typically · ${fastest[1].n} comparable races` });
     }
     const ds = Object.entries(distSrc).filter(([, v]) => v.median !== null);
     if (ds.length > 1) {
       const worst = [...ds].sort((a, b) => b[1].median - a[1].median)[0];
-      out.push({ k: 'Slowest-improving distance', v: worst[0], t: 'warn',
-                 d: `${pctShort(worst[1].median)} faster` });
+      out.push({ k: 'Slowest-improving distance', v: DIST_LONG[worst[0]] || worst[0], t: 'warn',
+                 d: `${pctShort(worst[1].median)} faster a year, typically${worst[1].n ? ` · ${worst[1].n} comparable races` : ''}` });
     }
     if (fClassCounts.rated) {
       out.push({ k: 'Swimmers needing a look', v: String(fClassCounts.review), t: 'warn',
-                 d: `of ${fClassCounts.rated} swimmers we have enough races to judge in this selection` });
+                 d: `of ${fClassCounts.rated} swimmers we have enough races to judge${fActive() ? ' in this selection' : ''}` });
     }
     if (!out.length) {
       out.push({ k: 'Nothing to flag', v: '\u2014', t: 'ok',
@@ -4016,7 +4025,8 @@ function render(){
     const v = sexSrc[k];
     return `<tr><td class="rowlab"><strong>${k}</strong></td><td class="num">${v.swimmers}</td>
       <td class="num">${v.swims}</td><td class="num">${v.podiums}</td>
-      <td class="num ${trendCls(v.median)}">${v.median===null?'—':pctShort(v.median)}</td>
+      <td class="num ${trendCls(v.median)}">${v.median===null?'—':pctShort(v.median)}${
+        v.rated ? `<span class="nof">from ${v.rated} swimmer${v.rated === 1 ? '' : 's'}</span>` : ''}</td>
       ${coachView() ? `<td class="num co-col">${isrCell(v, 'sex' + k)}</td>` : ''}</tr>${isrRows(v, 'sex' + k, k)}`;}).join('');
 
   // swimmer watch lists
@@ -4285,12 +4295,12 @@ function render(){
       <div class="panel"><div class="kick">Stroke development</div>
         <h3>Where the club is gaining time</h3>
         <div class="bars">${strokeBars||'<p class="note">No comparable repeat swims this season.</p>'}</div>
-        <p class="note">The typical gain, across every swimmer who has raced that stroke twice.</p>
+        <p class="note">The typical gain a year, across every swimmer who has raced that stroke twice.</p>
       </div>
       <div class="panel"><div class="kick">Distance development</div>
-        <h3>Sprint, middle and distance</h3>
+        <h3>Sprint, middle and long</h3>
         <div class="bars">${distBars||'<p class="note">No comparable repeat swims this season.</p>'}</div>
-        <p class="note">Sprint 25–50m · Middle 100–200m · Distance 400m and above.</p>
+        <p class="note">Sprint 25–50m · Middle 100–200m · Long 400m and up.</p>
       </div>
     </div>
 
@@ -4313,14 +4323,15 @@ function render(){
     </div>
     <div class="tblwrap" style="margin-top:12px"><table>
       <thead><tr><th>${ageMode==='year'?'Age':'Age band'}</th><th class="num">Swimmers</th><th class="num">Swims</th>
-        <th class="num" title="Podiums won by these swimmers, wherever they were entered">Podiums</th><th class="num">Median change</th>
+        <th class="num" title="Podiums won by these swimmers, wherever they were entered">Podiums</th><th class="num" title="How much faster the middle swimmer in the group gets in a year">Typical gain a year</th>
         ${coachView() ? `<th class="num co-col">Improving / Stable / Review ${coTag('Coaches')}</th>` : ''}</tr></thead>
       <tbody>${ageRows}</tbody></table></div>
+    <p class="tblnote">Typical gain a year: how much faster the middle swimmer in each group gets in a year, from swimmers with at least two races in the same event two months apart.</p>
 
     <h3 style="margin-top:26px;font-size:15px;font-weight:700">Boys and girls</h3>
     <div class="tblwrap" style="margin-top:10px"><table>
       <thead><tr><th></th><th class="num">Swimmers</th><th class="num">Swims</th>
-        <th class="num" title="Podiums won by these swimmers, wherever they were entered">Podiums</th><th class="num">Median change</th>
+        <th class="num" title="Podiums won by these swimmers, wherever they were entered">Podiums</th><th class="num" title="How much faster the middle swimmer in the group gets in a year">Typical gain a year</th>
         ${coachView() ? `<th class="num co-col">Improving / Stable / Review ${coTag('Coaches')}</th>` : ''}</tr></thead>
       <tbody>${sexRows}</tbody></table></div>
 
