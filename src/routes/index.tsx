@@ -50,6 +50,21 @@ function landing(): string {
   return nextFromUrl() ?? "/tracker";
 }
 
+/** Coaches land on the assessment form, front and centre (Felix, 21 Oct
+ * 2026) — while it is private, only those the server lets use it. A link
+ * someone followed to get here still wins. */
+async function go() {
+  const next = nextFromUrl();
+  if (!next || next === "/tracker#/coaches") {
+    const ok = await fetch("/api/coach/assessments?probe=1").then((r) => r.ok).catch(() => false);
+    if (ok) {
+      window.location.href = "/assess";
+      return;
+    }
+  }
+  window.location.href = landing();
+}
+
 export const Route = createFileRoute("/")({
   component: PortalLanding,
 });
@@ -83,7 +98,7 @@ function PortalLanding() {
       navigate({ to: "/welcome" });
       return;
     }
-    window.location.href = landing();
+    void go();
   }, [me.isLoading, me.data, navigate]);
 
   // Whether the shared coordinator sign-in exists at all. The server answers
@@ -139,7 +154,7 @@ function PortalLanding() {
           navigate({ to: "/welcome" });
           return;
         }
-        window.location.href = landing();
+        void go();
         return;
       }
       setDevNote(!!r.devMode);
@@ -169,7 +184,7 @@ function PortalLanding() {
         navigate({ to: "/welcome" });
         return;
       }
-      window.location.href = landing();
+      void go();
     } catch {
       setError("That code is wrong or has expired. Check the email, or send a new code.");
     }

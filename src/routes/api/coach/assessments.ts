@@ -50,7 +50,7 @@ const ymd = (d: unknown) => {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 };
 
-const shape = (r: Row, coach: boolean) => ({
+const shape = (r: Row, coach: boolean, me = "") => ({
   id: r.id,
   name: r.analytics_name,
   area: r.area,
@@ -60,7 +60,7 @@ const shape = (r: Row, coach: boolean) => ({
   updatedAt: r.updated_at,
   report: report(r.body),
   // The raw picks are only needed to edit, which only a coach does.
-  ...(coach ? { body: r.body, mine: true } : {}),
+  ...(coach ? { body: r.body, mine: r.coach_email.toLowerCase() === me.toLowerCase() } : {}),
 });
 
 /** Checks a body against the framework; returns an error message or null. */
@@ -75,6 +75,7 @@ function invalid(b: AssessmentBody): string | null {
     const pt = points.get(id);
     if (!pt || !pt.answers.some((a) => a.id === p.answer)) return "That form is out of date. Reload and try again";
     if (p.side && (!pt.sided || !["left", "right", "both"].includes(p.side))) return "Unknown side";
+    if ((p.note ?? "").length > 200) return "A point's note is too long";
   }
   if ((b.priorities ?? []).length > 3) return "Pick up to three priorities";
   for (const id of b.priorities ?? []) {
@@ -91,7 +92,11 @@ function clean(b: AssessmentBody): AssessmentBody {
   const picks: Record<string, Pick> = {};
   for (const [id, p] of Object.entries(b.picks)) {
     const work = points.get(id)?.answers.find((a) => a.id === p.answer)?.tone === "work";
-    picks[id] = { answer: p.answer, ...(p.side && work ? { side: p.side } : {}) };
+    picks[id] = {
+      answer: p.answer,
+      ...(p.side && work ? { side: p.side } : {}),
+      ...(p.note?.trim() ? { note: p.note.trim() } : {}),
+    };
   }
   return {
     area: b.area,
@@ -111,15 +116,29 @@ export const Route = createFileRoute("/api/coach/assessments")({
           if (!v) return json({ error: "Not signed in" }, 401);
           if (!allowed(v.email)) return hidden();
           const url = new URL(request.url);
-          if (url.searchParams.get("probe")) return json({ ok: true });
           const coach = isCoachView(v, request);
+          // The form asks first: may this person use it, and under what name.
+          if (url.searchParams.get("probe")) {
+            const who = v.parentId
+              ? await one<{ n: string }>(`select coalesce(full_name,'') n from public.parents where id = $1`, [v.parentId])
+              : null;
+            return json({ ok: true, coachName: who?.n.trim() || v.email.split("@")[0] });
+          }
+          // This coach's latest, for the "Recent" list on the form.
+          if (url.searchParams.get("mine")) {
+            if (!coach) return json({ error: "Coaches only" }, 403);
+            const rows = await q<Row>(
+              `select * from public.coach_assessments where lower(coach_email) = lower($1)
+                order by updated_at desc limit 12`, [v.email]);
+            return json(rows.map((r) => shape(r, true, v.email)));
+          }
 
           const id = url.searchParams.get("id");
           if (id) {
             if (!coach) return json({ error: "Coaches only" }, 403);
             const r = await one<Row>(`select * from public.coach_assessments where id = $1::uuid`, [id]);
             if (!r) return json({ error: "Not found" }, 404);
-            return json(shape(r, true));
+            return json(shape(r, true, v.email));
           }
 
           const name = url.searchParams.get("name")?.trim() ?? "";
@@ -137,7 +156,7 @@ export const Route = createFileRoute("/api/coach/assessments")({
             await q(`insert into public.assessment_views (viewer_email, analytics_name) values ($1, $2)`,
               [v.email, name]).catch(() => {});
           }
-          return new Response(JSON.stringify(rows.map((r) => shape(r, coach))), {
+          return new Response(JSON.stringify(rows.map((r) => shape(r, coach, v.email))), {
             headers: { "content-type": "application/json", "cache-control": "private, no-store" },
           });
         } catch (err) {
@@ -191,7 +210,7 @@ export const Route = createFileRoute("/api/coach/assessments")({
             email: v.email, parentId: v.parentId ?? undefined,
             detail: `${areaById(body.area)?.name} for ${name}${b.shared ? " (shared with parents)" : " (draft)"}`,
           });
-          return json(shape(row!, true));
+          return json(shape(row!, true, v.email));
         } catch (err) {
           return fail("POST /api/coach/assessments", err, "Could not save that assessment");
         }

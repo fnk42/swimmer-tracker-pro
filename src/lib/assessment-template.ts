@@ -29,8 +29,13 @@ export type Answer = {
   fix?: string;
 };
 
+/** Where a point sits on the swimmer figure in the form. */
+export type Zone = "head" | "arm" | "hand" | "body" | "legs" | "wall";
+
 export type Point = {
   id: string;
+  /** The part of the figure a coach taps to reach it (strokes only). */
+  zone?: Zone;
   /** The technique point, as coaches name it. */
   label: string;
   answers: Answer[];
@@ -642,6 +647,21 @@ export const AREAS: Area[] = [
   },
 ];
 
+// Where each stroke point sits on the figure. Starts and turns are not drawn
+// on it; they are listed by phase instead.
+const ZONES: Record<string, Zone> = {
+  head: "head", breathing: "head",
+  elbow: "arm", pull: "arm", recovery: "arm", finish: "arm", "pullout-arms": "arm",
+  entry: "hand", palm: "hand", wrist: "hand",
+  body: "body", rotation: "body", undulation: "body", timing: "body", glide: "body",
+  kick: "legs", kicks: "legs",
+  streamline: "wall", dolphin: "wall", "dolphin-feet": "wall", "kick-through": "wall",
+  breakout: "wall", "pullout-feet": "wall", "back-start": "wall",
+};
+export const FIGURE_AREAS = new Set(["freestyle", "backstroke", "breaststroke", "butterfly"]);
+export const zoneOf = (area: string, pointId: string): Zone | undefined =>
+  FIGURE_AREAS.has(area) ? ZONES[pointId] : undefined;
+
 export const areaById = (id: string) => AREAS.find((a) => a.id === id) ?? null;
 
 /** Every point of an area once (a shared phase can appear in several areas). */
@@ -651,8 +671,9 @@ export const pointsOf = (area: Area) => {
   return m;
 };
 
-/** What a coach records against one point: the answer picked, and for an arm, which side. */
-export type Pick = { answer: string; side?: Side };
+/** What a coach records against one point: the answer picked, for an arm
+ * which side, and a few words of their own ("getting better"). */
+export type Pick = { answer: string; side?: Side; note?: string };
 
 export type AssessmentBody = {
   area: string;
@@ -669,13 +690,14 @@ const sideWord = (s?: Side) => (s === "left" ? "Left arm: " : s === "right" ? "R
 export function report(body: AssessmentBody) {
   const area = areaById(body.area);
   const points = area ? pointsOf(area) : new Map<string, Point>();
-  const goodLines: string[] = [];
-  const workLines: { id: string; text: string; fix: string }[] = [];
+  const goodLines: { text: string; note?: string }[] = [];
+  const workLines: { id: string; text: string; fix: string; note?: string }[] = [];
   for (const [id, p] of Object.entries(body.picks ?? {})) {
     const a = points.get(id)?.answers.find((x) => x.id === p.answer);
     if (!a) continue;
-    if (a.tone === "good") goodLines.push(a.text);
-    else workLines.push({ id, text: sideWord(p.side) + a.text, fix: a.fix ?? "" });
+    const note = p.note?.trim() || undefined;
+    if (a.tone === "good") goodLines.push({ text: a.text, note });
+    else workLines.push({ id, text: sideWord(p.side) + a.text, fix: a.fix ?? "", note });
   }
   const order = (id: string) => {
     const i = body.priorities.indexOf(id);
