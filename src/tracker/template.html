@@ -5578,10 +5578,10 @@ function assessHTML(name, list){
     return `<details class="as"><summary><span class="as-t">${esc(r.title)}</span>
       <span class="as-m">${fmt(a.filmedOn)} · ${esc(a.coachName)}</span>
       ${coach ? `<span class="as-tag ${a.shared ? 'sh' : ''}">${a.shared ? 'Shared with parents' : 'Draft'}</span>` : ''}</summary>
-      <div class="as-body"><p class="as-m">${esc(r.filmed)}</p>
+      <div class="as-body">
       ${r.good.length ? `<p class="k ok">What is working</p><ul>${r.good.map(g => `<li>${esc(g)}</li>`).join('')}</ul>` : ''}
       ${r.work.length ? `<p class="k wk">To work on</p><ol>${r.work.map(w => `<li>${w.priority ? '<span class="pr">Priority</span>' : ''}${esc(w.text)}
-        <span class="fx">Fix: ${esc(w.fix)}</span>${w.note ? `<span class="fx">Coach's note: ${esc(w.note)}</span>` : ''}</li>`).join('')}</ol>` : ''}
+        <span class="fx">Fix: ${esc(w.fix)}</span></li>`).join('')}</ol>` : ''}
       ${r.note ? `<p class="k">Coach's summary</p><p style="white-space:pre-line;margin:0">${esc(r.note)}</p>` : ''}
       ${coach ? `<a class="as-edit" href="/assess?id=${encodeURIComponent(a.id)}">Edit</a>` : ''}</div></details>`;
   }).join('');

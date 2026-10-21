@@ -5,9 +5,11 @@ import { useMe } from "@/lib/api";
 import {
   AREAS,
   areaById,
+  pointsOf,
   report,
   type AssessmentBody,
-  type ItemMark,
+  type Pick,
+  type Point,
   type Side,
 } from "@/lib/assessment-template";
 
@@ -18,8 +20,9 @@ import {
 // coach can tell at a glance this is the coaches' side. Gold marks the step,
 // the chosen options and the save button; the page itself stays navy.
 //
-// The coach picks a mark per point; the words come from the template, so two
-// coaches assessing the same thing write the same sentence.
+// The coach picks one answer per technique point from a short dropdown, or
+// searches for the point ("elbow", "head"); the words come from the
+// framework, so two coaches who see the same thing write the same sentence.
 
 type Search = { name?: string; id?: string };
 
@@ -35,7 +38,7 @@ const GOLD = "var(--ng-gold)";
 const STEPS = ["what", "marks", "finish"] as const;
 type Step = (typeof STEPS)[number];
 const TITLE: Record<Step, string> = {
-  what: "The swimmer and what was filmed",
+  what: "The swimmer and the stroke",
   marks: "What you saw",
   finish: "Priorities and summary",
 };
@@ -58,8 +61,8 @@ function AssessPage() {
   const [name, setName] = useState(search.name ?? "");
   const [area, setArea] = useState("");
   const [filmedOn, setFilmedOn] = useState(today());
-  const [filmed, setFilmed] = useState("");
-  const [marks, setMarks] = useState<Record<string, ItemMark>>({});
+  const [picks, setPicks] = useState<Record<string, Pick>>({});
+  const [find, setFind] = useState("");
   const [priorities, setPriorities] = useState<string[]>([]);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -88,8 +91,7 @@ function AssessPage() {
         setName(a.name);
         setArea(b.area);
         setFilmedOn(b.filmedOn);
-        setFilmed(b.filmed);
-        setMarks(b.marks);
+        setPicks(b.picks ?? {});
         setPriorities(b.priorities);
         setNote(b.note);
       })
@@ -97,14 +99,11 @@ function AssessPage() {
   }, [search.id, coach]);
 
   const A = areaById(area);
-  const body: AssessmentBody = { area, filmedOn, filmed, marks, priorities, note };
-  const preview = useMemo(() => (A ? report(body) : null), [A, area, filmedOn, filmed, marks, priorities, note]);
-  const workIds = Object.entries(marks).filter(([, m]) => m.mark === "work").map(([k]) => k);
-  const itemsById = useMemo(() => {
-    const m = new Map<string, { label: string }>();
-    for (const p of A?.phases ?? []) for (const i of p.items) m.set(i.id, i);
-    return m;
-  }, [A]);
+  const body: AssessmentBody = { area, filmedOn, picks, priorities, note };
+  const preview = useMemo(() => (A ? report(body) : null), [A, area, filmedOn, picks, priorities, note]);
+  const points = useMemo(() => (A ? pointsOf(A) : new Map<string, Point>()), [A]);
+  const answerOf = (pid: string) => points.get(pid)?.answers.find((a) => a.id === picks[pid]?.answer);
+  const workIds = Object.keys(picks).filter((k) => answerOf(k)?.tone === "work");
 
   if (me.isLoading || probe.isLoading) return <Frame><p className="mt-10 text-white/60">Loading…</p></Frame>;
   if (!coach) {
@@ -124,17 +123,18 @@ function AssessPage() {
   const idx = STEPS.indexOf(step);
   const known = !!name && (swimmers.data ?? []).includes(name);
 
-  function setMark(itemId: string, mark: ItemMark["mark"] | null) {
-    setMarks((m) => {
+  function choose(pid: string, answer: string) {
+    const tone = points.get(pid)?.answers.find((a) => a.id === answer)?.tone;
+    setPicks((m) => {
       const n = { ...m };
-      if (!mark || n[itemId]?.mark === mark) delete n[itemId];
-      else n[itemId] = { ...n[itemId], mark };
+      if (!answer) delete n[pid];
+      else n[pid] = { answer, ...(tone === "work" && m[pid]?.side ? { side: m[pid].side } : {}) };
       return n;
     });
-    if (mark !== "work") setPriorities((p) => p.filter((x) => x !== itemId));
+    if (tone !== "work") setPriorities((p) => p.filter((x) => x !== pid));
   }
-  function patch(itemId: string, p: Partial<ItemMark>) {
-    setMarks((m) => ({ ...m, [itemId]: { ...m[itemId], ...p } }));
+  function setSide(pid: string, side: Side) {
+    setPicks((m) => ({ ...m, [pid]: { ...m[pid], side } }));
   }
   function togglePriority(itemId: string) {
     setPriorities((p) => (p.includes(itemId) ? p.filter((x) => x !== itemId) : p.length >= 3 ? p : [...p, itemId]));
@@ -145,10 +145,9 @@ function AssessPage() {
     if (step === "what") {
       if (!known) return setError("Choose a swimmer from the list");
       if (!A) return setError("Choose what was assessed");
-      if (!filmedOn) return setError("Give the date it was filmed");
-      if (!filmed) setFilmed(A.filmed);
+      if (!filmedOn) return setError("Give the date of the session");
     }
-    if (step === "marks" && !Object.keys(marks).length) return setError("Mark at least one point");
+    if (step === "marks" && !Object.keys(picks).length) return setError("Pick an answer for at least one point");
     setStep(STEPS[Math.min(STEPS.length - 1, idx + 1)]);
     window.scrollTo(0, 0);
   }
@@ -160,7 +159,7 @@ function AssessPage() {
       const r = await fetch("/api/coach/assessments", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id, name, shared, body: { ...body, filmed: filmed || A?.filmed || "" } }),
+        body: JSON.stringify({ id, name, shared, body }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || "That didn't save. Please try again.");
@@ -225,86 +224,97 @@ function AssessPage() {
             <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {AREAS.map((a) => (
                 <Choice key={a.id} on={area === a.id} onClick={() => {
-                  if (a.id !== area) { setArea(a.id); setMarks({}); setPriorities([]); setFilmed(a.filmed); }
+                  if (a.id !== area) { setArea(a.id); setPicks({}); setPriorities([]); setFind(""); }
                 }}>{a.name}</Choice>
               ))}
             </div>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="ng-label" htmlFor="a-date" style={{ color: GOLD }}>Date filmed</label>
+                <label className="ng-label" htmlFor="a-date" style={{ color: GOLD }}>Date of the session</label>
                 <input id="a-date" type="date" className="ng-field" value={filmedOn} max={today()}
                   onChange={(e) => setFilmedOn(e.target.value)} />
               </div>
             </div>
 
-            {A && (
-              <>
-                <label className="ng-label mt-5" htmlFor="a-filmed" style={{ color: GOLD }}>How it was filmed</label>
-                <input id="a-filmed" className="ng-field" value={filmed} maxLength={300}
-                  onChange={(e) => setFilmed(e.target.value)} />
-              </>
-            )}
           </>
         )}
 
-        {step === "marks" && A && (
-          <>
-            <p className="mb-2 mt-1.5 text-[14px] leading-relaxed text-white/65">
-              <span className="font-semibold text-white">{name}</span> · {A.name}. Mark what you saw;
-              leave a point blank if it was not filmed or not clear.
-            </p>
-            {A.phases.map((p) => (
-              <section key={p.title} className="mt-6">
-                <h3 className="text-[13px] font-bold uppercase tracking-[1.4px] text-white/55">{p.title}</h3>
-                <ul className="mt-2 space-y-3">
-                  {p.items.map((it) => {
-                    const m = marks[it.id];
-                    return (
-                      <li key={it.id} className="rounded-xl border p-4"
-                        style={{
-                          borderColor: m?.mark === "work" ? "rgba(255,194,75,.45)" : m?.mark === "good" ? "rgba(31,182,122,.45)" : "rgba(255,255,255,.12)",
-                          background: "rgba(255,255,255,.03)",
-                        }}>
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="text-[15px] font-semibold">{it.label}</span>
-                          <div className="flex gap-1.5" role="group" aria-label={it.label}>
-                            <Mini on={m?.mark === "good"} tone="ok" onClick={() => setMark(it.id, "good")}>Good</Mini>
-                            <Mini on={m?.mark === "work"} tone="gold" onClick={() => setMark(it.id, "work")}>Work on</Mini>
+        {step === "marks" && A && (() => {
+          const q = find.trim().toLowerCase();
+          const hit = (ph: string, pt: { label: string; answers: { label: string }[] }) =>
+            !q || [ph, pt.label, ...pt.answers.map((x) => x.label)].some((t) => t.toLowerCase().includes(q));
+          const phases = A.phases
+            .map((p) => ({ title: p.title, points: p.points.filter((pt) => hit(p.title, pt)) }))
+            .filter((p) => p.points.length);
+          const done = Object.keys(picks).length;
+          return (
+            <>
+              <p className="mb-2 mt-1.5 text-[14px] leading-relaxed text-white/65">
+                <span className="font-semibold text-white">{name}</span> · {A.name}. Pick what you saw for each
+                point; leave a point on "Not assessed" if it wasn't clear.
+              </p>
+              <div className="sticky top-0 z-10 mt-4 rounded-b-xl bg-[#13243f]/95 py-2 backdrop-blur">
+                <input className="ng-field" type="search" value={find} autoComplete="off"
+                  placeholder="Find a point: elbow, head, kick, breathing…"
+                  aria-label="Find a point" onChange={(e) => setFind(e.target.value)} />
+                <p className="mt-1.5 text-[12.5px] text-white/50">
+                  {done ? `${done} point${done === 1 ? "" : "s"} picked` : "Nothing picked yet"}
+                </p>
+              </div>
+              {!phases.length && <p className="mt-5 text-[14px] text-white/60">No point matches "{find}".</p>}
+              {phases.map((p) => (
+                <section key={p.title} className="mt-5">
+                  <h3 className="text-[13px] font-bold uppercase tracking-[1.4px] text-white/55">{p.title}</h3>
+                  <ul className="mt-2 space-y-2.5">
+                    {p.points.map((pt) => {
+                      const pk = picks[pt.id];
+                      const ans = pt.answers.find((x) => x.id === pk?.answer);
+                      return (
+                        <li key={pt.id} className="rounded-xl border p-3.5"
+                          style={{
+                            borderColor: ans?.tone === "work" ? "rgba(255,194,75,.45)" : ans?.tone === "good" ? "rgba(31,182,122,.45)" : "rgba(255,255,255,.12)",
+                            background: "rgba(255,255,255,.03)",
+                          }}>
+                          <div className="grid items-center gap-2 sm:grid-cols-[1fr_15rem]">
+                            <label htmlFor={"pt-" + pt.id} className="text-[15px] font-semibold">{pt.label}</label>
+                            <select id={"pt-" + pt.id} className="ng-field" value={pk?.answer ?? ""}
+                              style={{ fontSize: 14.5, padding: "9px 12px", colorScheme: "dark",
+                                color: ans ? (ans.tone === "work" ? GOLD : "var(--ng-ok)") : undefined }}
+                              onChange={(e) => choose(pt.id, e.target.value)}>
+                              <option value="">Not assessed</option>
+                              <optgroup label="Good">
+                                {pt.answers.filter((x) => x.tone === "good").map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
+                              </optgroup>
+                              <optgroup label="To work on">
+                                {pt.answers.filter((x) => x.tone === "work").map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
+                              </optgroup>
+                            </select>
                           </div>
-                        </div>
-                        <p className="mt-2 text-[13.5px] leading-relaxed text-white/60">
-                          {m?.mark === "work" ? it.work : it.good}
-                        </p>
-                        {m?.mark === "work" && (
-                          <>
-                            <p className="mt-1 text-[13.5px] leading-relaxed" style={{ color: GOLD }}>
-                              Fix: {it.fix}
+                          {ans && (
+                            <p className="mt-2 text-[13.5px] leading-relaxed text-white/65">
+                              {ans.text}
+                              {ans.fix && <span className="block" style={{ color: GOLD }}>Fix: {ans.fix}</span>}
                             </p>
-                            {it.sided && (
-                              <div className="mt-3 flex flex-wrap gap-1.5">
-                                {(["left", "right", "both"] as Side[]).map((s) => (
-                                  <Mini key={s} on={(m.side ?? "both") === s} tone="gold" onClick={() => patch(it.id, { side: s })}>
-                                    {s === "both" ? "Both arms" : s === "left" ? "Left arm" : "Right arm"}
-                                  </Mini>
-                                ))}
-                              </div>
-                            )}
-                          </>
-                        )}
-                        {m && (
-                          <input className="ng-field mt-3" style={{ fontSize: 14, padding: "10px 12px" }} maxLength={400}
-                            placeholder="Add a note (optional)" value={m.note ?? ""}
-                            onChange={(e) => patch(it.id, { note: e.target.value })} />
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            ))}
-          </>
-        )}
+                          )}
+                          {ans?.tone === "work" && pt.sided && (
+                            <div className="mt-2.5 flex flex-wrap gap-1.5">
+                              {(["left", "right", "both"] as Side[]).map((sd) => (
+                                <Mini key={sd} on={(pk?.side ?? "both") === sd} tone="gold" onClick={() => setSide(pt.id, sd)}>
+                                  {sd === "both" ? "Both arms" : sd === "left" ? "Left arm" : "Right arm"}
+                                </Mini>
+                              ))}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              ))}
+            </>
+          );
+        })()}
 
         {step === "finish" && A && preview && (
           <>
@@ -316,7 +326,7 @@ function AssessPage() {
                     const n = priorities.indexOf(wid);
                     return (
                       <Choice key={wid} on={n >= 0} onClick={() => togglePriority(wid)} left>
-                        {n >= 0 ? `${n + 1}. ` : ""}{itemsById.get(wid)?.label}
+                        {n >= 0 ? `${n + 1}. ` : ""}{points.get(wid)?.label}: {answerOf(wid)?.label}
                       </Choice>
                     );
                   })}
@@ -397,7 +407,7 @@ export function Report({ name, filmedOn, r }: { name: string; filmedOn: string; 
   return (
     <div className="mt-2 rounded-xl border border-white/12 bg-black/20 p-4 text-[14px] leading-relaxed text-white/80">
       <p className="text-[15px] font-semibold text-white">{r.title} · {firstName(name)}</p>
-      <p className="text-[12.5px] text-white/50">{when}. {r.filmed}</p>
+      <p className="text-[12.5px] text-white/50">{when}</p>
       {r.good.length > 0 && (
         <>
           <p className="mt-3 text-[12px] font-bold uppercase tracking-[1.2px] text-[var(--ng-ok)]">What is working</p>
@@ -413,7 +423,6 @@ export function Report({ name, filmedOn, r }: { name: string; filmedOn: string; 
                 {w.priority && <span className="mr-1.5 rounded px-1.5 py-0.5 text-[11px] font-bold" style={{ background: GOLD, color: "#0A1B33" }}>Priority</span>}
                 {w.text}
                 <span className="block text-white/60">Fix: {w.fix}</span>
-                {w.note && <span className="block text-white/60">Coach's note: {w.note}</span>}
               </li>
             ))}
           </ol>

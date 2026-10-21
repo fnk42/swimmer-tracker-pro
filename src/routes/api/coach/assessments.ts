@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { q, one, json, fail } from "@/lib/db";
 import { maySeeAssessment, viewer } from "@/lib/scope";
 import { note } from "@/lib/activity";
-import { areaById, report, type AssessmentBody, type ItemMark } from "@/lib/assessment-template";
+import { areaById, pointsOf, report, type AssessmentBody, type Pick } from "@/lib/assessment-template";
 
 // Coaches' assessments of one child (Felix, 21 Oct 2026).
 //
@@ -59,47 +59,44 @@ const shape = (r: Row, coach: boolean) => ({
   coachName: r.coach_name || "A NextGen coach",
   updatedAt: r.updated_at,
   report: report(r.body),
-  // The raw marks are only needed to edit, which only a coach does.
+  // The raw picks are only needed to edit, which only a coach does.
   ...(coach ? { body: r.body, mine: true } : {}),
 });
 
-/** Checks a body against the template; returns an error message or null. */
+/** Checks a body against the framework; returns an error message or null. */
 function invalid(b: AssessmentBody): string | null {
   const area = areaById(b.area);
   if (!area) return "Choose what was assessed";
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(b.filmedOn)) return "Give the date it was filmed";
-  const ids = new Set(area.phases.flatMap((p) => p.items.map((i) => i.id)));
-  const marks = Object.entries(b.marks ?? {});
-  if (!marks.length) return "Mark at least one point";
-  for (const [id, m] of marks) {
-    if (!ids.has(id)) return "That form is out of date. Reload and try again";
-    if (m.mark !== "good" && m.mark !== "work") return "Each point is either good or one to work on";
-    if (m.side && !["left", "right", "both"].includes(m.side)) return "Unknown side";
-    if ((m.note ?? "").length > 400) return "A point's note is too long";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(b.filmedOn)) return "Give the date of the session";
+  const points = pointsOf(area);
+  const picks = Object.entries(b.picks ?? {});
+  if (!picks.length) return "Pick an answer for at least one point";
+  for (const [id, p] of picks) {
+    const pt = points.get(id);
+    if (!pt || !pt.answers.some((a) => a.id === p.answer)) return "That form is out of date. Reload and try again";
+    if (p.side && (!pt.sided || !["left", "right", "both"].includes(p.side))) return "Unknown side";
   }
   if ((b.priorities ?? []).length > 3) return "Pick up to three priorities";
   for (const id of b.priorities ?? []) {
-    if (b.marks[id]?.mark !== "work") return "Priorities come from the points to work on";
+    const a = points.get(id)?.answers.find((x) => x.id === b.picks[id]?.answer);
+    if (a?.tone !== "work") return "Priorities come from the points to work on";
   }
   if ((b.note ?? "").length > 2000) return "The summary is too long";
-  if ((b.filmed ?? "").length > 300) return "The filming line is too long";
   return null;
 }
 
 function clean(b: AssessmentBody): AssessmentBody {
-  const marks: Record<string, ItemMark> = {};
-  for (const [id, m] of Object.entries(b.marks)) {
-    marks[id] = {
-      mark: m.mark,
-      ...(m.side && m.mark === "work" ? { side: m.side } : {}),
-      ...(m.note?.trim() ? { note: m.note.trim() } : {}),
-    };
+  const area = areaById(b.area)!;
+  const points = pointsOf(area);
+  const picks: Record<string, Pick> = {};
+  for (const [id, p] of Object.entries(b.picks)) {
+    const work = points.get(id)?.answers.find((a) => a.id === p.answer)?.tone === "work";
+    picks[id] = { answer: p.answer, ...(p.side && work ? { side: p.side } : {}) };
   }
   return {
     area: b.area,
     filmedOn: b.filmedOn,
-    filmed: (b.filmed ?? "").trim(),
-    marks,
+    picks,
     priorities: [...new Set(b.priorities ?? [])],
     note: (b.note ?? "").trim(),
   };
