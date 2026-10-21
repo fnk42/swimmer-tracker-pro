@@ -23,7 +23,9 @@ export type Kind =
   | "tester_agreed" // a tester signed the confidentiality agreement
   | "tester_refused" // a tester reached for the preview without agreeing
   | "tester_feedback" // a tester posted to the shared board
-  | "payment_recorded"; // a family logged an M-Pesa payment for the trip
+  | "payment_recorded" // a family logged an M-Pesa payment for the trip
+  | "assessment_saved" // a coach saved an assessment of a child
+  | "assessment_deleted"; // a coach deleted one
 
 export async function note(
   kind: Kind,

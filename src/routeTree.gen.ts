@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AssessRouteImport } from './routes/assess'
 import { Route as CoachRouteImport } from './routes/coach'
 import { Route as DatabaseRouteImport } from './routes/database'
 import { Route as DormantRouteImport } from './routes/dormant'
@@ -45,6 +46,7 @@ import { Route as ApiAuthDemoRouteImport } from './routes/api/auth/demo'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthRequestCodeRouteImport } from './routes/api/auth/request-code'
 import { Route as ApiAuthVerifyCodeRouteImport } from './routes/api/auth/verify-code'
+import { Route as ApiCoachAssessmentsRouteImport } from './routes/api/coach/assessments'
 import { Route as ApiMeClaimableRouteImport } from './routes/api/me/claimable'
 import { Route as ApiMeConsentRouteImport } from './routes/api/me/consent'
 import { Route as ApiMeDataRouteImport } from './routes/api/me/data'
@@ -72,6 +74,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssessRoute = AssessRouteImport.update({
+  id: '/assess',
+  path: '/assess',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CoachRoute = CoachRouteImport.update({
@@ -244,6 +251,11 @@ const ApiAuthVerifyCodeRoute = ApiAuthVerifyCodeRouteImport.update({
   path: '/api/auth/verify-code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCoachAssessmentsRoute = ApiCoachAssessmentsRouteImport.update({
+  id: '/api/coach/assessments',
+  path: '/api/coach/assessments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMeClaimableRoute = ApiMeClaimableRouteImport.update({
   id: '/api/me/claimable',
   path: '/api/me/claimable',
@@ -338,6 +350,7 @@ const ApiTrackerSummaryRoute = ApiTrackerSummaryRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/assess': typeof AssessRoute
   '/coach': typeof CoachRoute
   '/database': typeof DatabaseRoute
   '/dormant': typeof DormantRoute
@@ -372,6 +385,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/request-code': typeof ApiAuthRequestCodeRoute
   '/api/auth/verify-code': typeof ApiAuthVerifyCodeRoute
+  '/api/coach/assessments': typeof ApiCoachAssessmentsRoute
   '/api/me/claimable': typeof ApiMeClaimableRoute
   '/api/me/consent': typeof ApiMeConsentRoute
   '/api/me/data': typeof ApiMeDataRoute
@@ -394,6 +408,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/assess': typeof AssessRoute
   '/coach': typeof CoachRoute
   '/database': typeof DatabaseRoute
   '/dormant': typeof DormantRoute
@@ -428,6 +443,7 @@ export interface FileRoutesByTo {
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/request-code': typeof ApiAuthRequestCodeRoute
   '/api/auth/verify-code': typeof ApiAuthVerifyCodeRoute
+  '/api/coach/assessments': typeof ApiCoachAssessmentsRoute
   '/api/me/claimable': typeof ApiMeClaimableRoute
   '/api/me/consent': typeof ApiMeConsentRoute
   '/api/me/data': typeof ApiMeDataRoute
@@ -451,6 +467,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/assess': typeof AssessRoute
   '/coach': typeof CoachRoute
   '/database': typeof DatabaseRoute
   '/dormant': typeof DormantRoute
@@ -485,6 +502,7 @@ export interface FileRoutesById {
   '/api/auth/me': typeof ApiAuthMeRoute
   '/api/auth/request-code': typeof ApiAuthRequestCodeRoute
   '/api/auth/verify-code': typeof ApiAuthVerifyCodeRoute
+  '/api/coach/assessments': typeof ApiCoachAssessmentsRoute
   '/api/me/claimable': typeof ApiMeClaimableRoute
   '/api/me/consent': typeof ApiMeConsentRoute
   '/api/me/data': typeof ApiMeDataRoute
@@ -509,6 +527,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/assess'
     | '/coach'
     | '/database'
     | '/dormant'
@@ -543,6 +562,7 @@ export interface FileRouteTypes {
     | '/api/auth/me'
     | '/api/auth/request-code'
     | '/api/auth/verify-code'
+    | '/api/coach/assessments'
     | '/api/me/claimable'
     | '/api/me/consent'
     | '/api/me/data'
@@ -565,6 +585,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/assess'
     | '/coach'
     | '/database'
     | '/dormant'
@@ -599,6 +620,7 @@ export interface FileRouteTypes {
     | '/api/auth/me'
     | '/api/auth/request-code'
     | '/api/auth/verify-code'
+    | '/api/coach/assessments'
     | '/api/me/claimable'
     | '/api/me/consent'
     | '/api/me/data'
@@ -621,6 +643,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/assess'
     | '/coach'
     | '/database'
     | '/dormant'
@@ -655,6 +678,7 @@ export interface FileRouteTypes {
     | '/api/auth/me'
     | '/api/auth/request-code'
     | '/api/auth/verify-code'
+    | '/api/coach/assessments'
     | '/api/me/claimable'
     | '/api/me/consent'
     | '/api/me/data'
@@ -678,6 +702,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AssessRoute: typeof AssessRoute
   CoachRoute: typeof CoachRoute
   DatabaseRoute: typeof DatabaseRoute
   DormantRoute: typeof DormantRoute
@@ -712,6 +737,7 @@ export interface RootRouteChildren {
   ApiAuthMeRoute: typeof ApiAuthMeRoute
   ApiAuthRequestCodeRoute: typeof ApiAuthRequestCodeRoute
   ApiAuthVerifyCodeRoute: typeof ApiAuthVerifyCodeRoute
+  ApiCoachAssessmentsRoute: typeof ApiCoachAssessmentsRoute
   ApiMeClaimableRoute: typeof ApiMeClaimableRoute
   ApiMeConsentRoute: typeof ApiMeConsentRoute
   ApiMeDataRoute: typeof ApiMeDataRoute
@@ -743,6 +769,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assess': {
+      id: '/assess'
+      path: '/assess'
+      fullPath: '/assess'
+      preLoaderRoute: typeof AssessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/coach': {
@@ -983,6 +1016,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthVerifyCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/coach/assessments': {
+      id: '/api/coach/assessments'
+      path: '/api/coach/assessments'
+      fullPath: '/api/coach/assessments'
+      preLoaderRoute: typeof ApiCoachAssessmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/me/claimable': {
       id: '/api/me/claimable'
       path: '/api/me/claimable'
@@ -1151,6 +1191,7 @@ const ApiSwimmersRouteWithChildren = ApiSwimmersRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AssessRoute: AssessRoute,
   CoachRoute: CoachRoute,
   DatabaseRoute: DatabaseRoute,
   DormantRoute: DormantRoute,
@@ -1185,6 +1226,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthMeRoute: ApiAuthMeRoute,
   ApiAuthRequestCodeRoute: ApiAuthRequestCodeRoute,
   ApiAuthVerifyCodeRoute: ApiAuthVerifyCodeRoute,
+  ApiCoachAssessmentsRoute: ApiCoachAssessmentsRoute,
   ApiMeClaimableRoute: ApiMeClaimableRoute,
   ApiMeConsentRoute: ApiMeConsentRoute,
   ApiMeDataRoute: ApiMeDataRoute,

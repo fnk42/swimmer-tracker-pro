@@ -436,6 +436,27 @@ th.co-col{color:#7A5200;border-bottom:2px solid #E3A92B}
 .evrow .evtop{display:flex;align-items:baseline;gap:8px;min-width:0}
 .evrow .evtop .e{flex:0 1 auto}
 .evrow .evtop .trend{margin-left:auto;font-size:13px;min-width:0;text-align:right}
+.assess{margin-top:18px}
+.assess:empty{display:none}
+.assess h4{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.assess .as-new{margin-left:auto;font-size:12.5px;font-weight:700;text-decoration:none;padding:6px 12px;border-radius:9px;
+  background:#FFC24B;color:#0A1B33}
+.assess details.as{border:1px solid var(--line);border-left:3px solid #FFC24B;border-radius:12px;background:var(--surface);margin-top:8px}
+.assess details.as > summary{list-style:none;cursor:pointer;padding:11px 14px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.assess details.as > summary::-webkit-details-marker{display:none}
+.assess .as-t{font-weight:700;color:var(--ink)}
+.assess .as-m{font-size:12.5px;color:var(--muted)}
+.assess .as-tag{font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:2px 7px;border-radius:6px;background:var(--sunken);color:var(--muted)}
+.assess .as-tag.sh{background:rgba(31,182,122,.14);color:#0E7A50}
+.assess .as-body{padding:0 14px 14px;font-size:13.5px;line-height:1.55;color:var(--ink)}
+.assess .as-body .k{margin:12px 0 4px;font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase}
+.assess .as-body .k.ok{color:#0E8455}.assess .as-body .k.wk{color:#9A6A00}
+.assess .as-body ul,.assess .as-body ol{margin:0;padding-left:18px}
+.assess .as-body li{margin:3px 0}
+.assess .as-body .fx{display:block;color:var(--muted)}
+.assess .as-body .pr{font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:5px;background:#FFC24B;color:#0A1B33;margin-right:5px}
+.assess .as-edit{display:inline-block;margin-top:10px;font-size:12.5px;font-weight:700;color:var(--electric-deep)}
+.assess .as-none{font-size:13px;color:var(--muted);margin:6px 0 0}
 .tblnote{margin:8px 2px 0;font-size:12.5px;line-height:1.5;color:var(--muted)}
 .evlist.once .oncenote{margin:4px 0 10px;font-size:13px;color:var(--muted);line-height:1.5}
 .evrow .evsub{margin-top:2px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
@@ -3517,7 +3538,6 @@ function swimmerCard(s){
           ${s.pbRate===null?'':`<div class="cvbar"><i class="${s.pbRate>=50?'ok':''}"
             style="width:${Math.min(100,s.pbRate)}%"></i></div>`}</div>
       </div>
-      <p class="cvnotes">Coach's notes for this swimmer: coming soon.</p>
     </div>` : '';
   // Trend charts. Chips pick the event; one chart shows at a time, which is the
   // only version that works at 390px — a child can have 22 chartable series.
@@ -3617,6 +3637,8 @@ function swimmerCard(s){
       </div>`:''}
       ${chart}
       ${coach}
+      ${coachView() || (DATA.myAthletes || []).includes(s.name)
+        ? `<div class="assess${coachView() ? ' co' : ''}" data-assess="${esc(s.name)}"></div>` : ''}
       ${evs?`<div class="evlist"><h4 class="evhead">Event by event${ib('events', 'event by event')}</h4>${evs}</div>`:''}
       ${onceBlock}
       ${off}
@@ -5541,6 +5563,50 @@ function closeMeet(){
   window.scrollTo({ top: meetReturn, behavior: 'auto' });
 }
 window.closeMeet = closeMeet;
+
+// Coaches' assessments on a swimmer card (Felix, 21 Oct 2026), fetched when
+// the card opens: one child per request, so nothing is loaded for cards
+// nobody opens. Coaches see drafts and shared ones and can add or edit; a
+// parent sees only what has been shared, on their own child's card.
+const assessCache = new Map();
+function assessHTML(name, list){
+  const coach = coachView();
+  const fmt = d => { const x = new Date(d + 'T00:00:00'); return isNaN(x) ? d
+    : x.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); };
+  const items = list.map(a => {
+    const r = a.report;
+    return `<details class="as"><summary><span class="as-t">${esc(r.title)}</span>
+      <span class="as-m">${fmt(a.filmedOn)} · ${esc(a.coachName)}</span>
+      ${coach ? `<span class="as-tag ${a.shared ? 'sh' : ''}">${a.shared ? 'Shared with parents' : 'Draft'}</span>` : ''}</summary>
+      <div class="as-body"><p class="as-m">${esc(r.filmed)}</p>
+      ${r.good.length ? `<p class="k ok">What is working</p><ul>${r.good.map(g => `<li>${esc(g)}</li>`).join('')}</ul>` : ''}
+      ${r.work.length ? `<p class="k wk">To work on</p><ol>${r.work.map(w => `<li>${w.priority ? '<span class="pr">Priority</span>' : ''}${esc(w.text)}
+        <span class="fx">Fix: ${esc(w.fix)}</span>${w.note ? `<span class="fx">Coach's note: ${esc(w.note)}</span>` : ''}</li>`).join('')}</ol>` : ''}
+      ${r.note ? `<p class="k">Coach's summary</p><p style="white-space:pre-line;margin:0">${esc(r.note)}</p>` : ''}
+      ${coach ? `<a class="as-edit" href="/assess?id=${encodeURIComponent(a.id)}">Edit</a>` : ''}</div></details>`;
+  }).join('');
+  if (!coach && !list.length) return '';
+  return `<h4>Coach's assessments${coach ? coTag() : ''}${coach
+      ? `<a class="as-new" href="/assess?name=${encodeURIComponent(name)}">+ New assessment</a>` : ''}</h4>
+    ${items || `<p class="as-none">None yet.${coach ? ' Shared ones are also shown to this swimmer\'s parents.' : ''}</p>`}`;
+}
+function loadAssess(box){
+  const name = box.dataset.assess;
+  if (box.dataset.loaded) return;
+  box.dataset.loaded = '1';
+  const show = list => { box.innerHTML = assessHTML(name, list); };
+  if (assessCache.has(name)) return show(assessCache.get(name));
+  fetch('/api/coach/assessments?name=' + encodeURIComponent(name) + (AS_PARENT ? '&as=parent' : ''))
+    .then(r => r.ok ? r.json() : [])
+    .then(list => { assessCache.set(name, list); show(list); })
+    .catch(() => { box.dataset.loaded = ''; });
+}
+document.addEventListener('toggle', e => {
+  const d = e.target;
+  if (!(d instanceof HTMLDetailsElement) || !d.classList.contains('sw') || !d.open) return;
+  const box = d.querySelector('.assess[data-assess]');
+  if (box) loadAssess(box);
+}, true);
 
 // Delegated, so it survives every re-render of the meets list.
 document.addEventListener('click', e => {
