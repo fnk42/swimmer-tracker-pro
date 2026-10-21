@@ -45,7 +45,13 @@ const today = () => new Date().toISOString().slice(0, 10);
 function AssessPage() {
   const search = Route.useSearch();
   const me = useMe();
-  const coach = !!me.data?.isAdmin || !!me.data?.isCoach;
+  // Private for now: the server says who may use it (ASSESSMENT_EMAILS).
+  const probe = useQuery({
+    queryKey: ["assess-probe"],
+    enabled: !!me.data?.signedIn,
+    queryFn: async () => (await fetch("/api/coach/assessments?probe=1")).ok,
+  });
+  const coach = (!!me.data?.isAdmin || !!me.data?.isCoach) && probe.data === true;
 
   const [step, setStep] = useState<Step>("what");
   const [id, setId] = useState<string | undefined>(search.id);
@@ -100,16 +106,15 @@ function AssessPage() {
     return m;
   }, [A]);
 
-  if (me.isLoading) return <Frame><p className="mt-10 text-white/60">Loading…</p></Frame>;
+  if (me.isLoading || probe.isLoading) return <Frame><p className="mt-10 text-white/60">Loading…</p></Frame>;
   if (!coach) {
     return (
       <Frame>
         <div className="ng-panel mt-6 p-6">
-          <h2 className="text-[21px] font-semibold">For coaches</h2>
+          <h2 className="text-[21px] font-semibold">Not available</h2>
           <p className="mt-2 text-[14.5px] leading-relaxed text-white/70">
-            Assessments are written by the club's coaches. Sign in at{" "}
-            <a className="font-semibold text-[var(--ng-gold)] underline-offset-4 hover:underline" href="/coach">/coach</a>{" "}
-            with the address on the coach list.
+            This page is not open yet.{" "}
+            <a className="font-semibold text-[var(--ng-gold)] underline-offset-4 hover:underline" href="/tracker">Back to the analytics</a>
           </p>
         </div>
       </Frame>

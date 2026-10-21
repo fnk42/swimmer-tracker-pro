@@ -15,6 +15,17 @@ import { areaById, report, type AssessmentBody, type ItemMark } from "@/lib/asse
 // One child per request, like /api/athlete/assessment, and parents' reads are
 // logged to assessment_views so "who has looked at my child's assessment?"
 // has an answer.
+//
+// For now the whole feature is private to the addresses in ASSESSMENT_EMAILS
+// (Felix, 21 Oct 2026): it is shown to the club before it is opened to
+// coaches and parents. Unset means nobody. Everyone else gets a 404, so the
+// feature does not announce itself.
+
+const allowed = (email: string) =>
+  (process.env.ASSESSMENT_EMAILS ?? "")
+    .split(",").map((e) => e.trim().toLowerCase()).filter(Boolean)
+    .includes(email.trim().toLowerCase());
+const hidden = () => json({ error: "Not found" }, 404);
 
 type Row = {
   id: string;
@@ -101,7 +112,9 @@ export const Route = createFileRoute("/api/coach/assessments")({
         try {
           const v = await viewer(request);
           if (!v) return json({ error: "Not signed in" }, 401);
+          if (!allowed(v.email)) return hidden();
           const url = new URL(request.url);
+          if (url.searchParams.get("probe")) return json({ ok: true });
           const coach = isCoachView(v, request);
 
           const id = url.searchParams.get("id");
@@ -139,6 +152,7 @@ export const Route = createFileRoute("/api/coach/assessments")({
         try {
           const v = await viewer(request);
           if (!v || v.scope !== "coach") return json({ error: "Coaches only" }, 403);
+          if (!allowed(v.email)) return hidden();
           const b = (await request.json().catch(() => ({}))) as {
             id?: string; name?: string; shared?: boolean; body?: AssessmentBody;
           };
@@ -190,6 +204,7 @@ export const Route = createFileRoute("/api/coach/assessments")({
         try {
           const v = await viewer(request);
           if (!v || v.scope !== "coach") return json({ error: "Coaches only" }, 403);
+          if (!allowed(v.email)) return hidden();
           const b = (await request.json().catch(() => ({}))) as { id?: string };
           if (!b.id) return json({ error: "id required" }, 400);
           // The coach who wrote it, or an admin.

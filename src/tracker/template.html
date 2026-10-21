@@ -5597,8 +5597,11 @@ function loadAssess(box){
   const show = list => { box.innerHTML = assessHTML(name, list); };
   if (assessCache.has(name)) return show(assessCache.get(name));
   fetch('/api/coach/assessments?name=' + encodeURIComponent(name) + (AS_PARENT ? '&as=parent' : ''))
-    .then(r => r.ok ? r.json() : [])
-    .then(list => { assessCache.set(name, list); show(list); })
+    // Anything but a list (404 while the feature is private) leaves the
+    // block empty, and an empty block is not drawn.
+    .then(r => r.ok ? r.json() : null)
+    .then(list => { if (!Array.isArray(list)) { box.innerHTML = ''; return; }
+      assessCache.set(name, list); show(list); })
     .catch(() => { box.dataset.loaded = ''; });
 }
 document.addEventListener('toggle', e => {
